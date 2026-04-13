@@ -1807,6 +1807,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_clinic_for_user: {
+        Args: {
+          p_address?: string
+          p_email?: string
+          p_name: string
+          p_phone?: string
+        }
+        Returns: string
+      }
       deduct_inventory: {
         Args: { p_item_id: string; p_quantity: number }
         Returns: undefined
