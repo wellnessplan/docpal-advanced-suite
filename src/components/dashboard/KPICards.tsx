@@ -21,6 +21,7 @@ function MiniSparkline({ data }: { data: number[] }) {
 }
 
 export default function KPICards() {
+  const navigate = useNavigate();
   const { clinicId } = useAuth();
   const today = new Date().toISOString().split("T")[0];
 
