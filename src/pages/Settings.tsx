@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import GoogleIntegrationTab from "@/components/settings/GoogleIntegrationTab";
 import WhatsAppTemplatesTab from "@/components/settings/WhatsAppTemplatesTab";
+import WebhooksTab from "@/components/settings/WebhooksTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -513,6 +514,7 @@ export default function SettingsPage() {
             <TabsTrigger value="qr">Patient QR</TabsTrigger>
             <TabsTrigger value="integrations">Integrations</TabsTrigger>
             <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           </TabsList>
 
           <TabsContent value="clinic"><ClinicInfoTab clinicId={clinicId} /></TabsContent>
@@ -545,6 +547,7 @@ export default function SettingsPage() {
 
           <TabsContent value="integrations"><GoogleIntegrationTab /></TabsContent>
           <TabsContent value="whatsapp"><WhatsAppTemplatesTab clinicId={clinicId} /></TabsContent>
+          <TabsContent value="webhooks"><WebhooksTab clinicId={clinicId} /></TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
