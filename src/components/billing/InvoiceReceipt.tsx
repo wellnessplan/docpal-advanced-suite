@@ -1,7 +1,8 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer, Download } from "lucide-react";
+import { Printer, Download, FileDown } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
 
 interface InvoiceReceiptProps {
   invoice: any;
@@ -20,13 +21,14 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [] }:
   const taxRate = Number(invoice.tax_rate || 0);
   const taxAmount = Number(invoice.tax_amount || 0);
   const totalAmount = Number(invoice.amount);
+  const receiptNo = (invoice.invoice_number || invoice.id.slice(0, 8)).toUpperCase();
 
   const handlePrint = () => {
     const el = printRef.current;
     if (!el) return;
     const win = window.open("", "_blank");
     if (!win) return;
-    win.document.write(`<html><head><title>Receipt #${invoice.id.slice(0, 8)}</title>
+    win.document.write(`<html><head><title>Receipt #${receiptNo}</title>
       <style>
         body{font-family:system-ui,sans-serif;padding:24px;font-size:12px;color:#1a1a1a;max-width:800px;margin:0 auto}
         h1{font-size:20px;margin:0}h2{font-size:14px;margin:16px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}
@@ -34,26 +36,207 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [] }:
         th{background:#f5f5f5;font-weight:600}
         .header{display:flex;justify-content:space-between;border-bottom:2px solid #333;padding-bottom:12px;margin-bottom:16px}
         .amount-box{background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:12px;text-align:center;margin:16px 0}
-        .amount-box .label{font-size:11px;color:#666}.amount-box .value{font-size:24px;font-weight:bold;color:#16a34a}
         .footer{margin-top:32px;display:flex;justify-content:space-between;font-size:10px;color:#999}
-        .paid-stamp{color:#22c55e;font-size:32px;font-weight:bold;transform:rotate(-12deg);opacity:0.3;position:absolute;top:50%;right:10%}
-        @media print{body{padding:12px}.paid-stamp{opacity:0.2}}
+        @media print{body{padding:12px}}
       </style></head><body>${el.innerHTML}</body></html>`);
     win.document.close();
     win.print();
   };
 
-  const handleDownload = () => {
-    const el = printRef.current;
-    if (!el) return;
-    const blob = new Blob([`<html><body style="font-family:system-ui;padding:24px;font-size:12px;max-width:800px;margin:0 auto">${el.innerHTML}</body></html>`], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Receipt_${patient?.full_name}_${new Date(invoice.created_at).toISOString().split("T")[0]}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Receipt downloaded");
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const w = doc.internal.pageSize.getWidth();
+    let y = 15;
+    const lm = 15;
+    const rm = w - 15;
+
+    // Header
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(clinic?.name || "Dental Clinic", lm, y);
+    y += 6;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    if (clinic?.address) { doc.text(clinic.address, lm, y); y += 4; }
+    const contactLine = [clinic?.phone, clinic?.email].filter(Boolean).join(" · ");
+    if (contactLine) { doc.text(contactLine, lm, y); y += 4; }
+
+    // Receipt title on the right
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(50);
+    doc.text("RECEIPT", rm, 15, { align: "right" });
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Receipt #: ${receiptNo}`, rm, 22, { align: "right" });
+    doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString("en-IN")}`, rm, 27, { align: "right" });
+    if (invoice.paid_at) {
+      doc.text(`Paid: ${new Date(invoice.paid_at).toLocaleDateString("en-IN")}`, rm, 32, { align: "right" });
+    }
+
+    y = Math.max(y, 38);
+    // Separator
+    doc.setDrawColor(50);
+    doc.setLineWidth(0.5);
+    doc.line(lm, y, rm, y);
+    y += 8;
+
+    // Patient box
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(lm, y - 2, rm - lm, 18, 2, 2, "F");
+    doc.setFontSize(10);
+    doc.setTextColor(30);
+    doc.setFont("helvetica", "bold");
+    doc.text("Patient:", lm + 4, y + 4);
+    doc.setFont("helvetica", "normal");
+    doc.text(patient?.full_name || "—", lm + 24, y + 4);
+    if (patient?.phone) { doc.text(`Phone: ${patient.phone}`, lm + 4, y + 10); }
+    if (patient?.email) { doc.text(`Email: ${patient.email}`, lm + 80, y + 10); }
+    y += 22;
+
+    // PAID stamp
+    if (invoice.status === "paid") {
+      doc.setFontSize(48);
+      doc.setTextColor(34, 197, 94);
+      doc.saveGraphicsState();
+      // @ts-ignore
+      doc.setGState(new doc.GState({ opacity: 0.12 }));
+      doc.text("PAID", w / 2, y + 40, { align: "center", angle: -15 });
+      doc.restoreGraphicsState();
+    }
+
+    // Amount box
+    const boxColor = invoice.status === "paid" ? [34, 197, 94] : [245, 158, 11];
+    doc.setDrawColor(...(boxColor as [number, number, number]));
+    doc.setLineWidth(0.8);
+    const bgColor = invoice.status === "paid" ? [240, 253, 244] : [254, 243, 199];
+    doc.setFillColor(...(bgColor as [number, number, number]));
+    doc.roundedRect(lm + 30, y, rm - lm - 60, 22, 3, 3, "FD");
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(invoice.status === "paid" ? "AMOUNT PAID" : "AMOUNT DUE", w / 2, y + 7, { align: "center" });
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...(boxColor as [number, number, number]));
+    doc.text(`₹${totalAmount.toLocaleString("en-IN")}`, w / 2, y + 17, { align: "center" });
+    y += 30;
+
+    doc.setTextColor(30);
+
+    // Items table
+    if (items.length > 0) {
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("Treatment Details", lm, y);
+      y += 6;
+
+      // Table header
+      const cols = [lm, lm + 90, lm + 110, lm + 140];
+      doc.setFillColor(240, 240, 240);
+      doc.rect(lm, y - 1, rm - lm, 7, "F");
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.text("Description", cols[0] + 2, y + 4);
+      doc.text("Qty", cols[1] + 2, y + 4);
+      doc.text("Unit Price", cols[2] + 2, y + 4);
+      doc.text("Amount", cols[3] + 2, y + 4);
+      y += 8;
+
+      doc.setFont("helvetica", "normal");
+      items.forEach((item: any) => {
+        const lineTotal = (item.quantity || 1) * Number(item.unit_price);
+        doc.text(String(item.description).substring(0, 50), cols[0] + 2, y + 4);
+        doc.text(String(item.quantity || 1), cols[1] + 2, y + 4);
+        doc.text(`₹${Number(item.unit_price).toLocaleString()}`, cols[2] + 2, y + 4);
+        doc.text(`₹${lineTotal.toLocaleString()}`, cols[3] + 2, y + 4);
+        doc.setDrawColor(220);
+        doc.line(lm, y + 6, rm, y + 6);
+        y += 8;
+      });
+      y += 4;
+    }
+
+    // Summary
+    doc.setDrawColor(200);
+    doc.line(w / 2, y, rm, y);
+    y += 6;
+    doc.setFontSize(10);
+    const summaryX = w / 2 + 5;
+    const valX = rm - 2;
+
+    doc.setFont("helvetica", "normal");
+    doc.text("Subtotal", summaryX, y);
+    doc.text(`₹${subtotal.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+    y += 6;
+
+    if (discountTotal > 0) {
+      doc.setTextColor(22, 163, 74);
+      doc.text(`Discount${discountPct > 0 ? ` (${discountPct}%)` : ""}`, summaryX, y);
+      doc.text(`-₹${discountTotal.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+      y += 6;
+      doc.setTextColor(30);
+    }
+
+    if (taxRate > 0) {
+      doc.text(`Tax (${taxRate}%)`, summaryX, y);
+      doc.text(`₹${taxAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+      y += 6;
+    }
+
+    if (invoice.coupon_code) {
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.text(`Coupon: ${invoice.coupon_code}`, summaryX, y);
+      y += 5;
+    }
+
+    doc.setDrawColor(50);
+    doc.setLineWidth(0.5);
+    doc.line(w / 2, y, rm, y);
+    y += 6;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30);
+    doc.text("Total", summaryX, y);
+    doc.text(`₹${totalAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+    y += 10;
+
+    // Notes
+    if (invoice.notes) {
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100);
+      doc.text(`Notes: ${invoice.notes}`, lm, y);
+      y += 8;
+    }
+
+    // Payment method
+    if (invoice.payment_method) {
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.text(`Payment Method: ${invoice.payment_method}`, lm, y);
+      y += 8;
+    }
+
+    // Footer
+    y = Math.max(y + 10, 260);
+    doc.setFontSize(8);
+    doc.setTextColor(160);
+    doc.text(`Generated on ${new Date().toLocaleString("en-IN")}`, lm, y);
+    doc.text("This is a computer-generated receipt.", lm, y + 4);
+
+    // Signature line
+    doc.setDrawColor(60);
+    doc.setLineWidth(0.3);
+    doc.line(rm - 50, y, rm, y);
+    doc.setFontSize(8);
+    doc.setTextColor(80);
+    doc.text("Authorized Signature", rm - 25, y + 4, { align: "center" });
+
+    // Save
+    doc.save(`Receipt_${patient?.full_name?.replace(/\s/g, "_") || "Patient"}_${receiptNo}.pdf`);
+    toast.success("PDF receipt downloaded!");
   };
 
   return (
@@ -62,8 +245,8 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [] }:
         <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1">
           <Printer className="h-3.5 w-3.5" /> Print
         </Button>
-        <Button size="sm" variant="outline" onClick={handleDownload} className="gap-1">
-          <Download className="h-3.5 w-3.5" /> Download
+        <Button size="sm" onClick={handleDownloadPDF} className="gap-1">
+          <FileDown className="h-3.5 w-3.5" /> Download PDF
         </Button>
       </div>
 
@@ -85,7 +268,7 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [] }:
           </div>
           <div style={{ textAlign: "right" }}>
             <h2 style={{ margin: 0, fontSize: 18, color: "#333", borderBottom: "none" }}>RECEIPT</h2>
-            <p style={{ fontSize: 11, margin: "4px 0" }}><strong>Receipt #:</strong> {invoice.id.slice(0, 8).toUpperCase()}</p>
+            <p style={{ fontSize: 11, margin: "4px 0" }}><strong>Receipt #:</strong> {receiptNo}</p>
             <p style={{ fontSize: 11, margin: 0 }}><strong>Date:</strong> {new Date(invoice.created_at).toLocaleDateString("en-IN")}</p>
             {invoice.paid_at && <p style={{ fontSize: 11, margin: 0 }}><strong>Paid:</strong> {new Date(invoice.paid_at).toLocaleDateString("en-IN")}</p>}
           </div>
@@ -107,7 +290,8 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [] }:
             ₹{totalAmount.toLocaleString("en-IN")}
           </div>
         </div>
-        {/* Items table if available */}
+
+        {/* Items table */}
         {items.length > 0 && (
           <>
             <h2 style={{ fontSize: 13, borderBottom: "1px solid #ccc", paddingBottom: 4 }}>Treatment Details</h2>
@@ -126,7 +310,7 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [] }:
                     <td style={{ border: "1px solid #ddd", padding: "5px 8px" }}>{item.description}</td>
                     <td style={{ border: "1px solid #ddd", padding: "5px 8px", textAlign: "center" }}>{item.quantity}</td>
                     <td style={{ border: "1px solid #ddd", padding: "5px 8px", textAlign: "right" }}>₹{Number(item.unit_price).toLocaleString()}</td>
-                    <td style={{ border: "1px solid #ddd", padding: "5px 8px", textAlign: "right" }}>₹{(item.quantity * Number(item.unit_price)).toLocaleString()}</td>
+                    <td style={{ border: "1px solid #ddd", padding: "5px 8px", textAlign: "right" }}>₹{((item.quantity || 1) * Number(item.unit_price)).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -159,14 +343,12 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [] }:
           </div>
         </div>
 
-        {/* Notes */}
         {invoice.notes && (
           <div style={{ marginTop: 12, fontSize: 11, color: "#666" }}>
             <strong>Notes:</strong> {invoice.notes}
           </div>
         )}
 
-        {/* Footer */}
         <div style={{ marginTop: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div style={{ fontSize: 10, color: "#999" }}>
             <p style={{ margin: 0 }}>Generated on {new Date().toLocaleString("en-IN")}</p>
