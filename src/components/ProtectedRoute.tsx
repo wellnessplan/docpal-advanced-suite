@@ -2,8 +2,13 @@ import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
+// ⚠️ DEV MODE: Auth checks bypassed for testing
+const DEV_BYPASS_AUTH = true;
+
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { session, profile, loading } = useAuth();
+
+  if (DEV_BYPASS_AUTH) return <>{children}</>;
 
   if (loading) {
     return (
@@ -20,6 +25,8 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
 
 export function AuthOnlyRoute({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
+
+  if (DEV_BYPASS_AUTH) return <>{children}</>;
 
   if (loading) {
     return (
