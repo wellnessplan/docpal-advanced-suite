@@ -12,11 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import {
   Smile, CalendarDays, ChevronLeft,
-  Phone, Mail, FileText, User2, HeartPulse, History
+  Phone, Mail, FileText, User2, HeartPulse, History, Search
 } from "lucide-react";
 import MedicalHistoryTab from "@/components/patients/MedicalHistoryTab";
 import VisitHistoryTab from "@/components/patients/VisitHistoryTab";
 import DocumentsTab from "@/components/patients/DocumentsTab";
+import AuditTrailTab from "@/components/patients/AuditTrailTab";
 
 const TREATMENT_STATUS_COLORS: Record<string, string> = {
   planned: "bg-primary/10 text-primary border-primary/30",
@@ -158,6 +159,7 @@ export default function PatientProfilePage() {
             <TabsTrigger value="appointments">Appointments</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="documents" className="gap-1"><FileText className="h-3 w-3" />Documents</TabsTrigger>
+            <TabsTrigger value="audit-trail" className="gap-1"><Search className="h-3 w-3" />Audit Trail</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
           </TabsList>
 
@@ -308,6 +310,10 @@ export default function PatientProfilePage() {
 
           <TabsContent value="documents" className="mt-4">
             {clinicId && <DocumentsTab patientId={patient.id} clinicId={clinicId} />}
+          </TabsContent>
+
+          <TabsContent value="audit-trail" className="mt-4">
+            <AuditTrailTab patientId={patient.id} />
           </TabsContent>
 
           <TabsContent value="notes" className="mt-4">
