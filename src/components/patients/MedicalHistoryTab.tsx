@@ -45,7 +45,7 @@ export default function MedicalHistoryTab({ patientId, clinicId }: MedicalHistor
   const { data: history, isLoading } = useQuery({
     queryKey: ["medical-history", patientId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("patient_medical_history")
         .select("*")
         .eq("patient_id", patientId)
@@ -79,13 +79,13 @@ export default function MedicalHistoryTab({ patientId, clinicId }: MedicalHistor
     mutationFn: async () => {
       const payload = { ...form, patient_id: patientId, clinic_id: clinicId };
       if (history) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("patient_medical_history")
           .update(payload)
           .eq("id", history.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("patient_medical_history")
           .insert(payload);
         if (error) throw error;

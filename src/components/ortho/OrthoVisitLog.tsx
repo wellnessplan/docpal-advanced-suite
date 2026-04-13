@@ -29,8 +29,8 @@ export default function OrthoVisitLog({ caseId }: { caseId: string }) {
   const { data: visits = [] } = useQuery({
     queryKey: ["ortho-visits", caseId],
     queryFn: async () => {
-      const { data } = await supabase.from("ortho_visits").select("*, profiles(full_name)")
-        .eq("ortho_case_id", caseId).order("visit_number", { ascending: false });
+      const { data } = await (supabase.from("ortho_visits") as any).select("*, profiles(full_name)")
+        .eq("case_id", caseId).order("created_at", { ascending: false });
       return data ?? [];
     },
   });
@@ -39,9 +39,10 @@ export default function OrthoVisitLog({ caseId }: { caseId: string }) {
 
   const addVisit = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("ortho_visits").insert({
-        ortho_case_id: caseId,
+      const { error } = await (supabase.from("ortho_visits") as any).insert({
+        case_id: caseId,
         visit_number: nextVisitNumber,
+        visit_date: new Date().toISOString().split("T")[0],
         wire_upper: form.wire_upper || null,
         wire_lower: form.wire_lower || null,
         bracket_arch: form.bracket_arch || null,

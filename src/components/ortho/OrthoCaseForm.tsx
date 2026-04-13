@@ -45,7 +45,7 @@ export default function OrthoCaseForm({ clinicId, onClose, onSuccess }: Props) {
   const { data: patients = [] } = useQuery({
     queryKey: ["patients-list", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("patients").select("id, full_name, op_number").order("full_name");
+      const { data } = await supabase.from("patients").select("id, full_name, op_number" as any).order("full_name");
       return data ?? [];
     },
   });
@@ -62,16 +62,18 @@ export default function OrthoCaseForm({ clinicId, onClose, onSuccess }: Props) {
 
   const createCase = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("ortho_cases").insert({
+      const { error } = await (supabase.from("ortho_cases") as any).insert({
         clinic_id: clinicId,
         patient_id: patientId,
-        orthodontist_id: orthodontistId || null,
+        doctor_id: orthodontistId || null,
         case_type: caseType,
         malocclusion_class: malocclusion || null,
         skeletal_pattern: skeletal || null,
         case_start_date: startDate || null,
+        start_date: startDate || null,
         estimated_duration_months: duration ? parseInt(duration) : null,
         total_estimated_cost: cost ? parseFloat(cost) : 0,
+        total_cost: cost ? parseFloat(cost) : 0,
         notes: notes || null,
         pre_treatment_checklist: checklist,
       });

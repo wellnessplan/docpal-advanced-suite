@@ -12,7 +12,7 @@ export default function VisitHistoryTab({ patientId }: VisitHistoryTabProps) {
   const { data: prescriptions = [], isLoading } = useQuery({
     queryKey: ["visit-history", patientId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("prescriptions")
         .select("*, prescription_items(*)")
         .eq("patient_id", patientId)

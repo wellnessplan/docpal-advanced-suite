@@ -40,7 +40,7 @@ export default function UnifiedToothEntry({
   const { data: existingItems = [] } = useQuery({
     queryKey: ["prescription-items", prescriptionId, toothNumber],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("prescription_items")
         .select("*")
         .eq("prescription_id", prescriptionId)
@@ -54,9 +54,9 @@ export default function UnifiedToothEntry({
   const { data: pricingMap } = useQuery({
     queryKey: ["treatment-pricing", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("treatment_pricing").select("treatment_name, base_price").eq("clinic_id", clinicId);
+      const { data } = await supabase.from("treatment_pricing").select("treatment_name, price").eq("clinic_id", clinicId);
       const map: Record<string, number> = {};
-      data?.forEach((p: any) => { map[p.treatment_name] = Number(p.base_price); });
+      data?.forEach((p: any) => { map[p.treatment_name] = Number(p.price); });
       return map;
     },
     enabled: !!clinicId,
@@ -96,7 +96,7 @@ export default function UnifiedToothEntry({
       if (!form.condition && !form.treatment) throw new Error("Select at least a condition or treatment");
       const recordId = await ensureToothRecord();
 
-      await supabase.from("prescription_items").insert({
+      await (supabase as any).from("prescription_items").insert({
         prescription_id: prescriptionId,
         tooth_number: toothNumber,
         condition: form.condition || null,
@@ -131,7 +131,7 @@ export default function UnifiedToothEntry({
 
   const deleteItem = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("prescription_items").delete().eq("id", id);
+      await (supabase as any).from("prescription_items").delete().eq("id", id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prescription-items"] });

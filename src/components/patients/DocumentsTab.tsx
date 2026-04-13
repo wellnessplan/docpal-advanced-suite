@@ -70,12 +70,11 @@ export default function DocumentsTab({ patientId, clinicId }: DocumentsTabProps)
 
       const fileUrl = signedData?.signedUrl || urlData.publicUrl;
 
-      const { error: dbError } = await supabase.from("patient_documents").insert({
+      const { error: dbError } = await (supabase.from("patient_documents") as any).insert({
         patient_id: patientId,
         clinic_id: clinicId,
-        document_type: docType,
-        tooth_number: toothNumber ? parseInt(toothNumber) : null,
-        file_url: path, // store path, generate signed URL on read
+        category: docType,
+        file_url: path,
         file_name: file.name,
         notes: notes || null,
       });
