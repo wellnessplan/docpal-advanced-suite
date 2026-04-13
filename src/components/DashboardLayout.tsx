@@ -79,6 +79,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const isGroupActive = (group: NavGroup) =>
     group.items.some(i => pathname === i.href || pathname.startsWith(i.href + "/"));
 
+  const initials = (profile?.full_name || "U").charAt(0).toUpperCase();
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar — hidden on mobile */}
@@ -89,8 +91,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             collapsed ? "w-[60px]" : "w-[240px]"
           )}
         >
+          {/* Logo */}
           <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-primary">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-primary shadow-md shadow-primary/20">
               <Stethoscope className="h-4 w-4 text-sidebar-primary-foreground" />
             </div>
             {!collapsed && (
@@ -100,25 +103,53 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-3">
-            {navGroups.map((group) => {
+          {/* User mini-profile */}
+          {!collapsed && (
+            <div className="px-3 py-3 border-b border-sidebar-border">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground ring-2 ring-sidebar-primary/20">
+                  {initials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-sidebar-foreground truncate">{profile?.full_name || "Doctor"}</p>
+                  <p className="text-[10px] text-sidebar-foreground/50 truncate">{profile?.role || "Admin"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+            {navGroups.map((group, gi) => {
               const groupActive = isGroupActive(group);
               const isExpanded = group.collapsible ? (expandedGroups[group.label] ?? groupActive) : true;
 
               return (
-                <div key={group.label}>
+                <div key={group.label} className={gi > 0 ? "pt-2" : ""}>
+                  {/* Group separator line */}
+                  {gi > 0 && !collapsed && (
+                    <div className="h-px bg-sidebar-border mx-2 mb-2" />
+                  )}
+
                   {!collapsed && group.collapsible ? (
                     <button
                       onClick={() => toggleGroup(group.label)}
-                      className="flex w-full items-center justify-between px-2 mb-1 text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/50 uppercase hover:text-sidebar-foreground/70 transition-colors"
+                      className="flex w-full items-center justify-between px-2.5 mb-1 group/label"
                     >
-                      <span>{group.label}</span>
-                      {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      <div className="flex items-center gap-1.5">
+                        <group.groupIcon className="h-3 w-3 text-sidebar-foreground/30" />
+                        <span className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase group-hover/label:text-sidebar-foreground/60 transition-colors">
+                          {group.label}
+                        </span>
+                      </div>
+                      {isExpanded ? <ChevronUp className="h-3 w-3 text-sidebar-foreground/30" /> : <ChevronDown className="h-3 w-3 text-sidebar-foreground/30" />}
                     </button>
                   ) : !collapsed ? (
-                    <p className="px-2 mb-1 text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/50 uppercase">
-                      {group.label}
-                    </p>
+                    <div className="flex items-center gap-1.5 px-2.5 mb-1">
+                      <group.groupIcon className="h-3 w-3 text-sidebar-foreground/30" />
+                      <p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase">
+                        {group.label}
+                      </p>
+                    </div>
                   ) : null}
 
                   {(isExpanded || collapsed) && (
@@ -131,16 +162,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                             to={item.href}
                             title={collapsed ? item.label : undefined}
                             className={cn(
-                              "relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors duration-150",
+                              "relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all duration-200",
                               isActive
-                                ? "bg-sidebar-accent text-sidebar-primary"
+                                ? "bg-sidebar-accent text-sidebar-primary shadow-sm"
                                 : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                             )}
                           >
                             {isActive && (
-                              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-sidebar-primary" />
+                              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full bg-sidebar-primary shadow-[0_0_8px_hsl(var(--sidebar-primary)/0.5)]" />
                             )}
-                            <item.icon className="h-[18px] w-[18px] shrink-0" />
+                            <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-sidebar-primary")} />
                             {!collapsed && <span>{item.label}</span>}
                           </Link>
                         );
@@ -151,26 +182,31 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               );
             })}
 
-            <div>
+            {/* Settings */}
+            <div className="pt-2">
+              {!collapsed && <div className="h-px bg-sidebar-border mx-2 mb-2" />}
               {!collapsed && (
-                <p className="px-2 mb-1 text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/50 uppercase">
-                  SETTINGS
-                </p>
+                <div className="flex items-center gap-1.5 px-2.5 mb-1">
+                  <Settings className="h-3 w-3 text-sidebar-foreground/30" />
+                  <p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase">
+                    SETTINGS
+                  </p>
+                </div>
               )}
               <Link
                 to="/settings"
                 title={collapsed ? "Settings" : undefined}
                 className={cn(
-                  "relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors duration-150",
+                  "relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all duration-200",
                   pathname === "/settings"
-                    ? "bg-sidebar-accent text-sidebar-primary"
+                    ? "bg-sidebar-accent text-sidebar-primary shadow-sm"
                     : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                 )}
               >
                 {pathname === "/settings" && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-sidebar-primary" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full bg-sidebar-primary shadow-[0_0_8px_hsl(var(--sidebar-primary)/0.5)]" />
                 )}
-                <Settings className="h-[18px] w-[18px] shrink-0" />
+                <Settings className={cn("h-[18px] w-[18px] shrink-0", pathname === "/settings" && "text-sidebar-primary")} />
                 {!collapsed && <span>Settings</span>}
               </Link>
             </div>
@@ -179,14 +215,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="border-t border-sidebar-border p-2 space-y-0.5">
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
             >
               {collapsed ? <ChevronRight className="h-[18px] w-[18px]" /> : <ChevronLeft className="h-[18px] w-[18px]" />}
               {!collapsed && <span>Collapse</span>}
             </button>
             <button
               onClick={signOut}
-              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
               <LogOut className="h-[18px] w-[18px] shrink-0" />
               {!collapsed && <span>Sign Out</span>}
@@ -203,8 +239,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <h2 className="font-heading text-base md:text-lg font-semibold text-foreground">{currentPageLabel}</h2>
             <div className="flex items-center gap-2 md:gap-3">
               <span className="text-xs md:text-sm text-muted-foreground hidden sm:block">{profile?.full_name || "User"}</span>
-              <div className="h-7 w-7 md:h-8 md:w-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
-                {(profile?.full_name || "U").charAt(0).toUpperCase()}
+              <div className="h-7 w-7 md:h-8 md:w-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground ring-2 ring-primary/20">
+                {initials}
               </div>
             </div>
           </div>
