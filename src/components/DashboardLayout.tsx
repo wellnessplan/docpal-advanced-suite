@@ -9,7 +9,9 @@ import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
   Settings, LogOut, ChevronLeft, ChevronRight,
   ListOrdered, Package, TrendingUp, BarChart3, Stethoscope,
-  ChevronDown, ChevronUp, FlaskConical, Briefcase, Rocket, TestTubes, ClipboardList
+  ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
+  ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
+  Target, Star, Gift, Crown, UserCog, Plug, ScrollText, CalendarClock
 } from "lucide-react";
 
 interface NavGroup {
@@ -21,12 +23,13 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    label: "CLINIC",
+    label: "OPERATIONS",
     groupIcon: Stethoscope,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/tasks", label: "Today's Tasks", icon: ClipboardList },
+      { href: "/today-schedule", label: "Today's Schedule", icon: CalendarClock },
       { href: "/queue", label: "Queue", icon: ListOrdered },
+      { href: "/tasks", label: "Today's Tasks", icon: ClipboardList },
     ],
   },
   {
@@ -36,27 +39,54 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/patients", label: "Patients", icon: Users },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
+      { href: "/treatment-plans", label: "Treatment Plans", icon: ClipboardCheck },
       { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
       { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
     ],
   },
   {
-    label: "FINANCE",
-    groupIcon: Briefcase,
+    label: "BILLING & FINANCE",
+    groupIcon: Receipt,
     collapsible: true,
     items: [
-      { href: "/billing", label: "Billing", icon: Receipt },
-      { href: "/finance", label: "Finance", icon: TrendingUp },
+      { href: "/billing", label: "Billing & Invoices", icon: Receipt },
+      { href: "/payments", label: "Payments", icon: Wallet },
+      { href: "/insurance", label: "Insurance / Claims", icon: ShieldCheck },
+      { href: "/finance", label: "Expenses", icon: TrendingUp },
       { href: "/inventory", label: "Inventory", icon: Package },
     ],
   },
   {
-    label: "GROWTH",
-    groupIcon: Rocket,
+    label: "ANALYTICS",
+    groupIcon: BarChart3,
     collapsible: true,
     items: [
       { href: "/reports", label: "Reports", icon: BarChart3 },
+      { href: "/revenue", label: "Revenue", icon: IndianRupee },
+      { href: "/performance", label: "Performance", icon: Activity },
+    ],
+  },
+  {
+    label: "GROWTH",
+    groupIcon: Target,
+    collapsible: true,
+    items: [
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+      { href: "/leads", label: "Leads", icon: Target },
+      { href: "/reviews", label: "Feedback", icon: Star },
+      { href: "/referrals", label: "Referrals", icon: Gift },
+      { href: "/memberships", label: "Membership", icon: Crown },
+    ],
+  },
+  {
+    label: "ADMIN",
+    groupIcon: Settings,
+    collapsible: true,
+    items: [
+      { href: "/settings", label: "Settings", icon: Settings },
+      { href: "/staff", label: "Staff", icon: UserCog },
+      { href: "/integrations", label: "Integrations", icon: Plug },
+      { href: "/audit-log", label: "Audit Log", icon: ScrollText },
     ],
   },
 ];
@@ -69,8 +99,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
 
   const allItems = navGroups.flatMap((g) => g.items);
-  const currentPageLabel = allItems.find((i) => i.href === pathname || pathname.startsWith(i.href + "/"))?.label
-    ?? (pathname === "/settings" ? "Settings" : "DoctorsBuddy");
+  const currentPageLabel = allItems.find((i) => i.href === pathname || pathname.startsWith(i.href + "/"))?.label ?? "DoctorsBuddy";
 
   const toggleGroup = (label: string) => {
     setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -83,7 +112,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar — hidden on mobile */}
       {!isMobile && (
         <aside
           className={cn(
@@ -125,7 +153,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
               return (
                 <div key={group.label} className={gi > 0 ? "pt-2" : ""}>
-                  {/* Group separator line */}
                   {gi > 0 && !collapsed && (
                     <div className="h-px bg-sidebar-border mx-2 mb-2" />
                   )}
@@ -181,35 +208,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
               );
             })}
-
-            {/* Settings */}
-            <div className="pt-2">
-              {!collapsed && <div className="h-px bg-sidebar-border mx-2 mb-2" />}
-              {!collapsed && (
-                <div className="flex items-center gap-1.5 px-2.5 mb-1">
-                  <Settings className="h-3 w-3 text-sidebar-foreground/30" />
-                  <p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase">
-                    SETTINGS
-                  </p>
-                </div>
-              )}
-              <Link
-                to="/settings"
-                title={collapsed ? "Settings" : undefined}
-                className={cn(
-                  "relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all duration-200",
-                  pathname === "/settings"
-                    ? "bg-sidebar-accent text-sidebar-primary shadow-sm"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-                )}
-              >
-                {pathname === "/settings" && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full bg-sidebar-primary shadow-[0_0_8px_hsl(var(--sidebar-primary)/0.5)]" />
-                )}
-                <Settings className={cn("h-[18px] w-[18px] shrink-0", pathname === "/settings" && "text-sidebar-primary")} />
-                {!collapsed && <span>Settings</span>}
-              </Link>
-            </div>
           </nav>
 
           <div className="border-t border-sidebar-border p-2 space-y-0.5">
@@ -231,7 +229,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </aside>
       )}
 
-      {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <InstallPromptBanner />
         <div className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-md px-4 md:px-6 py-3">
@@ -248,7 +245,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className={cn("p-4 md:p-6", isMobile && "pb-20")}>{children}</div>
       </main>
 
-      {/* Mobile bottom nav */}
       {isMobile && <MobileBottomNav />}
     </div>
   );

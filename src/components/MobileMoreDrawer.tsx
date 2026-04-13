@@ -2,33 +2,64 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   CalendarDays, Receipt, TrendingUp, Package, BarChart3,
-  Megaphone, Settings, LogOut, Stethoscope, FlaskConical, TestTubes, ClipboardList
+  Megaphone, Settings, LogOut, Stethoscope, FlaskConical, TestTubes, ClipboardList,
+  ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
+  Target, Star, Gift, Crown, UserCog, Plug, ScrollText, CalendarClock, ListOrdered
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 
 const sections = [
   {
+    label: "Operations",
+    items: [
+      { href: "/today-schedule", label: "Schedule", icon: CalendarClock },
+      { href: "/queue", label: "Queue", icon: ListOrdered },
+      { href: "/tasks", label: "Tasks", icon: ClipboardList },
+    ],
+  },
+  {
     label: "Patients",
     items: [
-      { href: "/tasks", label: "Today's Tasks", icon: ClipboardList },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
+      { href: "/treatment-plans", label: "Tx Plans", icon: ClipboardCheck },
       { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
       { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
     ],
   },
   {
-    label: "Finance",
+    label: "Billing & Finance",
     items: [
-      { href: "/billing", label: "Billing", icon: Receipt },
-      { href: "/finance", label: "Finance", icon: TrendingUp },
+      { href: "/billing", label: "Invoices", icon: Receipt },
+      { href: "/payments", label: "Payments", icon: Wallet },
+      { href: "/insurance", label: "Insurance", icon: ShieldCheck },
+      { href: "/finance", label: "Expenses", icon: TrendingUp },
       { href: "/inventory", label: "Inventory", icon: Package },
+    ],
+  },
+  {
+    label: "Analytics",
+    items: [
+      { href: "/reports", label: "Reports", icon: BarChart3 },
+      { href: "/revenue", label: "Revenue", icon: IndianRupee },
+      { href: "/performance", label: "Performance", icon: Activity },
     ],
   },
   {
     label: "Growth",
     items: [
-      { href: "/reports", label: "Reports", icon: BarChart3 },
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+      { href: "/leads", label: "Leads", icon: Target },
+      { href: "/reviews", label: "Feedback", icon: Star },
+      { href: "/referrals", label: "Referrals", icon: Gift },
+      { href: "/memberships", label: "Membership", icon: Crown },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { href: "/staff", label: "Staff", icon: UserCog },
+      { href: "/integrations", label: "Integrations", icon: Plug },
+      { href: "/audit-log", label: "Audit Log", icon: ScrollText },
     ],
   },
 ];
