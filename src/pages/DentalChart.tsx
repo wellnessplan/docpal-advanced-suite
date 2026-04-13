@@ -10,10 +10,12 @@ import TreatmentQuickPanel from "@/components/dental-chart/TreatmentQuickPanel";
 import ClinicalExamPanel from "@/components/dental-chart/ClinicalExamPanel";
 import MedicationPanel, { type Medication } from "@/components/dental-chart/MedicationPanel";
 import PrescriptionSummary from "@/components/dental-chart/PrescriptionSummary";
+import ChairSideQuickMode from "@/components/dental-chart/ChairSideQuickMode";
+import XRayVault from "@/components/xray/XRayVault";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Mail, Phone, Calendar, Stethoscope, FileText } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, Stethoscope, FileText, Zap, FileImage } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DentalChartPage() {
@@ -179,7 +181,9 @@ export default function DentalChartPage() {
         <Tabs value={activeTab} onValueChange={v => { setActiveTab(v); if (v === "summary") refetchItems(); }}>
           <TabsList className="w-full">
             <TabsTrigger value="chart" className="flex-1 gap-1"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
-            <TabsTrigger value="summary" className="flex-1 gap-1"><FileText className="h-3 w-3" />Prescription</TabsTrigger>
+            <TabsTrigger value="quick" className="flex-1 gap-1"><Zap className="h-3 w-3" />Quick</TabsTrigger>
+            <TabsTrigger value="xrays" className="flex-1 gap-1"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
+            <TabsTrigger value="summary" className="flex-1 gap-1"><FileText className="h-3 w-3" />Rx</TabsTrigger>
           </TabsList>
 
           {/* EXAMINE TAB */}
@@ -253,6 +257,24 @@ export default function DentalChartPage() {
                 />
               </div>
             </div>
+          </TabsContent>
+
+          {/* QUICK TAB - Chair-Side 3-Tap Mode */}
+          <TabsContent value="quick" className="mt-3">
+            <ChairSideQuickMode
+              patientId={patientId}
+              clinicId={clinicId}
+              prescriptionId={prescriptionId}
+              onUpdate={() => {
+                refetchRecords();
+                queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
+              }}
+            />
+          </TabsContent>
+
+          {/* X-RAYS TAB */}
+          <TabsContent value="xrays" className="mt-3">
+            <XRayVault patientId={patientId} clinicId={clinicId} />
           </TabsContent>
 
           {/* PRESCRIPTION TAB */}
