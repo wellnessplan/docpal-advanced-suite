@@ -10,10 +10,12 @@ import TreatmentQuickPanel from "@/components/dental-chart/TreatmentQuickPanel";
 import ClinicalExamPanel from "@/components/dental-chart/ClinicalExamPanel";
 import MedicationPanel, { type Medication } from "@/components/dental-chart/MedicationPanel";
 import PrescriptionSummary from "@/components/dental-chart/PrescriptionSummary";
+import ChairSideQuickMode from "@/components/dental-chart/ChairSideQuickMode";
+import XRayVault from "@/components/xray/XRayVault";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Mail, Phone, Calendar, Stethoscope, FileText } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, Stethoscope, FileText, Zap, FileImage } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DentalChartPage() {
