@@ -4,8 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* DoctorsBuddy — Clinical Precision Design System v1.0
-   All colors HSL. Teal + Ivory + Instrument Sans. */
+/* DoctorsBuddy — Clinical Precision Design System v1.1
+   Sky Blue + Ivory + Instrument Sans. */
 
 @layer base {
   :root {
@@ -18,7 +18,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 28% 12%;
 
-    --primary: 187 72% 39%;
+    --primary: 197 71% 63%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 96%;
@@ -27,8 +27,8 @@
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 187 72% 95%;
-    --accent-foreground: 187 72% 28%;
+    --accent: 197 71% 93%;
+    --accent-foreground: 197 71% 32%;
 
     --destructive: 0 72% 58%;
     --destructive-foreground: 0 0% 100%;
@@ -40,21 +40,21 @@
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 187 72% 39%;
+    --ring: 197 71% 63%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 215 28% 10%;
     --sidebar-foreground: 220 14% 82%;
-    --sidebar-primary: 187 72% 45%;
+    --sidebar-primary: 197 71% 68%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 28% 16%;
     --sidebar-accent-foreground: 220 14% 92%;
     --sidebar-border: 215 20% 18%;
-    --sidebar-ring: 187 72% 45%;
+    --sidebar-ring: 197 71% 68%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(187 72% 39%), hsl(187 72% 50%));
-    --gradient-hero: linear-gradient(135deg, hsl(215 28% 10%), hsl(187 72% 28%));
+    --gradient-primary: linear-gradient(135deg, hsl(197 71% 63%), hsl(197 71% 73%));
+    --gradient-hero: linear-gradient(135deg, hsl(215 28% 10%), hsl(197 71% 38%));
     --shadow-card: 0 1px 3px hsl(215 28% 12% / 0.06), 0 1px 2px hsl(215 28% 12% / 0.04);
     --shadow-elevated: 0 10px 25px hsl(215 28% 12% / 0.08), 0 4px 10px hsl(215 28% 12% / 0.04);
 
@@ -70,14 +70,14 @@
     --card-foreground: 220 14% 96%;
     --popover: 215 28% 10%;
     --popover-foreground: 220 14% 96%;
-    --primary: 187 72% 45%;
+    --primary: 197 71% 68%;
     --primary-foreground: 0 0% 100%;
     --secondary: 215 28% 16%;
     --secondary-foreground: 220 14% 96%;
     --muted: 215 28% 16%;
     --muted-foreground: 220 9% 60%;
-    --accent: 187 72% 14%;
-    --accent-foreground: 187 72% 78%;
+    --accent: 197 71% 14%;
+    --accent-foreground: 197 71% 78%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
     --success: 152 44% 36%;
@@ -86,15 +86,15 @@
     --warning-foreground: 0 0% 100%;
     --border: 215 20% 18%;
     --input: 215 20% 18%;
-    --ring: 187 72% 45%;
+    --ring: 197 71% 68%;
     --sidebar-background: 215 28% 5%;
     --sidebar-foreground: 220 14% 82%;
-    --sidebar-primary: 187 72% 50%;
+    --sidebar-primary: 197 71% 72%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 28% 10%;
     --sidebar-accent-foreground: 220 14% 92%;
     --sidebar-border: 215 20% 12%;
-    --sidebar-ring: 187 72% 50%;
+    --sidebar-ring: 197 71% 72%;
   }
 }
 
