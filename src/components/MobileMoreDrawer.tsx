@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   CalendarDays, Receipt, TrendingUp, Package, BarChart3,
-  Megaphone, Settings, LogOut, Stethoscope, FlaskConical, TestTubes
+  Megaphone, Settings, LogOut, Stethoscope, FlaskConical, TestTubes, ClipboardList
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 
@@ -10,6 +10,7 @@ const sections = [
   {
     label: "Patients",
     items: [
+      { href: "/tasks", label: "Today's Tasks", icon: ClipboardList },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
       { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
       { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
