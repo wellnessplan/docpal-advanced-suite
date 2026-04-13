@@ -9,7 +9,7 @@ import UpNextWidget from "@/components/dashboard/UpNextWidget";
 import LiveQueueWidget from "@/components/dashboard/LiveQueueWidget";
 import TodayAppointments from "@/components/dashboard/TodayAppointments";
 import FinancialSummary from "@/components/dashboard/FinancialSummary";
-import PendingTreatments from "@/components/dashboard/PendingTreatments";
+import DailyTodoPanel from "@/components/dashboard/DailyTodoPanel";
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -67,7 +67,7 @@ export default function DashboardPage() {
             </div>
             {/* Appointments as vertical list */}
             <TodayAppointments />
-            <PendingTreatments />
+            <DailyTodoPanel />
           </div>
         ) : (
           <>
@@ -80,7 +80,7 @@ export default function DashboardPage() {
               <TodayAppointments />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
-              <PendingTreatments />
+              <DailyTodoPanel />
             </div>
           </>
         )}
