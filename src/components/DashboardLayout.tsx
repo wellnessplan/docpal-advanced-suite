@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
   Settings, LogOut, ChevronLeft, ChevronRight,
   ListOrdered, Package, TrendingUp, BarChart3, Stethoscope,
-  ChevronDown, ChevronUp, FlaskConical, Briefcase, Rocket
+  ChevronDown, ChevronUp, FlaskConical, Briefcase, Rocket, TestTubes
 } from "lucide-react";
 
 interface NavGroup {
@@ -35,6 +35,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/patients", label: "Patients", icon: Users },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
+      { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
       { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
     ],
   },
