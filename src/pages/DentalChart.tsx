@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import DentalChartGrid from "@/components/dental-chart/DentalChartGrid";
-import UnifiedToothEntry from "@/components/dental-chart/UnifiedToothEntry";
 import TreatmentQuickPanel from "@/components/dental-chart/TreatmentQuickPanel";
 import ClinicalExamPanel from "@/components/dental-chart/ClinicalExamPanel";
 import MedicationPanel, { type Medication } from "@/components/dental-chart/MedicationPanel";
@@ -15,6 +14,7 @@ import XRayVault from "@/components/xray/XRayVault";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Mail, Phone, Calendar, Stethoscope, FileText, Zap, FileImage } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,7 +27,6 @@ export default function DentalChartPage() {
   const [chartType, setChartType] = useState<"adult" | "kids">("adult");
   const [activeTab, setActiveTab] = useState("chart");
 
-  // Prescription state
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [gumCondition, setGumCondition] = useState("normal");
   const [alignmentCondition, setAlignmentCondition] = useState("normal");
@@ -64,20 +63,14 @@ export default function DentalChartPage() {
     enabled: !!patientId,
   });
 
-  // Load or create today's prescription
   useEffect(() => {
     if (!patientId || !clinicId) return;
     const loadPrescription = async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data: existing } = await (supabase
-        .from("prescriptions") as any)
-        .select("*")
-        .eq("patient_id", patientId)
-        .eq("clinic_id", clinicId)
-        .gte("created_at", today + "T00:00:00")
-        .lte("created_at", today + "T23:59:59")
-        .order("created_at", { ascending: false })
-        .limit(1);
+      const { data: existing } = await (supabase.from("prescriptions") as any)
+        .select("*").eq("patient_id", patientId).eq("clinic_id", clinicId)
+        .gte("created_at", today + "T00:00:00").lte("created_at", today + "T23:59:59")
+        .order("created_at", { ascending: false }).limit(1);
 
       if (existing && existing.length > 0) {
         const rx = existing[0] as any;
@@ -100,17 +93,12 @@ export default function DentalChartPage() {
     loadPrescription();
   }, [patientId, clinicId]);
 
-  // Auto-save prescription fields (debounced)
   const savePrescription = useCallback(async () => {
     if (!prescriptionId) return;
     await (supabase.from("prescriptions") as any).update({
-      chief_complaint: chiefComplaint,
-      gum_condition: gumCondition,
-      alignment_condition: alignmentCondition,
-      diagnosis_notes: diagnosisNotes,
-      treatment_plan: treatmentPlan,
-      medications: medications as any,
-      chart_type: chartType,
+      chief_complaint: chiefComplaint, gum_condition: gumCondition,
+      alignment_condition: alignmentCondition, diagnosis_notes: diagnosisNotes,
+      treatment_plan: treatmentPlan, medications: medications as any, chart_type: chartType,
     }).eq("id", prescriptionId);
   }, [prescriptionId, chiefComplaint, gumCondition, alignmentCondition, diagnosisNotes, treatmentPlan, medications, chartType]);
 
@@ -119,15 +107,11 @@ export default function DentalChartPage() {
     return () => clearTimeout(timer);
   }, [savePrescription]);
 
-  // Prescription items for summary
   const { data: prescriptionItems = [], refetch: refetchItems } = useQuery({
     queryKey: ["prescription-items-all", prescriptionId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("prescription_items")
-        .select("*")
-        .eq("prescription_id", prescriptionId!)
-        .order("tooth_number");
+      const { data } = await supabase.from("prescription_items").select("*")
+        .eq("prescription_id", prescriptionId!).order("tooth_number");
       return data ?? [];
     },
     enabled: !!prescriptionId,
@@ -138,10 +122,7 @@ export default function DentalChartPage() {
       await savePrescription();
       await (supabase.from("prescriptions") as any).update({ status: "confirmed" }).eq("id", prescriptionId!);
     },
-    onSuccess: () => {
-      setPrescriptionStatus("confirmed");
-      toast.success("Prescription confirmed");
-    },
+    onSuccess: () => { setPrescriptionStatus("confirmed"); toast.success("Prescription confirmed"); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -177,7 +158,6 @@ export default function DentalChartPage() {
           </div>
         </div>
 
-        {/* Main workflow tabs */}
         <Tabs value={activeTab} onValueChange={v => { setActiveTab(v); if (v === "summary") refetchItems(); }}>
           <TabsList className="w-full">
             <TabsTrigger value="chart" className="flex-1 gap-1"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
@@ -186,80 +166,48 @@ export default function DentalChartPage() {
             <TabsTrigger value="summary" className="flex-1 gap-1"><FileText className="h-3 w-3" />Rx</TabsTrigger>
           </TabsList>
 
-          {/* EXAMINE TAB */}
-          <TabsContent value="chart" className="mt-3">
-            <div className="grid gap-3 lg:grid-cols-[1fr_300px]">
-              {/* Left column */}
-              <div className="space-y-3">
-                {/* Clinical Exam */}
-                <ClinicalExamPanel
-                  chiefComplaint={chiefComplaint}
-                  gumCondition={gumCondition}
-                  alignmentCondition={alignmentCondition}
-                  diagnosisNotes={diagnosisNotes}
-                  onChange={handleClinicalChange}
-                />
+          {/* EXAMINE TAB — Simplified: chart on top, quick actions below */}
+          <TabsContent value="chart" className="mt-3 space-y-3">
+            <ClinicalExamPanel
+              chiefComplaint={chiefComplaint}
+              gumCondition={gumCondition}
+              alignmentCondition={alignmentCondition}
+              diagnosisNotes={diagnosisNotes}
+              onChange={handleClinicalChange}
+            />
 
-                {/* Tooth Chart */}
-                <Card className="shadow-card border-0">
-                  <CardContent className="p-4">
-                    <DentalChartGrid
-                      toothRecords={toothRecords ?? []}
-                      selectedTooth={selectedTooth}
-                      onSelectTooth={setSelectedTooth}
-                      chartType={chartType}
-                      onChartTypeChange={setChartType}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Medication panel */}
-                <MedicationPanel
-                  medications={medications}
-                  treatmentPlan={treatmentPlan}
-                  onMedicationsChange={setMedications}
-                  onTreatmentPlanChange={setTreatmentPlan}
+            <Card className="shadow-card border-0">
+              <CardContent className="p-4">
+                <DentalChartGrid
+                  toothRecords={toothRecords ?? []}
+                  selectedTooth={selectedTooth}
+                  onSelectTooth={setSelectedTooth}
+                  chartType={chartType}
+                  onChartTypeChange={setChartType}
                 />
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Right column - Unified tooth entry + Quick Panel */}
-              <div className="space-y-3">
-                {selectedTooth && prescriptionId ? (
-                  <UnifiedToothEntry
-                    prescriptionId={prescriptionId}
-                    clinicId={clinicId}
-                    toothNumber={selectedTooth}
-                    currentStatus={selectedRecord?.status || "healthy"}
-                    toothRecordId={selectedRecord?.id}
-                    patientId={patientId}
-                    onUpdate={() => {
-                      refetchRecords();
-                      queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
-                    }}
-                  />
-                ) : (
-                  <Card className="shadow-card border-0">
-                    <CardContent className="p-8 text-center text-muted-foreground">
-                      <Stethoscope className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">Select a tooth to add findings</p>
-                    </CardContent>
-                  </Card>
-                )}
-                <TreatmentQuickPanel
-                  patientId={patientId}
-                  clinicId={clinicId}
-                  toothNumber={selectedTooth}
-                  toothRecordId={selectedRecord?.id}
-                  onUpdate={() => {
-                    refetchRecords();
-                    queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
-                  }}
-                />
-              </div>
-            </div>
+            {/* Quick actions below chart — no side panel */}
+            <TreatmentQuickPanel
+              patientId={patientId}
+              clinicId={clinicId}
+              toothNumber={selectedTooth}
+              toothRecordId={selectedRecord?.id}
+              onUpdate={() => {
+                refetchRecords();
+                queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
+              }}
+            />
+
+            <MedicationPanel
+              medications={medications}
+              treatmentPlan={treatmentPlan}
+              onMedicationsChange={setMedications}
+              onTreatmentPlanChange={setTreatmentPlan}
+            />
           </TabsContent>
 
-          {/* QUICK TAB - Chair-Side 3-Tap Mode */}
           <TabsContent value="quick" className="mt-3">
             <ChairSideQuickMode
               patientId={patientId}
@@ -272,12 +220,10 @@ export default function DentalChartPage() {
             />
           </TabsContent>
 
-          {/* X-RAYS TAB */}
           <TabsContent value="xrays" className="mt-3">
             <XRayVault patientId={patientId} clinicId={clinicId} />
           </TabsContent>
 
-          {/* PRESCRIPTION TAB */}
           <TabsContent value="summary" className="mt-3">
             <PrescriptionSummary
               patient={patient}
