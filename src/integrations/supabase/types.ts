@@ -2037,6 +2037,104 @@ export type Database = {
           },
         ]
       }
+      whatsapp_logs: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          message_body: string | null
+          patient_id: string
+          phone: string | null
+          sent_at: string
+          status: string
+          template_name: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_body?: string | null
+          patient_id: string
+          phone?: string | null
+          sent_at?: string
+          status?: string
+          template_name: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_body?: string | null
+          patient_id?: string
+          phone?: string | null
+          sent_at?: string
+          status?: string
+          template_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_logs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          enabled: boolean
+          id: string
+          message_body: string
+          template_name: string
+          template_type: string
+          timing_offset_hours: number
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          message_body: string
+          template_name: string
+          template_type?: string
+          timing_offset_hours?: number
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          message_body?: string
+          template_name?: string
+          template_type?: string
+          timing_offset_hours?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

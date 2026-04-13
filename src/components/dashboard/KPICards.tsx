@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarDays, IndianRupee, AlertTriangle, TrendingDown, Package, TrendingUp } from "lucide-react";
+import { CalendarDays, IndianRupee, AlertTriangle, TrendingDown, Package, TrendingUp, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -98,6 +98,22 @@ export default function KPICards() {
     enabled: !!clinicId,
   });
 
+  const { data: whatsappSentCount = 0 } = useQuery({
+    queryKey: ["kpi-whatsapp-sent", clinicId],
+    queryFn: async () => {
+      const start = new Date();
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from("whatsapp_logs")
+        .select("*", { count: "exact", head: true })
+        .eq("clinic_id", clinicId!)
+        .gte("sent_at", start.toISOString());
+      return count ?? 0;
+    },
+    enabled: !!clinicId,
+  });
+
   const cards = [
     { title: "Today's Appointments", value: todayApptCount, icon: CalendarDays, color: "bg-accent text-primary", route: "/appointments" },
     { title: "Today's Revenue", value: `₹${todayRevenue.toLocaleString()}`, icon: IndianRupee, color: "bg-success/10 text-success", route: "/finance" },
@@ -105,6 +121,7 @@ export default function KPICards() {
     { title: "No-show Rate (30d)", value: `${noShowRate}%`, icon: TrendingDown, color: "bg-destructive/10 text-destructive", route: "/appointments" },
     { title: "Low Stock Items", value: lowStockCount, icon: Package, color: lowStockCount > 0 ? "bg-destructive/10 text-destructive" : "bg-accent text-primary", route: "/inventory" },
     { title: "Revenue Trend (6m)", value: `₹${(monthlyRevenueTrend[monthlyRevenueTrend.length - 1] ?? 0).toLocaleString()}`, icon: TrendingUp, color: "bg-success/10 text-success", sparkline: monthlyRevenueTrend, route: "/finance" },
+    { title: "WhatsApp Sent (Month)", value: whatsappSentCount, icon: MessageSquare, color: "bg-accent text-primary", route: "/settings" },
   ];
 
   return (
