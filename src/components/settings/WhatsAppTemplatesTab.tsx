@@ -183,7 +183,7 @@ export default function WhatsAppTemplatesTab({ clinicId }: { clinicId: string })
             <Save className="h-3.5 w-3.5 mr-1" /> {savingCreds ? "Saving..." : "Save Credentials"}
           </Button>
           {(!wabaToken || !wabaPhoneId) && (
-            <p className="text-xs text-amber-600">⚠ Without credentials, messages will be logged as "simulated" and not actually sent.</p>
+            <p className="text-xs text-destructive">⚠ Without credentials, messages will be logged as "simulated" and not actually sent.</p>
           )}
         </CardContent>
       </Card>
