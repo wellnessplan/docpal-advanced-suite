@@ -147,7 +147,7 @@ async function processClinic(clinicId: string) {
         date: appt.appointment_date,
         time: appt.appointment_time,
       });
-      await sendWhatsAppMessage({ clinicId, patientId: appt.patient_id, phone: patient.phone, templateName: "appt_reminder_24h", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: appt.patient_id, phone: patient.phone, templateName: "appt_reminder_24h", messageBody: msg, waba });
       sent++;
     }
   }
@@ -174,7 +174,7 @@ async function processClinic(clinicId: string) {
         patient_name: rec.patients.full_name,
         treatment: t.treatment_name,
       });
-      await sendWhatsAppMessage({ clinicId, patientId: rec.patient_id, phone: rec.patients.phone, templateName: "post_treatment_followup", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: rec.patient_id, phone: rec.patients.phone, templateName: "post_treatment_followup", messageBody: msg, waba });
       sent++;
     }
   }
@@ -204,7 +204,7 @@ async function processClinic(clinicId: string) {
       if ((count ?? 0) > 0) continue;
 
       const msg = replacePlaceholders(recallTemplate.message_body, { patient_name: p.full_name });
-      await sendWhatsAppMessage({ clinicId, patientId: p.id, phone: p.phone!, templateName: "recall_6month", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: p.id, phone: p.phone!, templateName: "recall_6month", messageBody: msg, waba });
       sent++;
     }
   }
@@ -228,7 +228,7 @@ async function processClinic(clinicId: string) {
       const rec = s.tooth_records as any;
       if (rec?.clinic_id !== clinicId || !rec?.patients?.phone) continue;
       const msg = replacePlaceholders(brushTemplate.message_body, { patient_name: rec.patients.full_name });
-      await sendWhatsAppMessage({ clinicId, patientId: rec.patient_id, phone: rec.patients.phone, templateName: "brush_change_reminder", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: rec.patient_id, phone: rec.patients.phone, templateName: "brush_change_reminder", messageBody: msg, waba });
       sent++;
     }
   }
@@ -255,7 +255,7 @@ async function processClinic(clinicId: string) {
         amount: String(inv.amount),
         due_date: inv.due_date!,
       });
-      await sendWhatsAppMessage({ clinicId, patientId: inv.patient_id, phone: patient.phone, templateName: "payment_due_reminder", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: inv.patient_id, phone: patient.phone, templateName: "payment_due_reminder", messageBody: msg, waba });
       sent++;
     }
   }
@@ -279,7 +279,7 @@ async function processClinic(clinicId: string) {
       if (dobMonthDay !== monthDay) continue;
 
       const msg = replacePlaceholders(bdayTemplate.message_body, { patient_name: p.full_name });
-      await sendWhatsAppMessage({ clinicId, patientId: p.id, phone: p.phone!, templateName: "birthday_greeting", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: p.id, phone: p.phone!, templateName: "birthday_greeting", messageBody: msg, waba });
       sent++;
     }
   }
