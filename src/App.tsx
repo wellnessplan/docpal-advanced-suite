@@ -30,6 +30,20 @@ import OrthoCase from "./pages/OrthoCase";
 import LabOrders from "./pages/LabOrders";
 import Tasks from "./pages/Tasks";
 import NotFound from "./pages/NotFound";
+// New modules
+import TodaySchedule from "./pages/TodaySchedule";
+import TreatmentPlans from "./pages/TreatmentPlans";
+import Payments from "./pages/Payments";
+import InsuranceClaims from "./pages/InsuranceClaims";
+import Revenue from "./pages/Revenue";
+import Performance from "./pages/Performance";
+import Leads from "./pages/Leads";
+import Reviews from "./pages/Reviews";
+import Referrals from "./pages/Referrals";
+import Memberships from "./pages/Memberships";
+import Staff from "./pages/Staff";
+import Integrations from "./pages/Integrations";
+import AuditLog from "./pages/AuditLog";
 
 const queryClient = new QueryClient();
 
@@ -47,10 +61,14 @@ const App = () => (
             <Route path="/onboarding" element={<AuthOnlyRoute><Onboarding /></AuthOnlyRoute>} />
             <Route path="/register" element={<PatientSelfRegister />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/today-schedule" element={<ProtectedRoute><TodaySchedule /></ProtectedRoute>} />
             <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
             <Route path="/patients/:id" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
             <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
+            <Route path="/treatment-plans" element={<ProtectedRoute><TreatmentPlans /></ProtectedRoute>} />
             <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+            <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+            <Route path="/insurance" element={<ProtectedRoute><InsuranceClaims /></ProtectedRoute>} />
             <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
             <Route path="/ai-generator" element={<ProtectedRoute><AIGenerator /></ProtectedRoute>} />
             <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
@@ -62,6 +80,15 @@ const App = () => (
             <Route path="/treatment-costing" element={<ProtectedRoute><TreatmentCosting /></ProtectedRoute>} />
             <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/revenue" element={<ProtectedRoute><Revenue /></ProtectedRoute>} />
+            <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
+            <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
+            <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
+            <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
+            <Route path="/memberships" element={<ProtectedRoute><Memberships /></ProtectedRoute>} />
+            <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
+            <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+            <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
             <Route path="/ortho" element={<ProtectedRoute><Orthodontics /></ProtectedRoute>} />
             <Route path="/ortho/:caseId" element={<ProtectedRoute><OrthoCase /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
