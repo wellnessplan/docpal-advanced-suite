@@ -27,6 +27,7 @@ import PatientSelfRegister from "./pages/PatientSelfRegister";
 import ResetPassword from "./pages/ResetPassword";
 import Orthodontics from "./pages/Orthodontics";
 import OrthoCase from "./pages/OrthoCase";
+import LabOrders from "./pages/LabOrders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
             <Route path="/dental-chart/:patientId" element={<ProtectedRoute><DentalChart /></ProtectedRoute>} />
             <Route path="/queue" element={<ProtectedRoute><Queue /></ProtectedRoute>} />
+            <Route path="/lab-orders" element={<ProtectedRoute><LabOrders /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
             <Route path="/treatment-costing" element={<ProtectedRoute><TreatmentCosting /></ProtectedRoute>} />
             <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
