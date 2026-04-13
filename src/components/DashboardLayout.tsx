@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
   Settings, LogOut, ChevronLeft, ChevronRight,
   ListOrdered, Package, TrendingUp, BarChart3, Stethoscope,
-  ChevronDown, ChevronUp, FlaskConical, Briefcase, Rocket, TestTubes
+  ChevronDown, ChevronUp, FlaskConical, Briefcase, Rocket, TestTubes, ClipboardList
 } from "lucide-react";
 
 interface NavGroup {
@@ -25,6 +25,7 @@ const navGroups: NavGroup[] = [
     groupIcon: Stethoscope,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/tasks", label: "Today's Tasks", icon: ClipboardList },
       { href: "/queue", label: "Queue", icon: ListOrdered },
     ],
   },
