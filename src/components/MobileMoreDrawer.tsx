@@ -31,6 +31,11 @@ const sections = [
   },
 ];
 
+interface MobileMoreDrawerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
 export default function MobileMoreDrawer({ open, onOpenChange }: MobileMoreDrawerProps) {
   const { signOut } = useAuth();
 
