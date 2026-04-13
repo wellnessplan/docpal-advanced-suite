@@ -305,6 +305,7 @@ export default function PrescriptionSummary({
                     <th style={{ background: "#f8fafc", padding: "8px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Condition</th>
                     <th style={{ background: "#f8fafc", padding: "8px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Treatment</th>
                     <th style={{ background: "#f8fafc", padding: "8px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Status</th>
+                    <th style={{ background: "#f8fafc", padding: "8px 12px", textAlign: "right", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>Cost</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -314,8 +315,15 @@ export default function PrescriptionSummary({
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>{item.condition || "—"}</td>
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>{item.treatment || "—"}</td>
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>{item.treatment_status?.replace("_", " ") || "—"}</td>
+                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9", textAlign: "right", fontWeight: 600 }}>{Number(item.cost) > 0 ? `₹${Number(item.cost).toLocaleString()}` : "—"}</td>
                     </tr>
                   ))}
+                  {items.some((i: any) => Number(i.cost) > 0) && (
+                    <tr style={{ background: "#f8fafc" }}>
+                      <td colSpan={4} style={{ padding: "8px 12px", fontWeight: 700, textAlign: "right" }}>Total</td>
+                      <td style={{ padding: "8px 12px", fontWeight: 700, textAlign: "right", color: "#0284c7" }}>₹{items.reduce((s: number, i: any) => s + (Number(i.cost) || 0), 0).toLocaleString()}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
