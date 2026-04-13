@@ -67,7 +67,7 @@ export default function DashboardPage() {
             </div>
             {/* Appointments as vertical list */}
             <TodayAppointments />
-            <PendingTreatments />
+            <DailyTodoPanel />
           </div>
         ) : (
           <>
@@ -80,7 +80,7 @@ export default function DashboardPage() {
               <TodayAppointments />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
-              <PendingTreatments />
+              <DailyTodoPanel />
             </div>
           </>
         )}
