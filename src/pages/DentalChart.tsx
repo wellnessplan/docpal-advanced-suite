@@ -181,7 +181,9 @@ export default function DentalChartPage() {
         <Tabs value={activeTab} onValueChange={v => { setActiveTab(v); if (v === "summary") refetchItems(); }}>
           <TabsList className="w-full">
             <TabsTrigger value="chart" className="flex-1 gap-1"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
-            <TabsTrigger value="summary" className="flex-1 gap-1"><FileText className="h-3 w-3" />Prescription</TabsTrigger>
+            <TabsTrigger value="quick" className="flex-1 gap-1"><Zap className="h-3 w-3" />Quick</TabsTrigger>
+            <TabsTrigger value="xrays" className="flex-1 gap-1"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
+            <TabsTrigger value="summary" className="flex-1 gap-1"><FileText className="h-3 w-3" />Rx</TabsTrigger>
           </TabsList>
 
           {/* EXAMINE TAB */}
