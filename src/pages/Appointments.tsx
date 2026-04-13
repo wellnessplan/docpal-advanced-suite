@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Plus, ChevronLeft, ChevronRight, CalendarDays, Clock, List, RefreshCw } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, subWeeks, subDays, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, getDay } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   scheduled: "bg-primary/10 text-primary border-primary/30",
