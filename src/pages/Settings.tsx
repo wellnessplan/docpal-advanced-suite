@@ -516,6 +516,7 @@ export default function SettingsPage() {
             <TabsTrigger value="integrations">Integrations</TabsTrigger>
             <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
             <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+            <TabsTrigger value="labs">Lab Directory</TabsTrigger>
           </TabsList>
 
           <TabsContent value="clinic"><ClinicInfoTab clinicId={clinicId} /></TabsContent>
