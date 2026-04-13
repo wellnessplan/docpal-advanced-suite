@@ -547,6 +547,7 @@ export default function SettingsPage() {
 
           <TabsContent value="integrations"><GoogleIntegrationTab /></TabsContent>
           <TabsContent value="whatsapp"><WhatsAppTemplatesTab clinicId={clinicId} /></TabsContent>
+          <TabsContent value="webhooks"><WebhooksTab clinicId={clinicId} /></TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
