@@ -234,14 +234,14 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
   const { data: vendors, isLoading } = useQuery({
     queryKey: ["vendors", clinicId],
     queryFn: async () => {
-      const { data } = await (supabase.from("vendors") as any).select("*").eq("clinic_id", clinicId).order("name");
+      const { data } = await (supabase as any).from("vendors").select("*").eq("clinic_id", clinicId).order("name");
       return data ?? [];
     },
   });
 
   const addVendor = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase.from("vendors") as any).insert({ ...form, clinic_id: clinicId });
+      const { error } = await (supabase as any).from("vendors").insert({ ...form, clinic_id: clinicId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -255,7 +255,7 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
 
   const deleteVendor = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase.from("vendors") as any).delete().eq("id", id);
+      const { error } = await (supabase as any).from("vendors").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

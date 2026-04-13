@@ -46,7 +46,7 @@ export default function Inventory() {
     queryKey: ["inventory-transactions", clinicId],
     queryFn: async () => {
       if (!clinicId) return [];
-      const { data, error } = await (supabase.from("inventory_transactions") as any).select("*, inventory_items(name)").order("created_at", { ascending: false }).limit(50);
+      const { data, error } = await (supabase as any).from("inventory_transactions").select("*, inventory_items(name)").order("created_at", { ascending: false }).limit(50);
       if (error) throw error;
       return data;
     },
@@ -85,7 +85,7 @@ export default function Inventory() {
       if (qty <= 0) throw new Error("Invalid quantity");
       const { error: updateErr } = await supabase.from("inventory_items").update({ quantity: restockItem.quantity + qty }).eq("id", restockItem.id);
       if (updateErr) throw updateErr;
-      const { error: txErr } = await (supabase.from("inventory_transactions") as any).insert({
+      const { error: txErr } = await (supabase as any).from("inventory_transactions").insert({
         inventory_item_id: restockItem.id,
         transaction_type: "restock",
         quantity_changed: qty,
