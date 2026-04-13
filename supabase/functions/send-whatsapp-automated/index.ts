@@ -7,10 +7,13 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const WABA_TOKEN = Deno.env.get("WHATSAPP_API_TOKEN");
-const WABA_PHONE_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+interface WABACredentials {
+  token: string | null;
+  phoneId: string | null;
+}
 
 interface MessagePayload {
   clinicId: string;
@@ -18,9 +21,11 @@ interface MessagePayload {
   phone: string;
   templateName: string;
   messageBody: string;
+  waba: WABACredentials;
 }
 
 async function sendWhatsAppMessage(payload: MessagePayload): Promise<{ success: boolean; error?: string }> {
+  const { token: WABA_TOKEN, phoneId: WABA_PHONE_ID } = payload.waba;
   if (!WABA_TOKEN || !WABA_PHONE_ID) {
     // Log as "simulated" when no WABA credentials configured
     await supabase.from("whatsapp_logs").insert({
@@ -88,7 +93,25 @@ function replacePlaceholders(body: string, vars: Record<string, string>): string
   return result;
 }
 
+async function getClinicWABA(clinicId: string): Promise<WABACredentials> {
+  const { data } = await supabase
+    .from("clinic_settings")
+    .select("setting_key, setting_value")
+    .eq("clinic_id", clinicId)
+    .in("setting_key", ["waba_token", "waba_phone_id"]);
+  
+  let token: string | null = null;
+  let phoneId: string | null = null;
+  for (const s of data ?? []) {
+    if (s.setting_key === "waba_token") token = s.setting_value;
+    if (s.setting_key === "waba_phone_id") phoneId = s.setting_value;
+  }
+  return { token, phoneId };
+}
+
 async function processClinic(clinicId: string) {
+  const waba = await getClinicWABA(clinicId);
+
   const { data: templates } = await supabase
     .from("whatsapp_templates")
     .select("*")
