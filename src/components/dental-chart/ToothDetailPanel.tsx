@@ -60,9 +60,9 @@ export default function ToothDetailPanel({
   const { data: pricingMap } = useQuery({
     queryKey: ["treatment-pricing", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("treatment_pricing").select("treatment_name, base_price").eq("clinic_id", clinicId);
+      const { data } = await supabase.from("treatment_pricing").select("treatment_name, price").eq("clinic_id", clinicId);
       const map: Record<string, number> = {};
-      data?.forEach((p: any) => { map[p.treatment_name] = Number(p.base_price); });
+      data?.forEach((p: any) => { map[p.treatment_name] = Number(p.price); });
       return map;
     },
     enabled: !!clinicId,
@@ -117,20 +117,17 @@ export default function ToothDetailPanel({
   });
 
   const deductMaterials = async (treatmentName: string, treatmentId: string) => {
-    // Fetch mappings for this treatment
-    const { data: mappings } = await supabase
-      .from("treatment_material_mappings")
+    const { data: mappings } = await (supabase.from("treatment_material_mappings") as any)
       .select("inventory_item_id, quantity_needed")
       .eq("clinic_id", clinicId)
       .eq("treatment_name", treatmentName);
 
     if (mappings && mappings.length > 0) {
-      for (const m of mappings) {
+      for (const m of mappings as any[]) {
         try {
           await supabase.rpc("deduct_inventory", {
-            p_treatment_name: treatmentName,
-            p_clinic_id: clinicId,
-            p_treatment_id: treatmentId,
+            p_item_id: m.inventory_item_id,
+            p_quantity: m.quantity_needed || 1,
           });
         } catch (err: any) {
           toast.error(`Stock deduction failed: ${err.message}`);

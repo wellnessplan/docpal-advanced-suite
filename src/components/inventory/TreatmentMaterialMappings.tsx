@@ -25,8 +25,7 @@ export default function TreatmentMaterialMappings() {
     queryKey: ["treatment-mappings", clinicId],
     queryFn: async () => {
       if (!clinicId) return [];
-      const { data, error } = await supabase
-        .from("treatment_material_mappings")
+      const { data, error } = await (supabase.from("treatment_material_mappings") as any)
         .select("*, inventory_items(name, unit)")
         .eq("clinic_id", clinicId)
         .order("treatment_name");
@@ -48,11 +47,13 @@ export default function TreatmentMaterialMappings() {
 
   const addMapping = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("treatment_material_mappings").insert({
+      const { error } = await (supabase.from("treatment_material_mappings") as any).insert({
         clinic_id: clinicId!,
         treatment_name: treatment,
         inventory_item_id: itemId,
+        treatment_pricing_id: itemId,
         quantity_needed: Number(qty),
+        quantity_used: Number(qty),
       });
       if (error) throw error;
     },
