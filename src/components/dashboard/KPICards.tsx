@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, IndianRupee, AlertTriangle, TrendingDown, Package, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function MiniSparkline({ data }: { data: number[] }) {
@@ -20,6 +21,7 @@ function MiniSparkline({ data }: { data: number[] }) {
 }
 
 export default function KPICards() {
+  const navigate = useNavigate();
   const { clinicId } = useAuth();
   const today = new Date().toISOString().split("T")[0];
 
@@ -97,18 +99,22 @@ export default function KPICards() {
   });
 
   const cards = [
-    { title: "Today's Appointments", value: todayApptCount, icon: CalendarDays, color: "bg-accent text-primary" },
-    { title: "Today's Revenue", value: `₹${todayRevenue.toLocaleString()}`, icon: IndianRupee, color: "bg-success/10 text-success" },
-    { title: "Pending Collections", value: `₹${pendingCollections.toLocaleString()}`, icon: AlertTriangle, color: "bg-warning/10 text-warning" },
-    { title: "No-show Rate (30d)", value: `${noShowRate}%`, icon: TrendingDown, color: "bg-destructive/10 text-destructive" },
-    { title: "Low Stock Items", value: lowStockCount, icon: Package, color: lowStockCount > 0 ? "bg-destructive/10 text-destructive" : "bg-accent text-primary" },
-    { title: "Revenue Trend (6m)", value: `₹${(monthlyRevenueTrend[monthlyRevenueTrend.length - 1] ?? 0).toLocaleString()}`, icon: TrendingUp, color: "bg-success/10 text-success", sparkline: monthlyRevenueTrend },
+    { title: "Today's Appointments", value: todayApptCount, icon: CalendarDays, color: "bg-accent text-primary", route: "/appointments" },
+    { title: "Today's Revenue", value: `₹${todayRevenue.toLocaleString()}`, icon: IndianRupee, color: "bg-success/10 text-success", route: "/finance" },
+    { title: "Pending Collections", value: `₹${pendingCollections.toLocaleString()}`, icon: AlertTriangle, color: "bg-warning/10 text-warning", route: "/billing" },
+    { title: "No-show Rate (30d)", value: `${noShowRate}%`, icon: TrendingDown, color: "bg-destructive/10 text-destructive", route: "/appointments" },
+    { title: "Low Stock Items", value: lowStockCount, icon: Package, color: lowStockCount > 0 ? "bg-destructive/10 text-destructive" : "bg-accent text-primary", route: "/inventory" },
+    { title: "Revenue Trend (6m)", value: `₹${(monthlyRevenueTrend[monthlyRevenueTrend.length - 1] ?? 0).toLocaleString()}`, icon: TrendingUp, color: "bg-success/10 text-success", sparkline: monthlyRevenueTrend, route: "/finance" },
   ];
 
   return (
     <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       {cards.map((card) => (
-        <Card key={card.title} className="shadow-card border-0">
+        <Card
+          key={card.title}
+          className="shadow-card border-0 cursor-pointer transition-all hover:scale-[1.03] hover:shadow-lg"
+          onClick={() => navigate(card.route)}
+        >
           <CardContent className="p-4">
             <div className="flex items-start justify-between">
               <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.color}`}>
