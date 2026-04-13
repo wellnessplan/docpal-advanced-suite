@@ -302,7 +302,7 @@ export default function AppointmentsPage() {
                       </Select>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={addAppointment.isPending || !form.patient_id}>
+                  <Button type="submit" className="w-full" disabled={addAppointment.isPending || !form.patient_id || !form.appointment_date || !form.appointment_time}>
                     {addAppointment.isPending ? "Booking..." : "Book Appointment"}
                   </Button>
                 </form>
