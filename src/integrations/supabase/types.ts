@@ -181,34 +181,52 @@ export type Database = {
           address: string | null
           created_at: string
           email: string | null
+          facebook_url: string | null
+          google_maps_url: string | null
           id: string
+          instagram_url: string | null
           logo_url: string | null
           name: string
           phone: string | null
           subscription_plan: string | null
+          tiktok_url: string | null
+          twitter_url: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
           address?: string | null
           created_at?: string
           email?: string | null
+          facebook_url?: string | null
+          google_maps_url?: string | null
           id?: string
+          instagram_url?: string | null
           logo_url?: string | null
           name: string
           phone?: string | null
           subscription_plan?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
           address?: string | null
           created_at?: string
           email?: string | null
+          facebook_url?: string | null
+          google_maps_url?: string | null
           id?: string
+          instagram_url?: string | null
           logo_url?: string | null
           name?: string
           phone?: string | null
           subscription_plan?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
