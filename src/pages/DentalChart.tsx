@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import DentalChartGrid from "@/components/dental-chart/DentalChartGrid";
-import TreatmentQuickPanel from "@/components/dental-chart/TreatmentQuickPanel";
+import UnifiedToothEntry from "@/components/dental-chart/UnifiedToothEntry";
 import ClinicalExamPanel from "@/components/dental-chart/ClinicalExamPanel";
 import MedicationPanel, { type Medication } from "@/components/dental-chart/MedicationPanel";
 import PrescriptionSummary from "@/components/dental-chart/PrescriptionSummary";
@@ -13,9 +13,11 @@ import ChairSideQuickMode from "@/components/dental-chart/ChairSideQuickMode";
 import XRayVault from "@/components/xray/XRayVault";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, Mail, Phone, Calendar, Stethoscope, FileText, Zap, FileImage } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, Stethoscope, FileText, Zap, FileImage, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DentalChartPage() {
@@ -35,6 +37,11 @@ export default function DentalChartPage() {
   const [medications, setMedications] = useState<Medication[]>([]);
   const [prescriptionId, setPrescriptionId] = useState<string | null>(null);
   const [prescriptionStatus, setPrescriptionStatus] = useState("draft");
+
+  // Next appointment booking state
+  const [showBookNext, setShowBookNext] = useState(false);
+  const [nextDate, setNextDate] = useState("");
+  const [nextTime, setNextTime] = useState("10:00");
 
   const { data: patient } = useQuery({
     queryKey: ["patient", patientId],
@@ -117,12 +124,71 @@ export default function DentalChartPage() {
     enabled: !!prescriptionId,
   });
 
+  // Confirm prescription → auto-create draft invoice
   const confirmPrescription = useMutation({
     mutationFn: async () => {
       await savePrescription();
       await (supabase.from("prescriptions") as any).update({ status: "confirmed" }).eq("id", prescriptionId!);
+
+      // Auto-create draft invoice from prescription items
+      const totalCost = prescriptionItems.reduce((sum: number, item: any) => sum + (Number(item.cost) || 0), 0);
+      if (totalCost > 0 && patientId && clinicId) {
+        const { data: invoice } = await supabase.from("invoices").insert({
+          patient_id: patientId,
+          clinic_id: clinicId,
+          amount: totalCost,
+          total: totalCost,
+          subtotal: totalCost,
+          status: "draft",
+          invoice_date: new Date().toISOString().split("T")[0],
+          notes: `Auto-generated from prescription`,
+        }).select("id").single();
+
+        // Add line items
+        if (invoice) {
+          const lineItems = prescriptionItems
+            .filter((item: any) => item.treatment && Number(item.cost) > 0)
+            .map((item: any) => ({
+              invoice_id: invoice.id,
+              description: `${item.treatment}${item.tooth_number ? ` (Tooth #${item.tooth_number})` : ""}`,
+              unit_price: Number(item.cost),
+              quantity: 1,
+              total: Number(item.cost),
+            }));
+          if (lineItems.length > 0) {
+            await supabase.from("invoice_items").insert(lineItems);
+          }
+        }
+      }
     },
-    onSuccess: () => { setPrescriptionStatus("confirmed"); toast.success("Prescription confirmed"); },
+    onSuccess: () => {
+      setPrescriptionStatus("confirmed");
+      setShowBookNext(true);
+      toast.success("Prescription confirmed & draft bill created");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Book next appointment
+  const bookNextAppointment = useMutation({
+    mutationFn: async () => {
+      if (!nextDate || !nextTime) throw new Error("Select date and time");
+      const { error } = await supabase.from("appointments").insert({
+        patient_id: patientId!,
+        clinic_id: clinicId!,
+        appointment_date: nextDate,
+        appointment_time: nextTime,
+        status: "scheduled",
+        type: "Follow-up",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Next appointment booked!");
+      setShowBookNext(false);
+      setNextDate("");
+      setNextTime("10:00");
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -166,7 +232,7 @@ export default function DentalChartPage() {
             <TabsTrigger value="summary" className="flex-1 gap-1"><FileText className="h-3 w-3" />Rx</TabsTrigger>
           </TabsList>
 
-          {/* EXAMINE TAB — Simplified: chart on top, quick actions below */}
+          {/* EXAMINE TAB */}
           <TabsContent value="chart" className="mt-3 space-y-3">
             <ClinicalExamPanel
               chiefComplaint={chiefComplaint}
@@ -188,17 +254,29 @@ export default function DentalChartPage() {
               </CardContent>
             </Card>
 
-            {/* Quick actions below chart — no side panel */}
-            <TreatmentQuickPanel
-              patientId={patientId}
-              clinicId={clinicId}
-              toothNumber={selectedTooth}
-              toothRecordId={selectedRecord?.id}
-              onUpdate={() => {
-                refetchRecords();
-                queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
-              }}
-            />
+            {/* Unified tooth entry with condition, treatment, cost, notes — below chart */}
+            {selectedTooth && prescriptionId && (
+              <UnifiedToothEntry
+                prescriptionId={prescriptionId}
+                clinicId={clinicId}
+                toothNumber={selectedTooth}
+                currentStatus={selectedRecord?.status || "healthy"}
+                toothRecordId={selectedRecord?.id}
+                patientId={patientId}
+                onUpdate={() => {
+                  refetchRecords();
+                  queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
+                }}
+              />
+            )}
+
+            {!selectedTooth && (
+              <Card className="shadow-card border-0">
+                <CardContent className="py-8 text-center text-muted-foreground text-sm">
+                  ← Tap a tooth on the chart to add condition, treatment & cost
+                </CardContent>
+              </Card>
+            )}
 
             <MedicationPanel
               medications={medications}
@@ -224,7 +302,7 @@ export default function DentalChartPage() {
             <XRayVault patientId={patientId} clinicId={clinicId} />
           </TabsContent>
 
-          <TabsContent value="summary" className="mt-3">
+          <TabsContent value="summary" className="mt-3 space-y-3">
             <PrescriptionSummary
               patient={patient}
               clinic={clinic}
@@ -239,6 +317,48 @@ export default function DentalChartPage() {
               onConfirm={() => confirmPrescription.mutate()}
               isConfirming={confirmPrescription.isPending}
             />
+
+            {/* Book Next Appointment — inline after confirm */}
+            {(showBookNext || prescriptionStatus === "confirmed") && (
+              <Card className="shadow-card border-0 border-l-4 border-l-primary">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <CalendarPlus className="h-4 w-4 text-primary" />
+                    <h3 className="font-heading text-sm font-semibold">Book Next Appointment</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Date</Label>
+                      <Input
+                        type="date"
+                        value={nextDate}
+                        min={new Date().toISOString().split("T")[0]}
+                        onChange={e => setNextDate(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Time</Label>
+                      <Input
+                        type="time"
+                        value={nextTime}
+                        onChange={e => setNextTime(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full gap-1"
+                    onClick={() => bookNextAppointment.mutate()}
+                    disabled={!nextDate || bookNextAppointment.isPending}
+                  >
+                    <CalendarPlus className="h-3 w-3" />
+                    {bookNextAppointment.isPending ? "Booking..." : "Book Follow-up"}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
