@@ -12,12 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import {
   Smile, CalendarDays, ChevronLeft,
-  Phone, Mail, FileText, User2, HeartPulse, History, Search
+  Phone, Mail, FileText, User2, HeartPulse, History, Search,
+  FileCheck, Package, Bell, Clock
 } from "lucide-react";
 import MedicalHistoryTab from "@/components/patients/MedicalHistoryTab";
 import VisitHistoryTab from "@/components/patients/VisitHistoryTab";
 import DocumentsTab from "@/components/patients/DocumentsTab";
 import AuditTrailTab from "@/components/patients/AuditTrailTab";
+import TreatmentTimeline from "@/components/patients/TreatmentTimeline";
+import ConsentForms from "@/components/patients/ConsentForms";
+import LabWorkTracker from "@/components/patients/LabWorkTracker";
+import RecallReminders from "@/components/patients/RecallReminders";
 
 const TREATMENT_STATUS_COLORS: Record<string, string> = {
   planned: "bg-primary/10 text-primary border-primary/30",
@@ -150,18 +155,23 @@ export default function PatientProfilePage() {
         </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview">
+        <Tabs defaultValue="timeline">
           <TabsList className="flex-wrap">
+            <TabsTrigger value="timeline" className="gap-1"><Clock className="h-3 w-3" />Timeline</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="medical-history" className="gap-1"><HeartPulse className="h-3 w-3" />Medical History</TabsTrigger>
-            <TabsTrigger value="visit-history" className="gap-1"><History className="h-3 w-3" />Visit History</TabsTrigger>
+            <TabsTrigger value="medical-history" className="gap-1"><HeartPulse className="h-3 w-3" />Medical</TabsTrigger>
             <TabsTrigger value="treatments">Treatments</TabsTrigger>
-            <TabsTrigger value="appointments">Appointments</TabsTrigger>
+            <TabsTrigger value="consent" className="gap-1"><FileCheck className="h-3 w-3" />Consent</TabsTrigger>
+            <TabsTrigger value="lab-work" className="gap-1"><Package className="h-3 w-3" />Lab Work</TabsTrigger>
+            <TabsTrigger value="reminders" className="gap-1"><Bell className="h-3 w-3" />Recalls</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="documents" className="gap-1"><FileText className="h-3 w-3" />Documents</TabsTrigger>
-            <TabsTrigger value="audit-trail" className="gap-1"><Search className="h-3 w-3" />Audit Trail</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="audit-trail" className="gap-1"><Search className="h-3 w-3" />Audit</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="timeline" className="mt-4">
+            <TreatmentTimeline patientId={patient.id} />
+          </TabsContent>
 
           <TabsContent value="overview" className="mt-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -190,10 +200,6 @@ export default function PatientProfilePage() {
 
           <TabsContent value="medical-history" className="mt-4">
             {clinicId && <MedicalHistoryTab patientId={patient.id} clinicId={clinicId} />}
-          </TabsContent>
-
-          <TabsContent value="visit-history" className="mt-4">
-            <VisitHistoryTab patientId={patient.id} />
           </TabsContent>
 
           <TabsContent value="treatments" className="mt-4">
@@ -244,35 +250,16 @@ export default function PatientProfilePage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="appointments" className="mt-4">
-            <Card className="shadow-card border-0">
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!appointments.length ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No appointments</TableCell></TableRow>
-                    ) : appointments.map((a: any) => (
-                      <TableRow key={a.id}>
-                        <TableCell>{new Date(a.scheduled_at).toLocaleDateString()}</TableCell>
-                        <TableCell>{new Date(a.scheduled_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</TableCell>
-                        <TableCell className="font-medium">{a.type}</TableCell>
-                        <TableCell><Badge variant="secondary" className="text-xs">{a.status}</Badge></TableCell>
-                        <TableCell className="text-muted-foreground max-w-[200px] truncate">{a.notes || "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+          <TabsContent value="consent" className="mt-4">
+            {clinicId && <ConsentForms patientId={patient.id} clinicId={clinicId} />}
+          </TabsContent>
+
+          <TabsContent value="lab-work" className="mt-4">
+            {clinicId && <LabWorkTracker patientId={patient.id} clinicId={clinicId} />}
+          </TabsContent>
+
+          <TabsContent value="reminders" className="mt-4">
+            {clinicId && <RecallReminders patientId={patient.id} clinicId={clinicId} />}
           </TabsContent>
 
           <TabsContent value="billing" className="mt-4">
@@ -314,14 +301,6 @@ export default function PatientProfilePage() {
 
           <TabsContent value="audit-trail" className="mt-4">
             <AuditTrailTab patientId={patient.id} />
-          </TabsContent>
-
-          <TabsContent value="notes" className="mt-4">
-            <Card className="shadow-card border-0">
-              <CardContent className="p-6">
-                <p className="text-sm text-muted-foreground">{(patient as any).notes || "No notes recorded for this patient."}</p>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
