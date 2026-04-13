@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import {
   CheckCircle2, X, Phone, MessageCircle, Package, Calendar,
   CreditCard, AlertTriangle, Loader2, RefreshCw, ClipboardList,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Star, Users
 } from "lucide-react";
 
 const TASK_CONFIG: Record<string, { icon: React.ReactNode; color: string; actionLabel: string; actionType: "call" | "whatsapp" | "done" }> = {
@@ -21,6 +21,8 @@ const TASK_CONFIG: Record<string, { icon: React.ReactNode; color: string; action
   EMI_DUE: { icon: <CreditCard className="w-4 h-4" />, color: "text-amber-600 bg-amber-50 dark:bg-amber-950", actionLabel: "WhatsApp", actionType: "whatsapp" },
   CONFIRM_TOMORROW: { icon: <Calendar className="w-4 h-4" />, color: "text-green-600 bg-green-50 dark:bg-green-950", actionLabel: "Confirm", actionType: "whatsapp" },
   LOW_STOCK: { icon: <AlertTriangle className="w-4 h-4" />, color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-950", actionLabel: "Done", actionType: "done" },
+  REVIEW_REQUEST: { icon: <Star className="w-4 h-4" />, color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950", actionLabel: "WhatsApp", actionType: "whatsapp" },
+  REFERRAL_CAMPAIGN: { icon: <Users className="w-4 h-4" />, color: "text-pink-600 bg-pink-50 dark:bg-pink-950", actionLabel: "WhatsApp", actionType: "whatsapp" },
 };
 
 const PRIORITY_BADGE: Record<string, string> = {

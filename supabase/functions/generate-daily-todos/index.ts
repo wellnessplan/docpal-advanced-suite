@@ -231,6 +231,73 @@ Deno.serve(async (req) => {
         }
       }
 
+      // 8. REVIEW_REQUEST: appointments completed today → ask for Google review
+      const { data: completedToday } = await supabase
+        .from("appointments")
+        .select("id, patient_id, patients(full_name, phone)")
+        .eq("clinic_id", clinicId)
+        .eq("appointment_date", today)
+        .eq("status", "completed");
+
+      for (const appt of completedToday ?? []) {
+        const p = appt.patients as any;
+        if (p?.phone) {
+          todos.push({
+            clinic_id: clinicId,
+            patient_id: appt.patient_id,
+            task_type: "REVIEW_REQUEST",
+            message: `Send Google review request to ${p?.full_name || "Patient"} — visited today`,
+            priority: "low",
+            patient_name: p?.full_name,
+            patient_phone: p?.phone,
+            reference_id: appt.id,
+            reference_table: "appointments",
+          });
+        }
+      }
+
+      // 9. REFERRAL_CAMPAIGN: loyal patients with 3+ completed appointments → referral offer
+      const { data: loyalPatients } = await supabase
+        .from("patients")
+        .select("id, full_name, phone")
+        .eq("clinic_id", clinicId);
+
+      for (const patient of loyalPatients ?? []) {
+        const { count } = await supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("clinic_id", clinicId)
+          .eq("patient_id", patient.id)
+          .eq("status", "completed");
+
+        if ((count ?? 0) >= 3) {
+          // Check no referral todo already sent in last 30 days
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+          const { data: recentReferral } = await supabase
+            .from("daily_todos")
+            .select("id")
+            .eq("clinic_id", clinicId)
+            .eq("patient_id", patient.id)
+            .eq("task_type", "REFERRAL_CAMPAIGN")
+            .gte("created_at", thirtyDaysAgo)
+            .limit(1);
+
+          if (!recentReferral?.length) {
+            todos.push({
+              clinic_id: clinicId,
+              patient_id: patient.id,
+              task_type: "REFERRAL_CAMPAIGN",
+              message: `Send referral offer to ${patient.full_name} — loyal patient (3+ visits)`,
+              priority: "low",
+              patient_name: patient.full_name,
+              patient_phone: patient.phone,
+              reference_id: patient.id,
+              reference_table: "patients",
+            });
+          }
+        }
+      }
+
       // Insert all todos
       if (todos.length > 0) {
         const { error: insertErr } = await supabase
