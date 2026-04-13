@@ -45,7 +45,7 @@ export default function Index() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
               <Smile className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-heading text-xl font-bold text-foreground">Dental Buddy</span>
+            <span className="font-heading text-xl font-bold text-foreground">DoctorsBuddy</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Features</a>
@@ -131,7 +131,7 @@ export default function Index() {
             Ready to Transform Your Practice?
           </h2>
           <p className="mt-4 text-primary-foreground/80 max-w-xl mx-auto">
-            Join thousands of dental professionals who trust Dental Buddy to run their practice efficiently.
+            Join thousands of dental professionals who trust DoctorsBuddy to run their practice efficiently.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             {["No credit card required", "14-day free trial", "Cancel anytime"].map(t => (
@@ -153,9 +153,9 @@ export default function Index() {
             <div className="flex h-7 w-7 items-center justify-center rounded-md gradient-primary">
               <Smile className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-heading text-sm font-semibold text-foreground">Dental Buddy</span>
+            <span className="font-heading text-sm font-semibold text-foreground">DoctorsBuddy</span>
           </div>
-          <p className="text-xs text-muted-foreground">© 2026 Dental Buddy. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">© 2026 DoctorsBuddy. All rights reserved.</p>
         </div>
       </footer>
     </div>
