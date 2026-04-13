@@ -27,7 +27,7 @@ const TEMPLATES = [
 ];
 
 export default function WhatsAppPage() {
-  const { clinicId, userId } = useAuth();
+  const { clinicId, user } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
