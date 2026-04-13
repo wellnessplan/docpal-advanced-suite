@@ -7,13 +7,14 @@ import MobileBottomNav from "./MobileBottomNav";
 import InstallPromptBanner from "./InstallPromptBanner";
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
-  Sparkles, MessageSquare, Settings, LogOut, ChevronLeft, ChevronRight,
-  ListOrdered, Package, TrendingUp, BarChart3, Waypoints, Stethoscope,
-  IndianRupee, ChevronDown, ChevronUp
+  Settings, LogOut, ChevronLeft, ChevronRight,
+  ListOrdered, Package, TrendingUp, BarChart3, Stethoscope,
+  ChevronDown, ChevronUp, FlaskConical, Briefcase, Rocket
 } from "lucide-react";
 
 interface NavGroup {
   label: string;
+  groupIcon: React.ElementType;
   collapsible?: boolean;
   items: { href: string; label: string; icon: React.ElementType }[];
 }
@@ -21,32 +22,39 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     label: "CLINIC",
+    groupIcon: Stethoscope,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/queue", label: "Queue", icon: ListOrdered },
-      { href: "/patients", label: "Patients", icon: Users },
-      { href: "/appointments", label: "Appointments", icon: CalendarDays },
-      { href: "/ortho", label: "Orthodontics", icon: Waypoints },
     ],
   },
   {
-    label: "OPERATIONS",
+    label: "PATIENTS",
+    groupIcon: Users,
+    collapsible: true,
+    items: [
+      { href: "/patients", label: "Patients", icon: Users },
+      { href: "/appointments", label: "Appointments", icon: CalendarDays },
+      { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
+    ],
+  },
+  {
+    label: "FINANCE",
+    groupIcon: Briefcase,
     collapsible: true,
     items: [
       { href: "/billing", label: "Billing", icon: Receipt },
       { href: "/finance", label: "Finance", icon: TrendingUp },
-      { href: "/treatment-costing", label: "Treatment Pricing", icon: IndianRupee },
       { href: "/inventory", label: "Inventory", icon: Package },
-      { href: "/reports", label: "Reports", icon: BarChart3 },
     ],
   },
   {
     label: "GROWTH",
+    groupIcon: Rocket,
     collapsible: true,
     items: [
+      { href: "/reports", label: "Reports", icon: BarChart3 },
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
-      { href: "/whatsapp", label: "WhatsApp", icon: MessageSquare },
-      { href: "/ai-generator", label: "AI Generator", icon: Sparkles },
     ],
   },
 ];
