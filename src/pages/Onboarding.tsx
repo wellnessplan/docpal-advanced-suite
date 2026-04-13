@@ -35,14 +35,16 @@ export default function OnboardingPage() {
     setLoading(true);
 
     try {
-      // Create clinic
-      const { data: newClinic, error: clinicError } = await (supabase
-        .from("clinics") as any).insert({
-          name: clinicName.trim(),
-          phone: clinicPhone || null,
-          address: clinicAddress || null,
-          email: clinicEmail || null,
-        }).select("id").single();
+      // Create clinic via secure function (handles RLS + profile linking)
+      const { data: clinicResult, error: clinicError } = await supabase.rpc(
+        "create_clinic_for_user" as any,
+        {
+          p_name: clinicName.trim(),
+          p_phone: clinicPhone || null,
+          p_address: clinicAddress || null,
+          p_email: clinicEmail || null,
+        }
+      );
 
       if (clinicError) {
         toast.error("Failed to create clinic: " + clinicError.message);
@@ -50,14 +52,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      const clinicId = newClinic?.id as string;
-
-      // Link profile to clinic
-      if (clinicId) {
-        await (supabase.from("profiles") as any)
-          .update({ clinic_id: clinicId })
-          .eq("user_id", user.id);
-      }
+      const clinicId = clinicResult as string;
 
       // Upload logo if provided
       if (logoFile && clinicId) {
