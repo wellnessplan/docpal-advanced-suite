@@ -22,6 +22,7 @@ import {
 import GoogleIntegrationTab from "@/components/settings/GoogleIntegrationTab";
 import WhatsAppTemplatesTab from "@/components/settings/WhatsAppTemplatesTab";
 import WebhooksTab from "@/components/settings/WebhooksTab";
+import LabDirectoryTab from "@/components/settings/LabDirectoryTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
