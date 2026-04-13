@@ -1,40 +1,32 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  CalendarDays, Receipt, TrendingUp, IndianRupee, Package, BarChart3,
-  Megaphone, MessageSquare, Sparkles, Settings, LogOut, Waypoints, Stethoscope
+  CalendarDays, Receipt, TrendingUp, Package, BarChart3,
+  Megaphone, Settings, LogOut, Stethoscope, FlaskConical
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 
-interface MobileMoreDrawerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
 const sections = [
   {
-    label: "Clinic",
+    label: "Patients",
     items: [
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
-      { href: "/ortho", label: "Orthodontics", icon: Waypoints },
+      { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
     ],
   },
   {
-    label: "Operations",
+    label: "Finance",
     items: [
       { href: "/billing", label: "Billing", icon: Receipt },
       { href: "/finance", label: "Finance", icon: TrendingUp },
-      { href: "/treatment-costing", label: "Treatment Pricing", icon: IndianRupee },
       { href: "/inventory", label: "Inventory", icon: Package },
-      { href: "/reports", label: "Reports", icon: BarChart3 },
     ],
   },
   {
     label: "Growth",
     items: [
+      { href: "/reports", label: "Reports", icon: BarChart3 },
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
-      { href: "/whatsapp", label: "WhatsApp", icon: MessageSquare },
-      { href: "/ai-generator", label: "AI Generator", icon: Sparkles },
     ],
   },
 ];
