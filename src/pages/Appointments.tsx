@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Plus, ChevronLeft, ChevronRight, CalendarDays, Clock, List, RefreshCw } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, subWeeks, subDays, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, getDay } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   scheduled: "bg-primary/10 text-primary border-primary/30",
@@ -36,6 +37,7 @@ const typeColors: Record<string, string> = {
 };
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 8);
+const TIME_SLOTS = HOURS.flatMap(h => [`${String(h).padStart(2, "0")}:00`, `${String(h).padStart(2, "0")}:30`]);
 
 export default function AppointmentsPage() {
   const { clinicId } = useAuth();
@@ -44,7 +46,7 @@ export default function AppointmentsPage() {
   const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "list">("day");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [doctorFilter, setDoctorFilter] = useState<string>("all");
-  const [form, setForm] = useState({ patient_id: "", scheduled_at: "", duration_minutes: "30", type: "General Checkup", notes: "", provider_id: "" });
+  const [form, setForm] = useState({ patient_id: "", appointment_date: "", appointment_time: "", duration_minutes: "30", type: "General Checkup", notes: "", provider_id: "" });
 
   const { data: patients } = useQuery({
     queryKey: ["patients-list", clinicId],
@@ -96,14 +98,26 @@ export default function AppointmentsPage() {
     return appointments.filter((a: any) => a.provider_id === doctorFilter);
   }, [appointments, doctorFilter]);
 
+  // Get booked slots for a given date to show availability
+  const bookedSlots = useMemo(() => {
+    if (!form.appointment_date) return new Set<string>();
+    return new Set(
+      appointments
+        .filter((a: any) => a.appointment_date === form.appointment_date && a.status !== "cancelled")
+        .map((a: any) => a.appointment_time?.slice(0, 5))
+    );
+  }, [appointments, form.appointment_date]);
+
   const addAppointment = useMutation({
     mutationFn: async () => {
       if (!clinicId) throw new Error("No clinic");
+      if (!form.appointment_date || !form.appointment_time) throw new Error("Select date and time slot");
+      const scheduledAt = `${form.appointment_date}T${form.appointment_time}:00`;
       const { error } = await (supabase.from("appointments") as any).insert({
         clinic_id: clinicId, patient_id: form.patient_id,
-        scheduled_at: form.scheduled_at,
-        appointment_date: form.scheduled_at?.split("T")[0] || new Date().toISOString().split("T")[0],
-        appointment_time: form.scheduled_at?.split("T")[1]?.slice(0, 5) || "09:00",
+        scheduled_at: scheduledAt,
+        appointment_date: form.appointment_date,
+        appointment_time: form.appointment_time,
         duration_minutes: parseInt(form.duration_minutes),
         type: form.type, notes: form.notes || null,
         provider_id: form.provider_id || null,
@@ -113,7 +127,7 @@ export default function AppointmentsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       setOpen(false);
-      setForm({ patient_id: "", scheduled_at: "", duration_minutes: "30", type: "General Checkup", notes: "", provider_id: "" });
+      setForm({ patient_id: "", appointment_date: "", appointment_time: "", duration_minutes: "30", type: "General Checkup", notes: "", provider_id: "" });
       toast.success("Appointment booked!");
     },
     onError: (e: any) => toast.error(e.message),
@@ -231,16 +245,41 @@ export default function AppointmentsPage() {
                       <SelectContent>{patients?.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Date & Time *</Label>
-                      <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Duration (min)</Label>
-                      <Input type="number" value={form.duration_minutes} onChange={e => setForm(f => ({ ...f, duration_minutes: e.target.value }))} />
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Date *</Label>
+                    <Input type="date" value={form.appointment_date} min={new Date().toISOString().split("T")[0]} onChange={e => setForm(f => ({ ...f, appointment_date: e.target.value, appointment_time: "" }))} required />
                   </div>
+                  {form.appointment_date && (
+                    <div className="space-y-2">
+                      <Label>Available Slots (30 min each)</Label>
+                      <div className="grid grid-cols-4 gap-1.5 max-h-[180px] overflow-y-auto p-1">
+                        {TIME_SLOTS.map(slot => {
+                          const isBooked = bookedSlots.has(slot);
+                          const isSelected = form.appointment_time === slot;
+                          const hour = parseInt(slot.split(":")[0]);
+                          const ampm = hour >= 12 ? "PM" : "AM";
+                          const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                          const displayTime = `${displayHour}:${slot.split(":")[1]} ${ampm}`;
+                          return (
+                            <button
+                              key={slot}
+                              type="button"
+                              disabled={isBooked}
+                              onClick={() => setForm(f => ({ ...f, appointment_time: slot }))}
+                              className={cn(
+                                "px-2 py-1.5 text-xs rounded-md border transition-all font-medium",
+                                isBooked && "bg-muted text-muted-foreground line-through cursor-not-allowed opacity-50",
+                                isSelected && !isBooked && "bg-primary text-primary-foreground border-primary",
+                                !isSelected && !isBooked && "hover:bg-primary/10 hover:border-primary/30 cursor-pointer"
+                              )}
+                            >
+                              {displayTime}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Type</Label>
@@ -263,7 +302,7 @@ export default function AppointmentsPage() {
                       </Select>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={addAppointment.isPending || !form.patient_id}>
+                  <Button type="submit" className="w-full" disabled={addAppointment.isPending || !form.patient_id || !form.appointment_date || !form.appointment_time}>
                     {addAppointment.isPending ? "Booking..." : "Book Appointment"}
                   </Button>
                 </form>

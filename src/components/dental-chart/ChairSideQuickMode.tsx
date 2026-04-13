@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Zap, Check, RotateCcw, ChevronRight } from "lucide-react";
@@ -42,6 +44,7 @@ export default function ChairSideQuickMode({
   const [step, setStep] = useState<Step>("tooth");
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
   const [selectedTreatment, setSelectedTreatment] = useState<string | null>(null);
+  const [customCost, setCustomCost] = useState<string>("");
 
   const { data: pricingMap } = useQuery({
     queryKey: ["treatment-pricing-map", clinicId],
@@ -79,7 +82,7 @@ export default function ChairSideQuickMode({
       }
 
       // Add treatment
-      const cost = pricingMap?.[selectedTreatment] || 0;
+      const cost = customCost ? Number(customCost) : (pricingMap?.[selectedTreatment] || 0);
       const { error: txErr } = await supabase.from("tooth_treatments").insert({
         tooth_record_id: toothRecordId,
         treatment_name: selectedTreatment,
@@ -116,6 +119,7 @@ export default function ChairSideQuickMode({
     setStep("tooth");
     setSelectedTooth(null);
     setSelectedTreatment(null);
+    setCustomCost("");
   };
 
   const stepIndex = step === "tooth" ? 1 : step === "treatment" ? 2 : 3;
@@ -240,9 +244,19 @@ export default function ChairSideQuickMode({
               <p className="text-sm text-muted-foreground">
                 on <span className="font-semibold text-foreground">Tooth #{selectedTooth}</span>
               </p>
-              {pricingMap?.[selectedTreatment!] ? (
-                <Badge variant="secondary" className="text-sm">₹{pricingMap[selectedTreatment!]}</Badge>
-              ) : null}
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <Label className="text-xs text-muted-foreground">Cost ₹</Label>
+                <Input
+                  type="number"
+                  placeholder={pricingMap?.[selectedTreatment!] ? String(pricingMap[selectedTreatment!]) : "0"}
+                  value={customCost}
+                  onChange={e => setCustomCost(e.target.value)}
+                  className="h-8 w-28 text-center text-sm font-semibold"
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {!customCost && pricingMap?.[selectedTreatment!] ? `Default: ₹${pricingMap[selectedTreatment!]}` : ""}
+              </p>
             </div>
             <Button
               className="w-full h-12 text-base font-bold gap-2"
