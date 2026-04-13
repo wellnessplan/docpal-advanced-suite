@@ -259,6 +259,24 @@ export default function DentalChartPage() {
             </div>
           </TabsContent>
 
+          {/* QUICK TAB - Chair-Side 3-Tap Mode */}
+          <TabsContent value="quick" className="mt-3">
+            <ChairSideQuickMode
+              patientId={patientId}
+              clinicId={clinicId}
+              prescriptionId={prescriptionId}
+              onUpdate={() => {
+                refetchRecords();
+                queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
+              }}
+            />
+          </TabsContent>
+
+          {/* X-RAYS TAB */}
+          <TabsContent value="xrays" className="mt-3">
+            <XRayVault patientId={patientId} clinicId={clinicId} />
+          </TabsContent>
+
           {/* PRESCRIPTION TAB */}
           <TabsContent value="summary" className="mt-3">
             <PrescriptionSummary
