@@ -244,16 +244,41 @@ export default function AppointmentsPage() {
                       <SelectContent>{patients?.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Date & Time *</Label>
-                      <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Duration (min)</Label>
-                      <Input type="number" value={form.duration_minutes} onChange={e => setForm(f => ({ ...f, duration_minutes: e.target.value }))} />
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Date *</Label>
+                    <Input type="date" value={form.appointment_date} min={new Date().toISOString().split("T")[0]} onChange={e => setForm(f => ({ ...f, appointment_date: e.target.value, appointment_time: "" }))} required />
                   </div>
+                  {form.appointment_date && (
+                    <div className="space-y-2">
+                      <Label>Available Slots (30 min each)</Label>
+                      <div className="grid grid-cols-4 gap-1.5 max-h-[180px] overflow-y-auto p-1">
+                        {TIME_SLOTS.map(slot => {
+                          const isBooked = bookedSlots.has(slot);
+                          const isSelected = form.appointment_time === slot;
+                          const hour = parseInt(slot.split(":")[0]);
+                          const ampm = hour >= 12 ? "PM" : "AM";
+                          const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                          const displayTime = `${displayHour}:${slot.split(":")[1]} ${ampm}`;
+                          return (
+                            <button
+                              key={slot}
+                              type="button"
+                              disabled={isBooked}
+                              onClick={() => setForm(f => ({ ...f, appointment_time: slot }))}
+                              className={cn(
+                                "px-2 py-1.5 text-xs rounded-md border transition-all font-medium",
+                                isBooked && "bg-muted text-muted-foreground line-through cursor-not-allowed opacity-50",
+                                isSelected && !isBooked && "bg-primary text-primary-foreground border-primary",
+                                !isSelected && !isBooked && "hover:bg-primary/10 hover:border-primary/30 cursor-pointer"
+                              )}
+                            >
+                              {displayTime}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Type</Label>
