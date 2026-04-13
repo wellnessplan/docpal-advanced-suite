@@ -27,6 +27,7 @@ export default function DentalChartPage() {
   const navigate = useNavigate();
   const { clinicId } = useAuth();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
   const [chartType, setChartType] = useState<"adult" | "kids">("adult");
   const [activeTab, setActiveTab] = useState("chart");
@@ -257,7 +258,28 @@ export default function DentalChartPage() {
             </Card>
 
             {/* Unified tooth entry with condition, treatment, cost, notes — below chart */}
-            {selectedTooth && prescriptionId && (
+            {/* Tooth detail — bottom sheet on mobile, inline on desktop */}
+            {selectedTooth && prescriptionId && isMobile ? (
+              <Drawer open={!!selectedTooth} onOpenChange={(open) => { if (!open) setSelectedTooth(null); }}>
+                <DrawerContent className="max-h-[85vh]">
+                  <DrawerHeader><DrawerTitle>Tooth #{selectedTooth}</DrawerTitle></DrawerHeader>
+                  <div className="px-4 pb-6 overflow-y-auto max-h-[70vh]">
+                    <UnifiedToothEntry
+                      prescriptionId={prescriptionId}
+                      clinicId={clinicId}
+                      toothNumber={selectedTooth}
+                      currentStatus={selectedRecord?.status || "healthy"}
+                      toothRecordId={selectedRecord?.id}
+                      patientId={patientId}
+                      onUpdate={() => {
+                        refetchRecords();
+                        queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
+                      }}
+                    />
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ) : selectedTooth && prescriptionId ? (
               <UnifiedToothEntry
                 prescriptionId={prescriptionId}
                 clinicId={clinicId}
@@ -270,11 +292,11 @@ export default function DentalChartPage() {
                   queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
                 }}
               />
-            )}
+            ) : null}
 
             {!selectedTooth && (
               <Card className="shadow-card border-0">
-                <CardContent className="py-8 text-center text-muted-foreground text-sm">
+                <CardContent className="py-6 md:py-8 text-center text-muted-foreground text-xs md:text-sm">
                   ← Tap a tooth on the chart to add condition, treatment & cost
                 </CardContent>
               </Card>
