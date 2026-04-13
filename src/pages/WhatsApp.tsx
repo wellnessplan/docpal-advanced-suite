@@ -118,7 +118,7 @@ export default function WhatsAppPage() {
         content: message,
         subject: "WhatsApp Message",
         status: "sent",
-        sent_by: userId || null,
+        sent_by: user?.id || null,
       });
       if (error) throw error;
 
