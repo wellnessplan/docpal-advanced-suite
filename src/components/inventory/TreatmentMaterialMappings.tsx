@@ -141,7 +141,7 @@ export default function TreatmentMaterialMappings() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((m: any) => (
+                  {(items as any[]).map((m: any) => (
                     <TableRow key={m.id}>
                       <TableCell>{m.inventory_items?.name}</TableCell>
                       <TableCell>

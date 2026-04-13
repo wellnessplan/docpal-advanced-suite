@@ -59,10 +59,10 @@ export default function TreatmentCosting() {
         notes: form.notes || null,
       };
       if (editingId) {
-        const { error } = await supabase.from("treatment_pricing").update(payload).eq("id", editingId);
+        const { error } = await (supabase.from("treatment_pricing") as any).update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("treatment_pricing").insert(payload);
+        const { error } = await (supabase.from("treatment_pricing") as any).insert(payload);
         if (error) throw error;
       }
     },

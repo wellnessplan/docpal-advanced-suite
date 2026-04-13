@@ -99,9 +99,11 @@ export default function AppointmentsPage() {
   const addAppointment = useMutation({
     mutationFn: async () => {
       if (!clinicId) throw new Error("No clinic");
-      const { error } = await supabase.from("appointments").insert({
+      const { error } = await (supabase.from("appointments") as any).insert({
         clinic_id: clinicId, patient_id: form.patient_id,
         scheduled_at: form.scheduled_at,
+        appointment_date: form.scheduled_at?.split("T")[0] || new Date().toISOString().split("T")[0],
+        appointment_time: form.scheduled_at?.split("T")[1]?.slice(0, 5) || "09:00",
         duration_minutes: parseInt(form.duration_minutes),
         type: form.type, notes: form.notes || null,
         provider_id: form.provider_id || null,

@@ -40,25 +40,26 @@ function ClinicInfoTab({ clinicId }: { clinicId: string }) {
 
   useEffect(() => {
     if (clinic) {
+      const c = clinic as any;
       setForm({
-        name: clinic.name || "",
-        address: clinic.address || "",
-        phone: clinic.phone || "",
-        email: clinic.email || "",
-        website: clinic.website || "",
-        logo_url: clinic.logo_url || "",
-        google_maps_url: clinic.google_maps_url || "",
-        facebook_url: clinic.facebook_url || "",
-        instagram_url: clinic.instagram_url || "",
-        twitter_url: clinic.twitter_url || "",
-        tiktok_url: clinic.tiktok_url || "",
+        name: c.name || "",
+        address: c.address || "",
+        phone: c.phone || "",
+        email: c.email || "",
+        website: c.website || "",
+        logo_url: c.logo_url || "",
+        google_maps_url: c.google_maps_url || "",
+        facebook_url: c.facebook_url || "",
+        instagram_url: c.instagram_url || "",
+        twitter_url: c.twitter_url || "",
+        tiktok_url: c.tiktok_url || "",
       });
     }
   }, [clinic]);
 
   const updateClinic = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("clinics").update(form).eq("id", clinicId);
+      const { error } = await (supabase.from("clinics") as any).update(form).eq("id", clinicId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -233,14 +234,14 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
   const { data: vendors, isLoading } = useQuery({
     queryKey: ["vendors", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("vendors").select("*").eq("clinic_id", clinicId).order("name");
+      const { data } = await (supabase as any).from("vendors").select("*").eq("clinic_id", clinicId).order("name");
       return data ?? [];
     },
   });
 
   const addVendor = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("vendors").insert({ ...form, clinic_id: clinicId });
+      const { error } = await (supabase as any).from("vendors").insert({ ...form, clinic_id: clinicId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -254,7 +255,7 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
 
   const deleteVendor = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("vendors").delete().eq("id", id);
+      const { error } = await (supabase as any).from("vendors").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -337,7 +338,7 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
                 <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
               ) : !vendors?.length ? (
                 <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No vendors yet</TableCell></TableRow>
-              ) : vendors.map(v => (
+              ) : vendors.map((v: any) => (
                 <TableRow key={v.id}>
                   <TableCell className="font-medium">{v.name}</TableCell>
                   <TableCell>{v.category ? <Badge variant="secondary">{v.category}</Badge> : "—"}</TableCell>

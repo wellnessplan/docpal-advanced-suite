@@ -100,12 +100,17 @@ export default function OnboardingPage() {
       }
 
       // Create clinic
-      const { data: clinicId, error: clinicError } = await supabase
-        .rpc("create_clinic_and_link", {
-          p_name: clinicName,
-          p_phone: clinicPhone || null,
-          p_address: clinicAddress || null,
-        });
+      const { data: newClinic, error: clinicError } = await (supabase
+        .from("clinics") as any).insert({
+          name: clinicName,
+          phone: clinicPhone || null,
+          address: clinicAddress || null,
+        }).select("id").single();
+      const clinicId = newClinic?.id as string | null;
+      
+      if (clinicId && user) {
+        await (supabase.from("profiles") as any).update({ clinic_id: clinicId }).eq("user_id", user.id);
+      }
 
       if (clinicError) {
         toast.error("Failed to create clinic: " + clinicError.message);
@@ -125,21 +130,21 @@ export default function OnboardingPage() {
           const { data: publicUrl } = supabase.storage
             .from("clinic-logos")
             .getPublicUrl(path);
-          await supabase
-            .from("clinics")
+          await (supabase
+            .from("clinics") as any)
             .update({ logo_url: publicUrl.publicUrl, email: clinicEmail || null })
             .eq("id", clinicId);
         }
       } else if (clinicEmail && clinicId) {
-        await supabase
-          .from("clinics")
+        await (supabase
+          .from("clinics") as any)
           .update({ email: clinicEmail })
           .eq("id", clinicId);
       }
 
       // Create first patient if provided (Step 5)
       if (patientName.trim() && clinicId) {
-        await supabase.from("patients").insert({
+        await (supabase.from("patients") as any).insert({
           clinic_id: clinicId,
           full_name: patientName.trim(),
           phone: patientPhone || null,

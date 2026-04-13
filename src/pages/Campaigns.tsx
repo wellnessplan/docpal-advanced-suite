@@ -32,7 +32,7 @@ export default function CampaignsPage() {
     queryKey: ["campaigns", clinicId],
     queryFn: async () => {
       if (!clinicId) return [];
-      const { data } = await supabase.from("campaigns")
+      const { data } = await (supabase.from("campaigns") as any)
         .select("*")
         .eq("clinic_id", clinicId)
         .order("created_at", { ascending: false });
@@ -44,7 +44,7 @@ export default function CampaignsPage() {
   const addCampaign = useMutation({
     mutationFn: async () => {
       if (!clinicId) throw new Error("No clinic");
-      const { error } = await supabase.from("campaigns").insert({
+      const { error } = await (supabase.from("campaigns") as any).insert({
         clinic_id: clinicId,
         name: form.name,
         type: form.type,
@@ -66,7 +66,7 @@ export default function CampaignsPage() {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const update: any = { status };
       if (status === "sent") update.sent_at = new Date().toISOString();
-      const { error } = await supabase.from("campaigns").update(update).eq("id", id);
+      const { error } = await (supabase.from("campaigns") as any).update(update).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -126,7 +126,7 @@ export default function CampaignsPage() {
             <p className="text-muted-foreground">Loading...</p>
           ) : !campaigns?.length ? (
             <Card className="shadow-card border-0"><CardContent className="py-12 text-center text-muted-foreground">No campaigns yet. Create one to get started!</CardContent></Card>
-          ) : campaigns.map(c => (
+          ) : campaigns.map((c: any) => (
             <Card key={c.id} className="shadow-card border-0">
               <CardContent className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-4">
