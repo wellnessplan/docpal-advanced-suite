@@ -290,6 +290,72 @@ export type Database = {
           },
         ]
       }
+      daily_todos: {
+        Row: {
+          clinic_id: string
+          completed_at: string | null
+          created_at: string
+          dismissed_at: string | null
+          id: string
+          message: string
+          patient_id: string | null
+          patient_name: string | null
+          patient_phone: string | null
+          priority: string
+          reference_id: string | null
+          reference_table: string | null
+          status: string
+          task_type: string
+        }
+        Insert: {
+          clinic_id: string
+          completed_at?: string | null
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          message: string
+          patient_id?: string | null
+          patient_name?: string | null
+          patient_phone?: string | null
+          priority?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          status?: string
+          task_type: string
+        }
+        Update: {
+          clinic_id?: string
+          completed_at?: string | null
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          message?: string
+          patient_id?: string | null
+          patient_name?: string | null
+          patient_phone?: string | null
+          priority?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          status?: string
+          task_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_todos_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_todos_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_chairs: {
         Row: {
           available_days: string[] | null
