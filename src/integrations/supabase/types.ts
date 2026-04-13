@@ -649,8 +649,62 @@ export type Database = {
           },
         ]
       }
+      lab_directory: {
+        Row: {
+          clinic_id: string
+          contact_person: string | null
+          created_at: string
+          default_cost: number | null
+          default_tat_days: number | null
+          id: string
+          lab_name: string
+          notes: string | null
+          phone: string | null
+          speciality: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          clinic_id: string
+          contact_person?: string | null
+          created_at?: string
+          default_cost?: number | null
+          default_tat_days?: number | null
+          id?: string
+          lab_name: string
+          notes?: string | null
+          phone?: string | null
+          speciality?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          contact_person?: string | null
+          created_at?: string
+          default_cost?: number | null
+          default_tat_days?: number | null
+          id?: string
+          lab_name?: string
+          notes?: string | null
+          phone?: string | null
+          speciality?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_directory_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_orders: {
         Row: {
+          actual_delivery_date: string | null
           clinic_id: string
           cost: number | null
           created_at: string
@@ -658,16 +712,21 @@ export type Database = {
           fitted_date: string | null
           id: string
           item_description: string
+          lab_directory_id: string | null
           lab_name: string | null
           notes: string | null
           patient_id: string
           received_date: string | null
           sent_date: string | null
+          shade: string | null
+          special_instructions: string | null
           status: string
           tooth_treatment_id: string | null
           updated_at: string
+          work_type: string | null
         }
         Insert: {
+          actual_delivery_date?: string | null
           clinic_id: string
           cost?: number | null
           created_at?: string
@@ -675,16 +734,21 @@ export type Database = {
           fitted_date?: string | null
           id?: string
           item_description: string
+          lab_directory_id?: string | null
           lab_name?: string | null
           notes?: string | null
           patient_id: string
           received_date?: string | null
           sent_date?: string | null
+          shade?: string | null
+          special_instructions?: string | null
           status?: string
           tooth_treatment_id?: string | null
           updated_at?: string
+          work_type?: string | null
         }
         Update: {
+          actual_delivery_date?: string | null
           clinic_id?: string
           cost?: number | null
           created_at?: string
@@ -692,14 +756,18 @@ export type Database = {
           fitted_date?: string | null
           id?: string
           item_description?: string
+          lab_directory_id?: string | null
           lab_name?: string | null
           notes?: string | null
           patient_id?: string
           received_date?: string | null
           sent_date?: string | null
+          shade?: string | null
+          special_instructions?: string | null
           status?: string
           tooth_treatment_id?: string | null
           updated_at?: string
+          work_type?: string | null
         }
         Relationships: [
           {
@@ -707,6 +775,13 @@ export type Database = {
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_orders_lab_directory_id_fkey"
+            columns: ["lab_directory_id"]
+            isOneToOne: false
+            referencedRelation: "lab_directory"
             referencedColumns: ["id"]
           },
           {
