@@ -54,17 +54,12 @@ export default function FinancePage() {
 
   const addExpense = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("expenses").insert({
+      const { error } = await (supabase.from("expenses") as any).insert({
         clinic_id: clinicId!,
         category: form.category,
         description: form.description,
         amount: Number(form.amount),
         expense_date: form.expense_date,
-        payment_method: form.payment_method,
-        vendor_name: form.vendor_name || null,
-        gst_rate: Number(form.gst_rate),
-        reference_number: form.reference_number || null,
-        notes: form.notes || null,
       });
       if (error) throw error;
     },

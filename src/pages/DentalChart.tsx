@@ -67,8 +67,8 @@ export default function DentalChartPage() {
     if (!patientId || !clinicId) return;
     const loadPrescription = async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data: existing } = await supabase
-        .from("prescriptions")
+      const { data: existing } = await (supabase
+        .from("prescriptions") as any)
         .select("*")
         .eq("patient_id", patientId)
         .eq("clinic_id", clinicId)
@@ -78,7 +78,7 @@ export default function DentalChartPage() {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        const rx = existing[0];
+        const rx = existing[0] as any;
         setPrescriptionId(rx.id);
         setChiefComplaint(rx.chief_complaint || "");
         setGumCondition(rx.gum_condition || "normal");
@@ -89,7 +89,7 @@ export default function DentalChartPage() {
         setPrescriptionStatus(rx.status || "draft");
         setChartType((rx.chart_type as "adult" | "kids") || "adult");
       } else {
-        const { data: newRx } = await supabase.from("prescriptions").insert({
+        const { data: newRx } = await (supabase.from("prescriptions") as any).insert({
           patient_id: patientId, clinic_id: clinicId, chart_type: chartType,
         }).select("id").single();
         if (newRx) setPrescriptionId(newRx.id);
@@ -101,7 +101,7 @@ export default function DentalChartPage() {
   // Auto-save prescription fields (debounced)
   const savePrescription = useCallback(async () => {
     if (!prescriptionId) return;
-    await supabase.from("prescriptions").update({
+    await (supabase.from("prescriptions") as any).update({
       chief_complaint: chiefComplaint,
       gum_condition: gumCondition,
       alignment_condition: alignmentCondition,
@@ -134,7 +134,7 @@ export default function DentalChartPage() {
   const confirmPrescription = useMutation({
     mutationFn: async () => {
       await savePrescription();
-      await supabase.from("prescriptions").update({ status: "confirmed" }).eq("id", prescriptionId!);
+      await (supabase.from("prescriptions") as any).update({ status: "confirmed" }).eq("id", prescriptionId!);
     },
     onSuccess: () => {
       setPrescriptionStatus("confirmed");

@@ -46,7 +46,7 @@ export default function Inventory() {
     queryKey: ["inventory-transactions", clinicId],
     queryFn: async () => {
       if (!clinicId) return [];
-      const { data, error } = await supabase.from("inventory_transactions").select("*, inventory_items(name)").order("created_at", { ascending: false }).limit(50);
+      const { data, error } = await (supabase.from("inventory_transactions") as any).select("*, inventory_items(name)").order("created_at", { ascending: false }).limit(50);
       if (error) throw error;
       return data;
     },
@@ -56,18 +56,16 @@ export default function Inventory() {
   const addItem = useMutation({
     mutationFn: async () => {
       if (!clinicId) throw new Error("No clinic");
-      const { error } = await supabase.from("inventory_items").insert({
+      const { error } = await (supabase.from("inventory_items") as any).insert({
         clinic_id: clinicId,
         name: form.name,
         category: form.category,
-        sku: form.sku || null,
         quantity: parseInt(form.quantity) || 0,
         unit: form.unit,
         min_stock_level: parseInt(form.min_stock_level) || 5,
-        cost_per_unit: parseFloat(form.cost_per_unit) || 0,
-        supplier_name: form.supplier_name || null,
+        unit_cost: parseFloat(form.cost_per_unit) || 0,
+        supplier: form.supplier_name || null,
         expiry_date: form.expiry_date || null,
-        notes: form.notes || null,
       });
       if (error) throw error;
     },
@@ -87,9 +85,9 @@ export default function Inventory() {
       if (qty <= 0) throw new Error("Invalid quantity");
       const { error: updateErr } = await supabase.from("inventory_items").update({ quantity: restockItem.quantity + qty }).eq("id", restockItem.id);
       if (updateErr) throw updateErr;
-      const { error: txErr } = await supabase.from("inventory_transactions").insert({
+      const { error: txErr } = await (supabase.from("inventory_transactions") as any).insert({
         inventory_item_id: restockItem.id,
-        transaction_type: "restock" as any,
+        transaction_type: "restock",
         quantity_changed: qty,
         notes: `Restocked ${qty} ${restockItem.unit}`,
       });
