@@ -31,6 +31,46 @@ const TEMPLATE_LABELS: Record<string, string> = {
 
 export default function WhatsAppTemplatesTab({ clinicId }: { clinicId: string }) {
   const queryClient = useQueryClient();
+  const [wabaToken, setWabaToken] = useState("");
+  const [wabaPhoneId, setWabaPhoneId] = useState("");
+  const [savingCreds, setSavingCreds] = useState(false);
+
+  const { data: credSettings } = useQuery({
+    queryKey: ["clinic-settings-waba", clinicId],
+    queryFn: async () => {
+      const { data } = await supabase.from("clinic_settings").select("*").eq("clinic_id", clinicId).in("setting_key", ["waba_token", "waba_phone_id"]);
+      return data ?? [];
+    },
+    enabled: !!clinicId,
+  });
+
+  useEffect(() => {
+    if (credSettings) {
+      credSettings.forEach((s: any) => {
+        if (s.setting_key === "waba_token") setWabaToken(s.setting_value || "");
+        if (s.setting_key === "waba_phone_id") setWabaPhoneId(s.setting_value || "");
+      });
+    }
+  }, [credSettings]);
+
+  const saveCredentials = async () => {
+    setSavingCreds(true);
+    const items = [
+      { key: "waba_token", value: wabaToken },
+      { key: "waba_phone_id", value: wabaPhoneId },
+    ];
+    for (const item of items) {
+      const existing = credSettings?.find((s: any) => s.setting_key === item.key);
+      if (existing) {
+        await supabase.from("clinic_settings").update({ setting_value: item.value }).eq("id", (existing as any).id);
+      } else {
+        await supabase.from("clinic_settings").insert({ clinic_id: clinicId, setting_key: item.key, setting_value: item.value });
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["clinic-settings-waba"] });
+    toast.success("WhatsApp API credentials saved!");
+    setSavingCreds(false);
+  };
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ["whatsapp-templates", clinicId],
@@ -111,6 +151,44 @@ export default function WhatsAppTemplatesTab({ clinicId }: { clinicId: string })
 
   return (
     <div className="space-y-4">
+      {/* WABA Credentials Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <MessageSquare className="h-5 w-5" /> WhatsApp Business API Credentials
+          </CardTitle>
+          <CardDescription>
+            Enter your clinic's WhatsApp Business API token and Phone Number ID. These are specific to your clinic's WABA account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">API Token</Label>
+            <Input
+              type="password"
+              value={wabaToken}
+              onChange={e => setWabaToken(e.target.value)}
+              placeholder="EAAxxxxxxx..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Phone Number ID</Label>
+            <Input
+              value={wabaPhoneId}
+              onChange={e => setWabaPhoneId(e.target.value)}
+              placeholder="1234567890"
+            />
+          </div>
+          <Button size="sm" onClick={saveCredentials} disabled={savingCreds}>
+            <Save className="h-3.5 w-3.5 mr-1" /> {savingCreds ? "Saving..." : "Save Credentials"}
+          </Button>
+          {(!wabaToken || !wabaPhoneId) && (
+            <p className="text-xs text-destructive">⚠ Without credentials, messages will be logged as "simulated" and not actually sent.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Templates Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

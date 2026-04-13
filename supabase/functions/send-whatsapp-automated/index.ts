@@ -7,10 +7,13 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const WABA_TOKEN = Deno.env.get("WHATSAPP_API_TOKEN");
-const WABA_PHONE_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+interface WABACredentials {
+  token: string | null;
+  phoneId: string | null;
+}
 
 interface MessagePayload {
   clinicId: string;
@@ -18,9 +21,11 @@ interface MessagePayload {
   phone: string;
   templateName: string;
   messageBody: string;
+  waba: WABACredentials;
 }
 
 async function sendWhatsAppMessage(payload: MessagePayload): Promise<{ success: boolean; error?: string }> {
+  const { token: WABA_TOKEN, phoneId: WABA_PHONE_ID } = payload.waba;
   if (!WABA_TOKEN || !WABA_PHONE_ID) {
     // Log as "simulated" when no WABA credentials configured
     await supabase.from("whatsapp_logs").insert({
@@ -88,7 +93,25 @@ function replacePlaceholders(body: string, vars: Record<string, string>): string
   return result;
 }
 
+async function getClinicWABA(clinicId: string): Promise<WABACredentials> {
+  const { data } = await supabase
+    .from("clinic_settings")
+    .select("setting_key, setting_value")
+    .eq("clinic_id", clinicId)
+    .in("setting_key", ["waba_token", "waba_phone_id"]);
+  
+  let token: string | null = null;
+  let phoneId: string | null = null;
+  for (const s of data ?? []) {
+    if (s.setting_key === "waba_token") token = s.setting_value;
+    if (s.setting_key === "waba_phone_id") phoneId = s.setting_value;
+  }
+  return { token, phoneId };
+}
+
 async function processClinic(clinicId: string) {
+  const waba = await getClinicWABA(clinicId);
+
   const { data: templates } = await supabase
     .from("whatsapp_templates")
     .select("*")
@@ -124,7 +147,7 @@ async function processClinic(clinicId: string) {
         date: appt.appointment_date,
         time: appt.appointment_time,
       });
-      await sendWhatsAppMessage({ clinicId, patientId: appt.patient_id, phone: patient.phone, templateName: "appt_reminder_24h", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: appt.patient_id, phone: patient.phone, templateName: "appt_reminder_24h", messageBody: msg, waba });
       sent++;
     }
   }
@@ -151,7 +174,7 @@ async function processClinic(clinicId: string) {
         patient_name: rec.patients.full_name,
         treatment: t.treatment_name,
       });
-      await sendWhatsAppMessage({ clinicId, patientId: rec.patient_id, phone: rec.patients.phone, templateName: "post_treatment_followup", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: rec.patient_id, phone: rec.patients.phone, templateName: "post_treatment_followup", messageBody: msg, waba });
       sent++;
     }
   }
@@ -181,7 +204,7 @@ async function processClinic(clinicId: string) {
       if ((count ?? 0) > 0) continue;
 
       const msg = replacePlaceholders(recallTemplate.message_body, { patient_name: p.full_name });
-      await sendWhatsAppMessage({ clinicId, patientId: p.id, phone: p.phone!, templateName: "recall_6month", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: p.id, phone: p.phone!, templateName: "recall_6month", messageBody: msg, waba });
       sent++;
     }
   }
@@ -205,7 +228,7 @@ async function processClinic(clinicId: string) {
       const rec = s.tooth_records as any;
       if (rec?.clinic_id !== clinicId || !rec?.patients?.phone) continue;
       const msg = replacePlaceholders(brushTemplate.message_body, { patient_name: rec.patients.full_name });
-      await sendWhatsAppMessage({ clinicId, patientId: rec.patient_id, phone: rec.patients.phone, templateName: "brush_change_reminder", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: rec.patient_id, phone: rec.patients.phone, templateName: "brush_change_reminder", messageBody: msg, waba });
       sent++;
     }
   }
@@ -232,7 +255,7 @@ async function processClinic(clinicId: string) {
         amount: String(inv.amount),
         due_date: inv.due_date!,
       });
-      await sendWhatsAppMessage({ clinicId, patientId: inv.patient_id, phone: patient.phone, templateName: "payment_due_reminder", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: inv.patient_id, phone: patient.phone, templateName: "payment_due_reminder", messageBody: msg, waba });
       sent++;
     }
   }
@@ -256,7 +279,7 @@ async function processClinic(clinicId: string) {
       if (dobMonthDay !== monthDay) continue;
 
       const msg = replacePlaceholders(bdayTemplate.message_body, { patient_name: p.full_name });
-      await sendWhatsAppMessage({ clinicId, patientId: p.id, phone: p.phone!, templateName: "birthday_greeting", messageBody: msg });
+      await sendWhatsAppMessage({ clinicId, patientId: p.id, phone: p.phone!, templateName: "birthday_greeting", messageBody: msg, waba });
       sent++;
     }
   }
