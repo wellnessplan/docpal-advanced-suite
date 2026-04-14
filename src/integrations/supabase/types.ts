@@ -334,6 +334,92 @@ export type Database = {
           },
         ]
       }
+      consultation_logs: {
+        Row: {
+          appointment_id: string | null
+          billing_at: string | null
+          checkin_at: string | null
+          clinic_id: string
+          consultation_end: string | null
+          consultation_start: string | null
+          created_at: string
+          doctor_id: string
+          id: string
+          notes: string | null
+          patient_id: string
+          payment_at: string | null
+          procedure_end: string | null
+          procedure_start: string | null
+          procedure_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          billing_at?: string | null
+          checkin_at?: string | null
+          clinic_id: string
+          consultation_end?: string | null
+          consultation_start?: string | null
+          created_at?: string
+          doctor_id: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          payment_at?: string | null
+          procedure_end?: string | null
+          procedure_start?: string | null
+          procedure_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          billing_at?: string | null
+          checkin_at?: string | null
+          clinic_id?: string
+          consultation_end?: string | null
+          consultation_start?: string | null
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          payment_at?: string | null
+          procedure_end?: string | null
+          procedure_start?: string | null
+          procedure_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultation_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultation_logs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultation_logs_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultation_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_todos: {
         Row: {
           clinic_id: string
