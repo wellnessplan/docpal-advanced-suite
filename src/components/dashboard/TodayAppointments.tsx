@@ -24,9 +24,8 @@ export default function TodayAppointments() {
       const { data } = await supabase.from("appointments")
         .select("*, patients(full_name, phone)")
         .eq("clinic_id", clinicId!)
-        .gte("scheduled_at", today + "T00:00:00")
-        .lt("scheduled_at", today + "T23:59:59")
-        .order("scheduled_at", { ascending: true });
+        .eq("appointment_date", today)
+        .order("appointment_time", { ascending: true });
       return data ?? [];
     },
     enabled: !!clinicId,
@@ -54,11 +53,11 @@ export default function TodayAppointments() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">{apt.patients?.full_name}</p>
-                    <p className="text-xs text-muted-foreground">{apt.type} • {new Date(apt.scheduled_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+                    <p className="text-xs text-muted-foreground">{apt.type} • {apt.appointment_time?.slice(0, 5)}</p>
                   </div>
                 </div>
-                <Badge variant="secondary" className={`text-xs ${statusColor[apt.status] || ""}`}>
-                  {apt.status.replace("_", " ")}
+                <Badge variant="secondary" className={`text-xs capitalize ${statusColor[apt.status] || ""}`}>
+                  {apt.status?.replace(/_/g, " ")}
                 </Badge>
               </div>
             ))}

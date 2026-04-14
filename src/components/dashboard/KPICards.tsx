@@ -29,7 +29,7 @@ export default function KPICards() {
     queryKey: ["kpi-today-appts", clinicId],
     queryFn: async () => {
       const { count } = await supabase.from("appointments").select("*", { count: "exact", head: true })
-        .eq("clinic_id", clinicId!).gte("scheduled_at", today + "T00:00:00").lt("scheduled_at", today + "T23:59:59");
+        .eq("clinic_id", clinicId!).eq("appointment_date", today);
       return count ?? 0;
     },
     enabled: !!clinicId,
@@ -61,7 +61,7 @@ export default function KPICards() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const { data } = await supabase.from("appointments").select("status")
-        .eq("clinic_id", clinicId!).gte("scheduled_at", thirtyDaysAgo.toISOString());
+        .eq("clinic_id", clinicId!).gte("appointment_date", thirtyDaysAgo.toISOString().split("T")[0]);
       if (!data?.length) return 0;
       const noShows = data.filter(a => a.status === "no_show").length;
       return Math.round((noShows / data.length) * 100);

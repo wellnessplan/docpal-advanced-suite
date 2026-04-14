@@ -70,8 +70,8 @@ export default function Performance() {
         .from("appointments")
         .select("*")
         .eq("clinic_id", clinicId!)
-        .gte("scheduled_at", startISO)
-        .lte("scheduled_at", endISO);
+        .gte("appointment_date", startDate.toISOString().split("T")[0])
+        .lte("appointment_date", new Date().toISOString().split("T")[0]);
       return data || [];
     },
     enabled: !!clinicId,
