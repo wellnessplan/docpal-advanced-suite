@@ -24,6 +24,7 @@ import WhatsAppTemplatesTab from "@/components/settings/WhatsAppTemplatesTab";
 import WebhooksTab from "@/components/settings/WebhooksTab";
 import ThemeBrandingTab from "@/components/settings/ThemeBrandingTab";
 import DataImportTab from "@/components/settings/DataImportTab";
+import DiscountCouponsTab from "@/components/settings/DiscountCouponsTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -731,6 +732,7 @@ export default function SettingsPage() {
              <TabsTrigger value="letterhead">Letterhead & PDF</TabsTrigger>
              <TabsTrigger value="team">Team</TabsTrigger>
              <TabsTrigger value="billing">Billing/GST</TabsTrigger>
+             <TabsTrigger value="coupons">Coupons</TabsTrigger>
              <TabsTrigger value="branding">Branding</TabsTrigger>
              <TabsTrigger value="integrations">Integrations</TabsTrigger>
              <TabsTrigger value="import">Data Import</TabsTrigger>
@@ -758,7 +760,11 @@ export default function SettingsPage() {
             <BillingTab clinicId={clinicId} />
           </TabsContent>
 
-          <TabsContent value="branding">
+           <TabsContent value="coupons">
+             <DiscountCouponsTab clinicId={clinicId} />
+           </TabsContent>
+
+           <TabsContent value="branding">
              <ThemeBrandingTab clinicId={clinicId} />
            </TabsContent>
 
