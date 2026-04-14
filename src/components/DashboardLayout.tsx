@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useThemeLoader } from "@/hooks/useThemeLoader";
 import MobileBottomNav from "./MobileBottomNav";
 import InstallPromptBanner from "./InstallPromptBanner";
 import {
@@ -106,6 +107,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
   useKeyboardShortcuts();
+  useThemeLoader();
 
   const allItems = navGroups.flatMap((g) => g.items);
   const currentPageLabel = allItems.find((i) => i.href === pathname || pathname.startsWith(i.href + "/"))?.label ?? "DoctorsBuddy";
