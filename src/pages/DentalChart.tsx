@@ -247,9 +247,10 @@ export default function DentalChartPage() {
                   patient={patient}
                   patientId={patientId || ""}
                   clinic={clinic}
-                  doctorName="" // TODO: from profile
+                  doctorName={profile?.full_name || "Doctor"}
                   doctorRegistration=""
-                  doctorDegree=""
+                  doctorDegree={profile?.role || ""}
+                  doctorSpecialization={profile?.specialization || ""}
                   chiefComplaint={chiefComplaint}
                   diagnosisNotes={diagnosisNotes}
                   treatments={treatmentsList}
