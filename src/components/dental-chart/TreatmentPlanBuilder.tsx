@@ -14,11 +14,18 @@ import { Plus, Trash2, ClipboardList, CalendarDays, IndianRupee, CheckCircle2, S
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 
+interface ExamFinding {
+  tooth: number | string;
+  condition: string;
+  treatment: string;
+}
+
 interface TreatmentPlanBuilderProps {
   patientId: string;
   clinicId: string;
   patient: any;
   clinic: any;
+  examFindings?: ExamFinding[];
 }
 
 const TREATMENTS = [
