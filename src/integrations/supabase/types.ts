@@ -220,6 +220,68 @@ export type Database = {
           },
         ]
       }
+      clinic_subscriptions: {
+        Row: {
+          amount: number | null
+          approved_at: string | null
+          approved_by: string | null
+          billing_cycle: string | null
+          clinic_id: string
+          created_at: string
+          id: string
+          next_billing_date: string | null
+          notes: string | null
+          payment_id: string | null
+          payment_provider: string | null
+          plan_name: string | null
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          billing_cycle?: string | null
+          clinic_id: string
+          created_at?: string
+          id?: string
+          next_billing_date?: string | null
+          notes?: string | null
+          payment_id?: string | null
+          payment_provider?: string | null
+          plan_name?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          billing_cycle?: string | null
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          next_billing_date?: string | null
+          notes?: string | null
+          payment_id?: string | null
+          payment_provider?: string | null
+          plan_name?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_subscriptions_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinics: {
         Row: {
           address: string | null
@@ -2582,6 +2644,24 @@ export type Database = {
           },
         ]
       }
+      super_admins: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tooth_conditions: {
         Row: {
           condition_name: string
@@ -3149,6 +3229,10 @@ export type Database = {
         Args: { p_item_id: string; p_quantity: number }
         Returns: undefined
       }
+      get_clinic_subscription_status: {
+        Args: { p_clinic_id: string }
+        Returns: string
+      }
       get_next_token_number: {
         Args: { p_clinic_id: string; p_date: string }
         Returns: number
@@ -3161,6 +3245,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
