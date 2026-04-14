@@ -232,6 +232,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </nav>
 
             <div className="p-2 space-y-0.5">
+              {isSuperAdmin && (
+                <Link
+                  to="/super-admin"
+                  title={collapsed ? "Super Admin" : undefined}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors",
+                    pathname === "/super-admin"
+                      ? "bg-sidebar-primary/15 text-sidebar-primary"
+                      : "text-amber-400 hover:bg-white/[0.08]"
+                  )}
+                >
+                  <Shield className="h-[18px] w-[18px] shrink-0" />
+                  {!collapsed && <span>Super Admin</span>}
+                </Link>
+              )}
               <button
                 onClick={() => setCollapsed(!collapsed)}
                 className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-sidebar-foreground hover:bg-white/[0.06] transition-colors"
