@@ -31,7 +31,7 @@ const navGroups: NavGroup[] = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/today-schedule", label: "Today's Schedule", icon: CalendarClock },
       { href: "/queue", label: "Queue", icon: ListOrdered },
-      { href: "/tasks", label: "Today's Tasks", icon: ClipboardList },
+      { href: "/tasks", label: "Follow-Ups", icon: ClipboardList },
     ],
   },
   {
