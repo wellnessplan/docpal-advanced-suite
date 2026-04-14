@@ -1097,6 +1097,50 @@ export type Database = {
           },
         ]
       }
+      membership_plans: {
+        Row: {
+          amount: number
+          benefits: string[] | null
+          clinic_id: string
+          created_at: string
+          discount_percent: number | null
+          duration_months: number
+          id: string
+          plan_name: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          benefits?: string[] | null
+          clinic_id: string
+          created_at?: string
+          discount_percent?: number | null
+          duration_months?: number
+          id?: string
+          plan_name: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          benefits?: string[] | null
+          clinic_id?: string
+          created_at?: string
+          discount_percent?: number | null
+          duration_months?: number
+          id?: string
+          plan_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_plans_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           amount: number
