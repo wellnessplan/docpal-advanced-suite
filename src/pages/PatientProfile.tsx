@@ -17,8 +17,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Smile, CalendarDays, ChevronLeft, Plus,
-  Phone, Mail, User2, HeartPulse, FileText, Clock, IndianRupee
+  Phone, Mail, User2, HeartPulse, FileText, Clock, IndianRupee, Printer
 } from "lucide-react";
+import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
 import MedicalHistoryTab from "@/components/patients/MedicalHistoryTab";
 import DocumentsTab from "@/components/patients/DocumentsTab";
 import TreatmentTimeline from "@/components/patients/TreatmentTimeline";
