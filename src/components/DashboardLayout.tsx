@@ -110,6 +110,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
   useKeyboardShortcuts();
   useThemeLoader();
+  const { data: isSuperAdmin } = useSuperAdmin();
 
   const allItems = navGroups.flatMap((g) => g.items);
   const currentPageLabel = allItems.find((i) => i.href === pathname || pathname.startsWith(i.href + "/"))?.label ?? "DoctorsBuddy";
