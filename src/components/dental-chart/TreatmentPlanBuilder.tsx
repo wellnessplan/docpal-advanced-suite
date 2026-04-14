@@ -383,9 +383,18 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
             <ClipboardList className="h-4 w-4 text-primary" />
             Treatment Plans
           </h3>
-          <Button size="sm" className="gap-1" onClick={() => createNewPlan.mutate()} disabled={createNewPlan.isPending}>
-            <Plus className="h-3 w-3" />{createNewPlan.isPending ? "Creating..." : "New Plan"}
-          </Button>
+          <div className="flex gap-1.5">
+            {examFindings.length > 0 && (
+              <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => {
+                createNewPlan.mutate();
+              }}>
+                Import from Exam ({examFindings.length})
+              </Button>
+            )}
+            <Button size="sm" className="gap-1" onClick={() => createNewPlan.mutate()} disabled={createNewPlan.isPending}>
+              <Plus className="h-3 w-3" />{createNewPlan.isPending ? "Creating..." : "New Plan"}
+            </Button>
+          </div>
         </div>
 
         {existingPlans.length === 0 ? (
