@@ -5,10 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Download, Printer, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
+import QRCode from "qrcode";
 import type { Medication } from "./MedicationPanel";
 
 interface PrescriptionDownloadProps {
   patient: any;
+  patientId: string;
   clinic: any;
   doctorName: string;
   doctorRegistration: string;
@@ -28,12 +30,12 @@ const PAPER_SIZES: Record<PaperSize, { w: number; h: number; label: string }> = 
 };
 
 export default function PrescriptionDownload({
-  patient, clinic, doctorName, doctorRegistration, doctorDegree,
+  patient, patientId, clinic, doctorName, doctorRegistration, doctorDegree,
   chiefComplaint, diagnosisNotes, treatments, medications,
 }: PrescriptionDownloadProps) {
   const [paperSize, setPaperSize] = useState<PaperSize>("a5");
 
-  const buildPDF = () => {
+  const buildPDF = async () => {
     const ps = PAPER_SIZES[paperSize];
     const doc = new jsPDF({ format: [ps.w, ps.h], unit: "mm" });
     const lm = 10;
@@ -230,6 +232,18 @@ export default function PrescriptionDownload({
       y += 3;
     }
 
+    // ─── QR Code (bottom-left) ───
+    const patientUrl = `${window.location.origin}/patients/${patientId}`;
+    try {
+      const qrDataUrl = await QRCode.toDataURL(patientUrl, { width: 200, margin: 1 });
+      const qrSize = paperSize === "a6" ? 18 : 22;
+      const qrY = Math.min(y + 4, ps.h - qrSize - 10);
+      doc.addImage(qrDataUrl, "PNG", lm, qrY, qrSize, qrSize);
+      doc.setFontSize(5);
+      doc.setTextColor(140);
+      doc.text("Scan for patient details", lm + qrSize / 2, qrY + qrSize + 3, { align: "center" });
+    } catch {}
+
     // ─── Footer: Signature ───
     const sigY = Math.max(y + 12, ps.h - 22);
     if (sigY < ps.h - 8) {
@@ -249,14 +263,14 @@ export default function PrescriptionDownload({
     return doc;
   };
 
-  const handleDownload = () => {
-    const doc = buildPDF();
+  const handleDownload = async () => {
+    const doc = await buildPDF();
     doc.save(`Rx_${patient?.full_name}_${new Date().toISOString().split("T")[0]}.pdf`);
     toast.success("Prescription PDF downloaded");
   };
 
-  const handlePrint = () => {
-    const doc = buildPDF();
+  const handlePrint = async () => {
+    const doc = await buildPDF();
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
     const win = window.open(url, "_blank");
@@ -264,7 +278,7 @@ export default function PrescriptionDownload({
   };
 
   const handleShare = async () => {
-    const doc = buildPDF();
+    const doc = await buildPDF();
     const blob = doc.output("blob");
     const file = new File([blob], `Rx_${patient?.full_name}.pdf`, { type: "application/pdf" });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {

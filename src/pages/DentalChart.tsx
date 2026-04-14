@@ -237,6 +237,7 @@ export default function DentalChartPage() {
                 <Separator />
                 <PrescriptionDownload
                   patient={patient}
+                  patientId={patientId || ""}
                   clinic={clinic}
                   doctorName="" // TODO: from profile
                   doctorRegistration=""
