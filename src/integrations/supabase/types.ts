@@ -2592,10 +2592,14 @@ export type Database = {
           id: string
           notes: string | null
           procedure_name: string
+          scheduled_date: string | null
+          selected_option: string | null
           sort_order: number | null
           status: string
           tooth_number: number | null
+          treatment_options: Json | null
           treatment_plan_id: string
+          treatment_type: string | null
         }
         Insert: {
           created_at?: string
@@ -2603,10 +2607,14 @@ export type Database = {
           id?: string
           notes?: string | null
           procedure_name: string
+          scheduled_date?: string | null
+          selected_option?: string | null
           sort_order?: number | null
           status?: string
           tooth_number?: number | null
+          treatment_options?: Json | null
           treatment_plan_id: string
+          treatment_type?: string | null
         }
         Update: {
           created_at?: string
@@ -2614,10 +2622,14 @@ export type Database = {
           id?: string
           notes?: string | null
           procedure_name?: string
+          scheduled_date?: string | null
+          selected_option?: string | null
           sort_order?: number | null
           status?: string
           tooth_number?: number | null
+          treatment_options?: Json | null
           treatment_plan_id?: string
+          treatment_type?: string | null
         }
         Relationships: [
           {
@@ -2631,40 +2643,52 @@ export type Database = {
       }
       treatment_plans: {
         Row: {
+          accepted_at: string | null
           approved_at: string | null
           approved_by: string | null
           clinic_id: string
           created_at: string
+          doctor_notes: string | null
           id: string
           notes: string | null
           patient_id: string
           plan_name: string
+          presented_at: string | null
+          signature_url: string | null
           status: string
           total_estimated_cost: number | null
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
           approved_at?: string | null
           approved_by?: string | null
           clinic_id: string
           created_at?: string
+          doctor_notes?: string | null
           id?: string
           notes?: string | null
           patient_id: string
           plan_name?: string
+          presented_at?: string | null
+          signature_url?: string | null
           status?: string
           total_estimated_cost?: number | null
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
           approved_at?: string | null
           approved_by?: string | null
           clinic_id?: string
           created_at?: string
+          doctor_notes?: string | null
           id?: string
           notes?: string | null
           patient_id?: string
           plan_name?: string
+          presented_at?: string | null
+          signature_url?: string | null
           status?: string
           total_estimated_cost?: number | null
           updated_at?: string
