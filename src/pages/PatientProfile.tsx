@@ -99,6 +99,35 @@ export default function PatientProfilePage() {
     enabled: !!id,
   });
 
+  const { data: clinic } = useQuery({
+    queryKey: ["clinic", clinicId],
+    queryFn: async () => {
+      const { data } = await supabase.from("clinics").select("*").eq("id", clinicId!).single();
+      return data;
+    },
+    enabled: !!clinicId,
+  });
+
+  const { data: receiptItems = [] } = useQuery({
+    queryKey: ["receipt-items", receiptInvoice?.id],
+    queryFn: async () => {
+      if (!receiptInvoice?.id) return [];
+      const { data } = await supabase.from("invoice_items").select("*").eq("invoice_id", receiptInvoice.id);
+      return data ?? [];
+    },
+    enabled: !!receiptInvoice?.id,
+  });
+
+  const { data: receiptPayments = [] } = useQuery({
+    queryKey: ["receipt-payments", receiptInvoice?.id],
+    queryFn: async () => {
+      if (!receiptInvoice?.id) return [];
+      const { data } = await supabase.from("payments").select("*").eq("invoice_id", receiptInvoice.id).order("payment_date");
+      return data ?? [];
+    },
+    enabled: !!receiptInvoice?.id,
+  });
+
   // Add new treatment directly
   const addTreatment = useMutation({
     mutationFn: async () => {
