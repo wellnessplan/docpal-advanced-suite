@@ -582,6 +582,46 @@ export default function PatientProfilePage() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Partial Payment Dialog */}
+        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-base">Record Payment</DialogTitle>
+            </DialogHeader>
+            {paymentInvoice && (
+              <div className="space-y-4">
+                <div className="bg-muted/50 rounded-md p-3 text-sm space-y-1">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Invoice Total</span><span className="font-medium">₹{Number(paymentInvoice.amount).toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Already Paid</span><span className="text-success">₹{Number(paymentInvoice.paid_amount || 0).toLocaleString()}</span></div>
+                  <div className="flex justify-between border-t pt-1"><span className="font-medium">Balance Due</span><span className="font-bold text-destructive">₹{(Number(paymentInvoice.amount) - Number(paymentInvoice.paid_amount || 0)).toLocaleString()}</span></div>
+                </div>
+                <div>
+                  <Label className="text-xs">Payment Amount (₹)</Label>
+                  <Input type="number" className="h-9" value={paymentAmount}
+                    onChange={e => setPaymentAmount(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Payment Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {["cash", "upi", "card", "bank_transfer", "cheque"].map(m =>
+                        <SelectItem key={m} value={m}>{m.replace("_", " ").toUpperCase()}</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
+                  <Button className="flex-1" onClick={() => recordPayment.mutate()} disabled={recordPayment.isPending}>
+                    {recordPayment.isPending ? "Recording..." : "Record Payment"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
