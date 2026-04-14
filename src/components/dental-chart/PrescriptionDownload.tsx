@@ -36,197 +36,214 @@ export default function PrescriptionDownload({
   const buildPDF = () => {
     const ps = PAPER_SIZES[paperSize];
     const doc = new jsPDF({ format: [ps.w, ps.h], unit: "mm" });
-    const lm = 8;
-    const rm = ps.w - 8;
+    const lm = 10;
+    const rm = ps.w - 10;
     const pw = rm - lm;
-    let y = 10;
-    const lineH = 4;
+    let y = 12;
 
-    // --- HEADER: Clinic name centered ---
-    doc.setFontSize(14);
+    const checkPage = (needed: number) => {
+      if (y + needed > ps.h - 15) { doc.addPage([ps.w, ps.h]); y = 12; }
+    };
+
+    // ─── HEADER: Clinic Name ───
+    doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
+    doc.setTextColor(20, 20, 20);
     doc.text(clinic?.name || "Dental Clinic", ps.w / 2, y, { align: "center" });
     y += 5;
 
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(80);
+    doc.setTextColor(100);
     if (clinic?.address) {
-      const addrLines = doc.splitTextToSize(clinic.address, pw - 20);
+      const addrLines = doc.splitTextToSize(clinic.address, pw - 10);
       addrLines.forEach((line: string) => {
         doc.text(line, ps.w / 2, y, { align: "center" });
         y += 3;
       });
     }
-    if (clinic?.phone) {
-      doc.text(`Ph: ${clinic.phone}`, ps.w / 2, y, { align: "center" });
-      y += 3;
-    }
-    if (clinic?.email) {
-      doc.text(clinic.email, ps.w / 2, y, { align: "center" });
+    const contactParts: string[] = [];
+    if (clinic?.phone) contactParts.push(`Ph: ${clinic.phone}`);
+    if (clinic?.email) contactParts.push(clinic.email);
+    if (contactParts.length > 0) {
+      doc.text(contactParts.join("  |  "), ps.w / 2, y, { align: "center" });
       y += 3;
     }
 
-    // Divider
+    // ─── Divider ───
     y += 1;
-    doc.setDrawColor(200);
-    doc.setLineWidth(0.3);
+    doc.setDrawColor(180);
+    doc.setLineWidth(0.4);
     doc.line(lm, y, rm, y);
-    y += 4;
+    y += 5;
 
-    // --- PATIENT + DOCTOR ROW ---
-    doc.setTextColor(30);
-    doc.setFontSize(8);
+    // ─── PATIENT (left) + DOCTOR (right) ───
+    const leftX = lm;
+    const rightX = rm;
+    const infoY = y;
+
+    doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text(patient?.full_name || "", lm, y);
-    doc.setFont("helvetica", "normal");
+    doc.setTextColor(30);
+    doc.text(patient?.full_name || "Patient", leftX, infoY);
+    doc.text(doctorName || "Doctor", rightX, infoY, { align: "right" });
+
+    y = infoY + 4;
     doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(80);
 
-    // Doctor info right
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30);
-    doc.text(doctorName || "Doctor", rm, y, { align: "right" });
+    if (patient?.phone) doc.text(patient.phone, leftX, y);
+    if (doctorDegree) doc.text(doctorDegree, rightX, y, { align: "right" });
     y += 3.5;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.5);
-    doc.setTextColor(80);
-    if (patient?.phone) doc.text(patient.phone, lm, y);
-    if (doctorDegree) doc.text(doctorDegree, rm, y, { align: "right" });
-    y += 3;
-    if (patient?.email) doc.text(patient.email, lm, y);
-    if (doctorRegistration) doc.text(`Reg No.: ${doctorRegistration}`, rm, y, { align: "right" });
-    y += 4;
+    if (patient?.email) doc.text(patient.email, leftX, y);
+    if (doctorRegistration) doc.text(`Reg: ${doctorRegistration}`, rightX, y, { align: "right" });
+    y += 5;
 
-    // PRESCRIPTION title
-    doc.setFontSize(10);
+    // ─── PRESCRIPTION Title ───
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30);
     doc.text("PRESCRIPTION", ps.w / 2, y, { align: "center" });
-    y += 5;
+    y += 6;
 
-    // Date
-    doc.setFontSize(7);
+    // ─── Date ───
+    doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text(`Date: ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`, lm, y);
+    doc.setTextColor(30);
+    doc.text(`Date: ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`, leftX, y);
     y += 5;
 
-    // Chief Complaint
+    // ─── Chief Complaint ───
     if (chiefComplaint) {
-      doc.setFontSize(7);
+      checkPage(12);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30);
-      doc.text("Chief Complaint:", lm, y);
-      y += 3.5;
+      doc.text("Chief Complaint:", leftX, y);
+      y += 4;
       doc.setFont("helvetica", "normal");
       doc.setTextColor(60);
       const lines = doc.splitTextToSize(chiefComplaint, pw);
       lines.forEach((line: string) => {
-        if (y > ps.h - 20) { doc.addPage([ps.w, ps.h]); y = 10; }
-        doc.text(line, lm, y);
-        y += 3;
+        checkPage(4);
+        doc.text(line, leftX, y);
+        y += 3.5;
       });
       y += 2;
     }
 
-    // Brief Treatment Summary (no cost)
+    // ─── Treatment Summary ───
     if (treatments.length > 0) {
+      checkPage(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30);
-      doc.setFontSize(7);
-      doc.text("Treatment Summary:", lm, y);
-      y += 4;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.5);
-      treatments.forEach((t) => {
-        if (y > ps.h - 20) { doc.addPage([ps.w, ps.h]); y = 10; }
-        const label = `• Tooth #${t.tooth} — ${t.condition ? t.condition + " → " : ""}${t.treatment || "—"}`;
-        const tLines = doc.splitTextToSize(label, pw - 4);
-        tLines.forEach((line: string) => {
-          doc.text(line, lm + 2, y);
-          y += 3;
-        });
-      });
-      y += 2;
-    }
-
-    // Diagnosis notes
-    if (diagnosisNotes) {
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30);
-      doc.setFontSize(7);
-      doc.text("Notes:", lm, y);
-      y += 3.5;
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(60);
-      const lines = doc.splitTextToSize(diagnosisNotes, pw);
-      lines.forEach((line: string) => {
-        if (y > ps.h - 20) { doc.addPage([ps.w, ps.h]); y = 10; }
-        doc.text(line, lm, y);
-        y += 3;
-      });
-      y += 2;
-    }
-
-    // Rx Medications
-    if (medications.length > 0) {
-      y += 1;
-      doc.setFont("helvetica", "bolditalic");
-      doc.setFontSize(12);
-      doc.setTextColor(30);
-      doc.text("Rx", lm, y);
+      doc.setFontSize(8);
+      doc.text("Treatment Summary:", leftX, y);
       y += 5;
 
-      // Table header
-      const colW = [pw * 0.28, pw * 0.14, pw * 0.18, pw * 0.16, pw * 0.24];
-      const colX = [lm];
-      for (let i = 1; i < colW.length; i++) colX.push(colX[i - 1] + colW[i - 1]);
-      const headers = ["Medicine", "Dosage", "Duration", "Measure", "Instruction"];
-
-      doc.setFontSize(6.5);
-      doc.setFont("helvetica", "bold");
-      doc.setFillColor(240, 240, 240);
-      doc.rect(lm, y - 3, pw, 5, "F");
-      headers.forEach((h, i) => doc.text(h, colX[i] + 1, y));
-      y += 4;
-
-      doc.setDrawColor(200);
-      doc.line(lm, y - 1, rm, y - 1);
-
       doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
       doc.setTextColor(40);
-      medications.forEach((med) => {
-        if (y > ps.h - 15) { doc.addPage([ps.w, ps.h]); y = 10; }
-        const row = [med.name, med.dosage, med.duration, "", med.frequency];
-        row.forEach((val, i) => {
-          const cellLines = doc.splitTextToSize(val || "", colW[i] - 2);
-          cellLines.forEach((line: string, li: number) => {
-            doc.text(line, colX[i] + 1, y + li * 3);
-          });
+      treatments.forEach((t) => {
+        checkPage(6);
+        const arrow = t.condition && t.treatment ? " → " : "";
+        const label = `•  Tooth #${t.tooth}  —  ${t.condition || ""}${arrow}${t.treatment || "—"}`;
+        const tLines = doc.splitTextToSize(label, pw - 6);
+        tLines.forEach((line: string) => {
+          doc.text(line, leftX + 3, y);
+          y += 3.5;
         });
-        const maxLines = Math.max(...row.map(v => doc.splitTextToSize(v || "", colW[0]).length));
-        y += Math.max(maxLines, 1) * 3 + 1.5;
-        doc.setDrawColor(230);
-        doc.line(lm, y - 1, rm, y - 1);
       });
-      y += 2;
+      y += 3;
     }
 
-    // Footer: Signature + clinic name
-    const footerY = Math.max(y + 10, ps.h - 20);
-    if (footerY < ps.h - 5) {
-      doc.setDrawColor(30);
-      doc.line(rm - 40, footerY, rm, footerY);
-      doc.setFontSize(6.5);
+    // ─── Notes ───
+    if (diagnosisNotes) {
+      checkPage(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30);
+      doc.setFontSize(8);
+      doc.text("Notes:", leftX, y);
+      y += 4;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(60);
+      doc.setFontSize(7.5);
+      const lines = doc.splitTextToSize(diagnosisNotes, pw);
+      lines.forEach((line: string) => {
+        checkPage(4);
+        doc.text(line, leftX, y);
+        y += 3.5;
+      });
+      y += 3;
+    }
+
+    // ─── Rx Medications ───
+    if (medications.length > 0) {
+      checkPage(20);
+      y += 1;
+      doc.setFont("helvetica", "bolditalic");
+      doc.setFontSize(14);
+      doc.setTextColor(30);
+      doc.text("Rx", leftX, y);
+      y += 6;
+
+      // Table columns — proportional widths
+      const colWidths = [pw * 0.30, pw * 0.13, pw * 0.17, pw * 0.15, pw * 0.25];
+      const colX = [leftX];
+      for (let i = 1; i < colWidths.length; i++) colX.push(colX[i - 1] + colWidths[i - 1]);
+      const headers = ["Medicine", "Dosage", "Duration", "Measure", "Instruction"];
+
+      // Header row
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30);
+      doc.setFillColor(245, 245, 245);
+      doc.rect(leftX, y - 3.5, pw, 6, "F");
+      headers.forEach((h, i) => doc.text(h, colX[i] + 1.5, y));
+      y += 5;
+
+      doc.setDrawColor(200);
+      doc.setLineWidth(0.2);
+      doc.line(leftX, y - 1.5, rm, y - 1.5);
+
+      // Data rows
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(40);
+      doc.setFontSize(7);
+      medications.forEach((med) => {
+        checkPage(8);
+        const row = [med.name, med.dosage, med.duration, "", med.frequency];
+        let maxRowH = 0;
+        row.forEach((val, i) => {
+          const cellLines = doc.splitTextToSize(val || "", colWidths[i] - 3);
+          cellLines.forEach((line: string, li: number) => {
+            doc.text(line, colX[i] + 1.5, y + li * 3.2);
+          });
+          maxRowH = Math.max(maxRowH, cellLines.length * 3.2);
+        });
+        y += Math.max(maxRowH, 3.2) + 2;
+        doc.setDrawColor(230);
+        doc.line(leftX, y - 1, rm, y - 1);
+      });
+      y += 3;
+    }
+
+    // ─── Footer: Signature ───
+    const sigY = Math.max(y + 12, ps.h - 22);
+    if (sigY < ps.h - 8) {
+      doc.setDrawColor(60);
+      doc.setLineWidth(0.3);
+      doc.line(rm - 45, sigY, rm, sigY);
+      doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(80);
-      doc.text("Doctor's Signature", rm - 20, footerY + 4, { align: "center" });
+      doc.text("Doctor's Signature", rm - 22.5, sigY + 4, { align: "center" });
 
       doc.setFontSize(6);
-      doc.setTextColor(150);
-      doc.text(`For ${clinic?.name || "Clinic"}`, ps.w / 2, ps.h - 5, { align: "center" });
+      doc.setTextColor(160);
+      doc.text(`For ${clinic?.name || "Clinic"}`, ps.w / 2, ps.h - 6, { align: "center" });
     }
 
     return doc;
@@ -243,20 +260,16 @@ export default function PrescriptionDownload({
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
     const win = window.open(url, "_blank");
-    if (win) {
-      win.onload = () => win.print();
-    }
+    if (win) { win.onload = () => win.print(); }
   };
 
   const handleShare = async () => {
     const doc = buildPDF();
     const blob = doc.output("blob");
     const file = new File([blob], `Rx_${patient?.full_name}.pdf`, { type: "application/pdf" });
-
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       await navigator.share({ title: "Prescription", files: [file] });
     } else {
-      // Fallback: copy text
       const text = `Prescription for ${patient?.full_name}\nDate: ${new Date().toLocaleDateString()}\n\nChief Complaint: ${chiefComplaint}\n\nMedications:\n${medications.map((m, i) => `${i + 1}. ${m.name} - ${m.dosage} - ${m.frequency} - ${m.duration}`).join("\n")}`;
       await navigator.clipboard.writeText(text);
       toast.success("Prescription text copied to clipboard");
