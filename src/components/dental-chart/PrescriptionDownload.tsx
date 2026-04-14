@@ -35,7 +35,7 @@ export default function PrescriptionDownload({
 }: PrescriptionDownloadProps) {
   const [paperSize, setPaperSize] = useState<PaperSize>("a5");
 
-  const buildPDF = () => {
+  const buildPDF = async () => {
     const ps = PAPER_SIZES[paperSize];
     const doc = new jsPDF({ format: [ps.w, ps.h], unit: "mm" });
     const lm = 10;
