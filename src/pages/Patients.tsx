@@ -99,14 +99,18 @@ export default function PatientsPage() {
       if (error) throw error;
 
       if (bookAppointment && form.appointment_date && form.appointment_time) {
-        const { error: aptError } = await supabase.from("appointments").insert({
+        const insertData: any = {
           clinic_id: clinicId,
           patient_id: patient.id,
           appointment_date: form.appointment_date,
           appointment_time: form.appointment_time,
           type: form.appointment_type,
           status: "scheduled",
-        });
+        };
+        if (form.doctor_id && form.doctor_id !== "any") {
+          insertData.doctor_id = form.doctor_id;
+        }
+        const { error: aptError } = await supabase.from("appointments").insert(insertData);
         if (aptError) {
           toast.warning("Patient added but appointment failed: " + aptError.message);
         }
