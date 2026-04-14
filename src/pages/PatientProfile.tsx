@@ -51,6 +51,10 @@ export default function PatientProfilePage() {
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [invoiceData, setInvoiceData] = useState<{ treatmentId: string; name: string; cost: number; discount: number } | null>(null);
   const [newTx, setNewTx] = useState({ tooth_number: "", treatment_name: "", cost: "", notes: "", shade: "", material: "", lab_name: "" });
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentInvoice, setPaymentInvoice] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
 
   const { data: patient, isLoading } = useQuery({
     queryKey: ["patient", id],
@@ -198,6 +202,48 @@ export default function PatientProfilePage() {
       setShowInvoiceDialog(false);
       setInvoiceData(null);
       toast.success("Invoice created!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Record partial/full payment
+  const recordPayment = useMutation({
+    mutationFn: async () => {
+      if (!paymentInvoice || !paymentAmount) throw new Error("Missing payment data");
+      const amt = Number(paymentAmount);
+      if (amt <= 0) throw new Error("Amount must be positive");
+      const currentBalance = Number(paymentInvoice.balance ?? (paymentInvoice.amount - (paymentInvoice.paid_amount || 0)));
+      if (amt > currentBalance) throw new Error("Amount exceeds balance");
+
+      // Insert payment record
+      const { error: payErr } = await supabase.from("payments").insert({
+        clinic_id: clinicId!,
+        patient_id: id!,
+        invoice_id: paymentInvoice.id,
+        amount: amt,
+        payment_method: paymentMethod,
+        payment_date: new Date().toISOString().split("T")[0],
+      });
+      if (payErr) throw payErr;
+
+      // Update invoice paid_amount and status
+      const newPaid = (Number(paymentInvoice.paid_amount) || 0) + amt;
+      const invoiceTotal = Number(paymentInvoice.amount);
+      const newStatus = newPaid >= invoiceTotal ? "paid" : "partial";
+
+      const { error: invErr } = await supabase.from("invoices").update({
+        paid_amount: newPaid,
+        status: newStatus,
+        ...(newPaid >= invoiceTotal ? { paid_at: new Date().toISOString() } : {}),
+      }).eq("id", paymentInvoice.id);
+      if (invErr) throw invErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
+      setShowPaymentDialog(false);
+      setPaymentInvoice(null);
+      setPaymentAmount("");
+      toast.success("Payment recorded!");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -402,7 +448,7 @@ export default function PatientProfilePage() {
           </TabsContent>
 
           {/* Billing */}
-          <TabsContent value="billing" className="mt-4">
+          <TabsContent value="billing" className="mt-4 space-y-4">
             <Card className="shadow-card border-0">
               <CardContent className="p-0">
                 <Table>
@@ -411,32 +457,85 @@ export default function PatientProfilePage() {
                       <TableHead>Date</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Discount</TableHead>
-                      <TableHead>Total</TableHead>
+                      <TableHead>Paid</TableHead>
+                      <TableHead>Balance</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Paid At</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {!invoices.length ? (
-                      <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">No invoices</TableCell></TableRow>
-                    ) : invoices.map((inv: any) => (
-                      <TableRow key={inv.id}>
-                        <TableCell>{new Date(inv.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell>₹{Number(inv.subtotal || inv.amount).toLocaleString()}</TableCell>
-                        <TableCell>{inv.discount ? `₹${Number(inv.discount).toLocaleString()}` : "—"}</TableCell>
-                        <TableCell className="font-medium">₹{Number(inv.total || inv.amount).toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className={`text-xs ${inv.status === "paid" ? "bg-success/10 text-success" : inv.status === "overdue" ? "bg-destructive/10 text-destructive" : ""}`}>
-                            {inv.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{inv.paid_at ? new Date(inv.paid_at).toLocaleDateString() : "—"}</TableCell>
-                      </TableRow>
-                    ))}
+                      <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No invoices</TableCell></TableRow>
+                    ) : invoices.map((inv: any) => {
+                      const total = Number(inv.amount || 0);
+                      const paid = Number(inv.paid_amount || 0);
+                      const balance = total - paid;
+                      const isPaid = inv.status === "paid" || balance <= 0;
+                      return (
+                        <TableRow key={inv.id}>
+                          <TableCell className="text-sm">{new Date(inv.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell className="font-medium">₹{total.toLocaleString()}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{inv.discount ? `₹${Number(inv.discount).toLocaleString()}` : "—"}</TableCell>
+                          <TableCell className="text-sm text-success font-medium">₹{paid.toLocaleString()}</TableCell>
+                          <TableCell className={`font-medium ${balance > 0 ? "text-destructive" : "text-success"}`}>
+                            {balance > 0 ? `₹${balance.toLocaleString()}` : "Cleared"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className={`text-xs ${
+                              isPaid ? "bg-success/10 text-success" : 
+                              inv.status === "partial" ? "bg-warning/10 text-warning" : 
+                              inv.status === "overdue" ? "bg-destructive/10 text-destructive" : ""
+                            }`}>
+                              {isPaid ? "paid" : inv.status === "partial" ? "partial" : inv.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              {!isPaid && (
+                                <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                                  onClick={() => {
+                                    setPaymentInvoice(inv);
+                                    setPaymentAmount(String(balance));
+                                    setShowPaymentDialog(true);
+                                  }}>
+                                  <IndianRupee className="h-3 w-3" /> Pay
+                                </Button>
+                              )}
+                              {isPaid && (
+                                <>
+                                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
+                                    onClick={() => window.print()}>
+                                    <FileText className="h-3 w-3" /> Print
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
+
+            {/* Summary cards */}
+            {invoices.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                <Card><CardContent className="p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Total Billed</p>
+                  <p className="text-lg font-bold">₹{invoices.reduce((s: number, i: any) => s + Number(i.amount || 0), 0).toLocaleString()}</p>
+                </CardContent></Card>
+                <Card><CardContent className="p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Paid</p>
+                  <p className="text-lg font-bold text-success">₹{invoices.reduce((s: number, i: any) => s + Number(i.paid_amount || 0), 0).toLocaleString()}</p>
+                </CardContent></Card>
+                <Card><CardContent className="p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Balance</p>
+                  <p className="text-lg font-bold text-destructive">₹{invoices.reduce((s: number, i: any) => s + (Number(i.amount || 0) - Number(i.paid_amount || 0)), 0).toLocaleString()}</p>
+                </CardContent></Card>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="files" className="mt-4">
@@ -477,6 +576,46 @@ export default function PatientProfilePage() {
                   </Button>
                   <Button className="flex-1" onClick={() => createInvoice.mutate()} disabled={createInvoice.isPending}>
                     Create Invoice
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Partial Payment Dialog */}
+        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-base">Record Payment</DialogTitle>
+            </DialogHeader>
+            {paymentInvoice && (
+              <div className="space-y-4">
+                <div className="bg-muted/50 rounded-md p-3 text-sm space-y-1">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Invoice Total</span><span className="font-medium">₹{Number(paymentInvoice.amount).toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Already Paid</span><span className="text-success">₹{Number(paymentInvoice.paid_amount || 0).toLocaleString()}</span></div>
+                  <div className="flex justify-between border-t pt-1"><span className="font-medium">Balance Due</span><span className="font-bold text-destructive">₹{(Number(paymentInvoice.amount) - Number(paymentInvoice.paid_amount || 0)).toLocaleString()}</span></div>
+                </div>
+                <div>
+                  <Label className="text-xs">Payment Amount (₹)</Label>
+                  <Input type="number" className="h-9" value={paymentAmount}
+                    onChange={e => setPaymentAmount(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Payment Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {["cash", "upi", "card", "bank_transfer", "cheque"].map(m =>
+                        <SelectItem key={m} value={m}>{m.replace("_", " ").toUpperCase()}</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
+                  <Button className="flex-1" onClick={() => recordPayment.mutate()} disabled={recordPayment.isPending}>
+                    {recordPayment.isPending ? "Recording..." : "Record Payment"}
                   </Button>
                 </div>
               </div>

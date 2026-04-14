@@ -697,6 +697,7 @@ export type Database = {
       invoices: {
         Row: {
           amount: number
+          balance: number | null
           clinic_id: string
           coupon_code: string | null
           created_at: string
@@ -707,6 +708,7 @@ export type Database = {
           invoice_date: string | null
           invoice_number: string | null
           notes: string | null
+          paid_amount: number
           paid_at: string | null
           patient_id: string
           payment_method: string | null
@@ -720,6 +722,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          balance?: number | null
           clinic_id: string
           coupon_code?: string | null
           created_at?: string
@@ -730,6 +733,7 @@ export type Database = {
           invoice_date?: string | null
           invoice_number?: string | null
           notes?: string | null
+          paid_amount?: number
           paid_at?: string | null
           patient_id: string
           payment_method?: string | null
@@ -743,6 +747,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          balance?: number | null
           clinic_id?: string
           coupon_code?: string | null
           created_at?: string
@@ -753,6 +758,7 @@ export type Database = {
           invoice_date?: string | null
           invoice_number?: string | null
           notes?: string | null
+          paid_amount?: number
           paid_at?: string | null
           patient_id?: string
           payment_method?: string | null

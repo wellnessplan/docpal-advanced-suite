@@ -121,10 +121,11 @@ export default function BillingPage() {
       if (!selectedTreatments.length && !subtotal) throw new Error("Select at least one treatment or enter an amount");
 
       // Create invoice
-      const { data: inv, error } = await (supabase.from("invoices") as any).insert({
+      const { data: inv, error } = await supabase.from("invoices").insert({
         clinic_id: clinicId,
         patient_id: form.patient_id,
         amount: finalAmount,
+        total: finalAmount,
         subtotal: subtotal,
         discount: discountAmt,
         discount_percent: discountPct,
@@ -133,6 +134,7 @@ export default function BillingPage() {
         tax_amount: taxAmount,
         due_date: form.due_date || null,
         notes: form.notes || null,
+        status: "draft",
       }).select("id").single();
       if (error) throw error;
 
