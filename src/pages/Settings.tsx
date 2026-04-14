@@ -22,6 +22,7 @@ import {
 import GoogleIntegrationTab from "@/components/settings/GoogleIntegrationTab";
 import WhatsAppTemplatesTab from "@/components/settings/WhatsAppTemplatesTab";
 import WebhooksTab from "@/components/settings/WebhooksTab";
+import ThemeBrandingTab from "@/components/settings/ThemeBrandingTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -726,10 +727,11 @@ export default function SettingsPage() {
         <Tabs defaultValue="clinic" className="space-y-6">
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="clinic">Clinic Info</TabsTrigger>
-            <TabsTrigger value="letterhead">Letterhead & PDF</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
-            <TabsTrigger value="billing">Billing/GST</TabsTrigger>
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
+             <TabsTrigger value="letterhead">Letterhead & PDF</TabsTrigger>
+             <TabsTrigger value="team">Team</TabsTrigger>
+             <TabsTrigger value="billing">Billing/GST</TabsTrigger>
+             <TabsTrigger value="branding">Branding</TabsTrigger>
+             <TabsTrigger value="integrations">Integrations</TabsTrigger>
           </TabsList>
 
           <TabsContent value="clinic">
@@ -754,9 +756,13 @@ export default function SettingsPage() {
             <BillingTab clinicId={clinicId} />
           </TabsContent>
 
-          <TabsContent value="integrations">
-            <IntegrationsTab clinicId={clinicId} />
-          </TabsContent>
+          <TabsContent value="branding">
+             <ThemeBrandingTab clinicId={clinicId} />
+           </TabsContent>
+
+           <TabsContent value="integrations">
+             <IntegrationsTab clinicId={clinicId} />
+           </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
