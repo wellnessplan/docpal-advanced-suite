@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import SubscriptionGate from "./SubscriptionGate";
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { session, profile, loading } = useAuth();
@@ -15,7 +16,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!session) return <Navigate to="/auth" replace />;
   if (!profile?.clinic_id) return <Navigate to="/onboarding" replace />;
-  return <>{children}</>;
+  return <SubscriptionGate>{children}</SubscriptionGate>;
 }
 
 export function AuthOnlyRoute({ children }: { children: ReactNode }) {
