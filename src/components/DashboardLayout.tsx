@@ -113,7 +113,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const currentPageLabel = allItems.find((i) => i.href === pathname || pathname.startsWith(i.href + "/"))?.label ?? "DoctorsBuddy";
 
   const toggleGroup = (label: string) => {
-    setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
+    setExpandedGroups(prev => {
+      const isCurrentlyOpen = prev[label];
+      // Close all groups, then toggle the clicked one
+      const allClosed: Record<string, boolean> = {};
+      navGroups.forEach(g => { if (g.collapsible) allClosed[g.label] = false; });
+      return { ...allClosed, [label]: !isCurrentlyOpen };
+    });
   };
 
   const isGroupActive = (group: NavGroup) =>

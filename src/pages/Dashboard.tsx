@@ -29,10 +29,10 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-heading text-xl md:text-2xl font-bold text-foreground">
+            <h1 className="font-heading text-2xl md:text-3xl font-bold text-foreground">
               {greeting}, {profile?.full_name?.split(" ")[0] || "Doctor"} 👋
             </h1>
-            <p className="text-muted-foreground text-xs md:text-sm">Here's what's happening at your clinic today.</p>
+            <p className="text-muted-foreground text-sm md:text-base">Here's what's happening at your clinic today.</p>
           </div>
           {/* Quick actions — horizontal scroll on mobile */}
           <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 -mx-1 px-1">
