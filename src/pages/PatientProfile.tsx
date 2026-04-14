@@ -20,6 +20,7 @@ import {
   Phone, Mail, User2, HeartPulse, FileText, Clock, IndianRupee, Printer
 } from "lucide-react";
 import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
+import VisitSummaryPDF from "@/components/dental-chart/VisitSummaryPDF";
 import MedicalHistoryTab from "@/components/patients/MedicalHistoryTab";
 import DocumentsTab from "@/components/patients/DocumentsTab";
 import TreatmentTimeline from "@/components/patients/TreatmentTimeline";
@@ -349,7 +350,23 @@ export default function PatientProfilePage() {
             <TabsTrigger value="files" className="gap-1"><FileText className="h-3 w-3" /> Files</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="history" className="mt-4">
+          <TabsContent value="history" className="mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-muted-foreground">Treatment Timeline</h3>
+              <VisitSummaryPDF
+                patient={patient}
+                patientId={patient.id}
+                clinic={clinic}
+                treatments={treatments.map((t: any) => ({
+                  tooth_number: t.tooth_records?.tooth_number,
+                  treatment_name: t.treatment_name,
+                  status: t.status,
+                  cost: t.cost,
+                }))}
+                appointments={appointments}
+                invoices={invoices}
+              />
+            </div>
             <TreatmentTimeline patientId={patient.id} />
           </TabsContent>
 

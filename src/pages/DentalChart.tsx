@@ -14,6 +14,7 @@ import PrescriptionDownload from "@/components/dental-chart/PrescriptionDownload
 import TreatmentPlanBuilder from "@/components/dental-chart/TreatmentPlanBuilder";
 import XRayVault from "@/components/xray/XRayVault";
 import AllergyBanner from "@/components/dental-chart/AllergyBanner";
+import VisitSummaryPDF from "@/components/dental-chart/VisitSummaryPDF";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -252,6 +253,27 @@ export default function DentalChartPage() {
                   chiefComplaint={chiefComplaint}
                   diagnosisNotes={diagnosisNotes}
                   treatments={treatmentsList}
+                  medications={medications}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Visit Summary PDF */}
+            <Card className="shadow-card border-0">
+              <CardContent className="p-4 space-y-2">
+                <h3 className="font-heading text-sm font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Visit Summary
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  One-tap shareable summary of today's consultation — treatments, medications, and billing.
+                </p>
+                <VisitSummaryPDF
+                  patient={patient}
+                  patientId={patientId || ""}
+                  clinic={clinic}
+                  chiefComplaint={chiefComplaint}
+                  diagnosisNotes={diagnosisNotes}
                   medications={medications}
                 />
               </CardContent>
