@@ -21,6 +21,7 @@ import {
   Plus, Search, Users, Smile, CalendarDays, Activity, Phone
 } from "lucide-react";
 import AppointmentSlotPicker from "@/components/patients/AppointmentSlotPicker";
+import { PatientListSkeleton, TableSkeleton } from "@/components/ui/skeleton-loaders";
 
 export default function PatientsPage() {
   const navigate = useNavigate();
@@ -278,7 +279,7 @@ export default function PatientsPage() {
         {isMobile ? (
           <div className="space-y-2">
             {isLoading ? (
-              <p className="text-center py-8 text-muted-foreground text-sm">Loading...</p>
+              <PatientListSkeleton count={5} />
             ) : !patients?.length ? (
               <p className="text-center py-8 text-muted-foreground text-sm">No patients yet. Tap + to register.</p>
             ) : patients.map(p => (
@@ -326,7 +327,7 @@ export default function PatientsPage() {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6}><TableSkeleton rows={5} cols={6} /></TableCell></TableRow>
                   ) : !patients?.length ? (
                     <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No patients yet. Click "New Patient" to register.</TableCell></TableRow>
                   ) : patients.map(p => (

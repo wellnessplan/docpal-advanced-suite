@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import MobileBottomNav from "./MobileBottomNav";
 import InstallPromptBanner from "./InstallPromptBanner";
 import {
@@ -97,6 +98,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
+  useKeyboardShortcuts();
 
   const allItems = navGroups.flatMap((g) => g.items);
   const currentPageLabel = allItems.find((i) => i.href === pathname || pathname.startsWith(i.href + "/"))?.label ?? "DoctorsBuddy";
