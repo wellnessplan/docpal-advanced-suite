@@ -650,6 +650,22 @@ export default function PatientProfilePage() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Receipt Dialog */}
+        <Dialog open={!!receiptInvoice} onOpenChange={open => { if (!open) setReceiptInvoice(null); }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Payment Receipt</DialogTitle></DialogHeader>
+            {receiptInvoice && (
+              <InvoiceReceipt
+                invoice={receiptInvoice}
+                clinic={clinic}
+                patient={patient}
+                items={receiptItems}
+                payments={receiptPayments}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
