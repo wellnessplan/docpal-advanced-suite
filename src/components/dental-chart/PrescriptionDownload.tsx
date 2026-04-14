@@ -10,6 +10,7 @@ import type { Medication } from "./MedicationPanel";
 
 interface PrescriptionDownloadProps {
   patient: any;
+  patientId: string;
   clinic: any;
   doctorName: string;
   doctorRegistration: string;
