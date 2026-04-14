@@ -196,34 +196,17 @@ export default function PatientsPage() {
           <Switch checked={bookAppointment} onCheckedChange={setBookAppointment} />
         </div>
         {bookAppointment && (
-          <div className="space-y-3 pt-1">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Date <span className="text-destructive">*</span></Label>
-                <Input type="date" min={today} value={form.appointment_date} onChange={e => setForm(f => ({ ...f, appointment_date: e.target.value }))} required={bookAppointment} className="h-11" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Time <span className="text-destructive">*</span></Label>
-                <Input type="time" value={form.appointment_time} onChange={e => setForm(f => ({ ...f, appointment_time: e.target.value }))} required={bookAppointment} className="h-11" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Type</Label>
-              <Select value={form.appointment_type} onValueChange={v => setForm(f => ({ ...f, appointment_type: v }))}>
-                <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="checkup">Checkup</SelectItem>
-                  <SelectItem value="cleaning">Cleaning</SelectItem>
-                  <SelectItem value="filling">Filling</SelectItem>
-                  <SelectItem value="extraction">Extraction</SelectItem>
-                  <SelectItem value="root_canal">Root Canal</SelectItem>
-                  <SelectItem value="crown">Crown/Bridge</SelectItem>
-                  <SelectItem value="ortho">Orthodontics</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <AppointmentSlotPicker
+            selectedDate={form.appointment_date}
+            selectedTime={form.appointment_time}
+            selectedDoctor={form.doctor_id}
+            appointmentType={form.appointment_type}
+            onDateChange={(v) => setForm(f => ({ ...f, appointment_date: v }))}
+            onTimeChange={(v) => setForm(f => ({ ...f, appointment_time: v }))}
+            onDoctorChange={(v) => setForm(f => ({ ...f, doctor_id: v }))}
+            onTypeChange={(v) => setForm(f => ({ ...f, appointment_type: v }))}
+            required={bookAppointment}
+          />
         )}
       </div>
       <Button type="submit" className="w-full h-12 text-base" disabled={addPatient.isPending || !!phoneError}>
