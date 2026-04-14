@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Download, Printer, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
+import QRCode from "qrcode";
 import type { Medication } from "./MedicationPanel";
 
 interface PrescriptionDownloadProps {
