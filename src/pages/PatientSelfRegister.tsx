@@ -61,7 +61,7 @@ export default function PatientSelfRegister() {
       .insert({
         id: patientId,
         clinic_id: clinicId,
-        full_name: fullName,
+        full_name: trimmedName,
         phone: phone || null,
         email: email || null,
         date_of_birth: dob || null,
