@@ -486,6 +486,62 @@ export type Database = {
           },
         ]
       }
+      discount_coupons: {
+        Row: {
+          clinic_id: string
+          code: string
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          updated_at: string
+          used_count: number
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          clinic_id: string
+          code: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_coupons_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_chairs: {
         Row: {
           available_days: string[] | null
