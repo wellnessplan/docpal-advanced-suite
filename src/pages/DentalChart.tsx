@@ -25,7 +25,7 @@ import { ArrowLeft, User, Phone, Calendar, Stethoscope, ClipboardList, FileImage
 export default function DentalChartPage() {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
-  const { clinicId } = useAuth();
+  const { clinicId, profile } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
@@ -247,9 +247,10 @@ export default function DentalChartPage() {
                   patient={patient}
                   patientId={patientId || ""}
                   clinic={clinic}
-                  doctorName="" // TODO: from profile
+                  doctorName={profile?.full_name || "Doctor"}
                   doctorRegistration=""
-                  doctorDegree=""
+                  doctorDegree={profile?.role || ""}
+                  doctorSpecialization={profile?.specialization || ""}
                   chiefComplaint={chiefComplaint}
                   diagnosisNotes={diagnosisNotes}
                   treatments={treatmentsList}
