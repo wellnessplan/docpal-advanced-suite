@@ -145,7 +145,7 @@ export default function DentalChartPage() {
         {/* Allergy & Medical Alert Banner */}
         <AllergyBanner
           allergies={patient?.allergies}
-          medicalConditions={patient?.medical_conditions}
+          medicalConditions={patient?.notes}
         />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
