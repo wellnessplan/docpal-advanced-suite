@@ -44,6 +44,7 @@ import Memberships from "./pages/Memberships";
 import Staff from "./pages/Staff";
 import Integrations from "./pages/Integrations";
 import AuditLog from "./pages/AuditLog";
+import Partners from "./pages/Partners";
 
 const queryClient = new QueryClient();
 
