@@ -148,12 +148,16 @@ export default function Index() {
 
       {/* Footer */}
       <footer className="border-t bg-card">
-        <div className="mx-auto max-w-7xl px-6 py-8 flex items-center justify-between">
+        <div className="mx-auto max-w-7xl px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md gradient-primary">
               <Smile className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="font-heading text-sm font-semibold text-foreground">DoctorsBuddy</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
           </div>
           <p className="text-xs text-muted-foreground">© 2026 DoctorsBuddy. All rights reserved.</p>
         </div>
