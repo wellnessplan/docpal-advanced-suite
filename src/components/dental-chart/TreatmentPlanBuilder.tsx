@@ -153,7 +153,23 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
       setActivePlanId(data.id);
       setPlanName("Treatment Plan");
       setDoctorNotes("");
-      setItems([]);
+      // Auto-import exam findings if available
+      if (examFindings.length > 0) {
+        const imported: PlanItem[] = examFindings.map(f => ({
+          tooth_number: typeof f.tooth === "number" ? f.tooth : Number(f.tooth) || null,
+          procedure_name: f.treatment || f.condition || "—",
+          treatment_type: "",
+          treatment_options: [],
+          selected_option: "",
+          estimated_cost: pricingMap?.[f.treatment] || 0,
+          scheduled_date: "",
+          notes: f.condition ? `Dx: ${f.condition}` : "",
+          status: "planned",
+        }));
+        setItems(imported);
+      } else {
+        setItems([]);
+      }
       refetchPlans();
       toast.success("New plan created");
     },
