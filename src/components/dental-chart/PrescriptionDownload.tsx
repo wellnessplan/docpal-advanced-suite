@@ -30,7 +30,7 @@ const PAPER_SIZES: Record<PaperSize, { w: number; h: number; label: string }> = 
 };
 
 export default function PrescriptionDownload({
-  patient, clinic, doctorName, doctorRegistration, doctorDegree,
+  patient, patientId, clinic, doctorName, doctorRegistration, doctorDegree,
   chiefComplaint, diagnosisNotes, treatments, medications,
 }: PrescriptionDownloadProps) {
   const [paperSize, setPaperSize] = useState<PaperSize>("a5");
