@@ -67,7 +67,7 @@ interface PlanItem {
   status: string;
 }
 
-export default function TreatmentPlanBuilder({ patientId, clinicId, patient, clinic }: TreatmentPlanBuilderProps) {
+export default function TreatmentPlanBuilder({ patientId, clinicId, patient, clinic, examFindings = [] }: TreatmentPlanBuilderProps) {
   const queryClient = useQueryClient();
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
   const [planName, setPlanName] = useState("Treatment Plan");
