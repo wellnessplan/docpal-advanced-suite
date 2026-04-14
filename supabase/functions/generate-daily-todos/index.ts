@@ -9,6 +9,23 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // Verify caller is authenticated (cron job or admin)
+  const authHeader = req.headers.get("Authorization");
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    // If CRON_SECRET is set, require it. Otherwise fall back to JWT check.
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "");
+      const { error } = await supabaseAuth.auth.getUser(token);
+      if (error) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      }
+    } else {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    }
+  }
+
   try {
     const supabase = createClient(supabaseUrl, serviceKey);
 
