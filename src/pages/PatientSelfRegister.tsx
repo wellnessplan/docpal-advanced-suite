@@ -162,7 +162,7 @@ export default function PatientSelfRegister() {
               </div>
               <div className="space-y-2">
                 <Label>Date of Birth</Label>
-                <Input value={dob} onChange={e => setDob(e.target.value)} type="date" />
+                <Input value={dob} onChange={e => setDob(e.target.value)} type="date" max={new Date().toISOString().split("T")[0]} />
               </div>
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
                 {loading ? "Registering..." : "Register & Get Token"}

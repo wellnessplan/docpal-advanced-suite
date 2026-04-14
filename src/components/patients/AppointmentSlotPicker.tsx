@@ -90,7 +90,6 @@ export default function AppointmentSlotPicker({
   const bookedTimesSet = useMemo(() => {
     const set = new Set<string>();
     bookedAppointments?.forEach((apt) => {
-      // Mark the slot and subsequent slots based on duration
       const [h, m] = apt.appointment_time.split(":").map(Number);
       const duration = apt.duration_minutes || 30;
       const slotsNeeded = Math.ceil(duration / SLOT_INTERVAL);
@@ -103,6 +102,22 @@ export default function AppointmentSlotPicker({
     });
     return set;
   }, [bookedAppointments]);
+
+  // Determine past slots for today
+  const pastTimesSet = useMemo(() => {
+    const set = new Set<string>();
+    if (selectedDate === today) {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      ALL_SLOTS.forEach((slot) => {
+        const [h, m] = slot.split(":").map(Number);
+        if (h * 60 + m <= currentMinutes) {
+          set.add(slot);
+        }
+      });
+    }
+    return set;
+  }, [selectedDate, today]);
 
   // Group slots by morning/afternoon/evening
   const slotGroups = useMemo(() => {
@@ -119,8 +134,9 @@ export default function AppointmentSlotPicker({
   }, []);
 
   const totalBooked = bookedTimesSet.size;
+  const totalPast = pastTimesSet.size;
   const totalSlots = ALL_SLOTS.length;
-  const totalAvailable = totalSlots - totalBooked;
+  const totalAvailable = totalSlots - totalBooked - totalPast;
 
   return (
     <div className="space-y-4">
@@ -208,16 +224,18 @@ export default function AppointmentSlotPicker({
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                   {slots.map((slot) => {
                     const isBooked = bookedTimesSet.has(slot);
+                    const isPast = pastTimesSet.has(slot);
+                    const isDisabled = isBooked || isPast;
                     const isSelected = selectedTime === slot;
                     return (
                       <button
                         key={slot}
                         type="button"
-                        disabled={isBooked}
+                        disabled={isDisabled}
                         onClick={() => onTimeChange(slot)}
                         className={cn(
                           "h-9 rounded-md text-xs font-medium transition-all border",
-                          isBooked
+                          isDisabled
                             ? "bg-destructive/10 border-destructive/20 text-destructive/50 cursor-not-allowed line-through"
                             : isSelected
                               ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
