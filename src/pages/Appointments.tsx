@@ -85,9 +85,9 @@ export default function AppointmentsPage() {
       const { data } = await supabase.from("appointments")
         .select("*, patients(full_name)")
         .eq("clinic_id", clinicId)
-        .gte("scheduled_at", start)
-        .lte("scheduled_at", end)
-        .order("scheduled_at", { ascending: true });
+        .gte("appointment_date", format(rangeStart, "yyyy-MM-dd"))
+        .lte("appointment_date", format(rangeEnd, "yyyy-MM-dd"))
+        .order("appointment_date", { ascending: true });
       return data ?? [];
     },
     enabled: !!clinicId,
