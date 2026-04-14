@@ -77,11 +77,11 @@ export default function TasksPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("tooth_treatments")
-        .select("id, tooth_number, treatment_name, status, patient_id, patients(full_name, phone)")
-        .eq("clinic_id", clinicId!)
+        .select("id, treatment_name, status, tooth_record_id, tooth_records(tooth_number, patient_id, clinic_id, patients(full_name, phone))")
         .in("status", ["planned", "in-progress", "in_progress"])
         .order("created_at", { ascending: false });
-      return data ?? [];
+      // Filter client-side by clinic_id since it's on tooth_records
+      return (data ?? []).filter((t: any) => t.tooth_records?.clinic_id === clinicId);
     },
     enabled: !!clinicId,
   });
