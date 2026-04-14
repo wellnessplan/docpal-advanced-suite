@@ -57,7 +57,7 @@ export default function SmartInsights() {
   const { data: pendingPayments = 0 } = useQuery({
     queryKey: ["insight-pending-payments", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("balance")
+      const { data } = await supabase.from("invoices").select("balance, amount")
         .eq("clinic_id", clinicId!).in("status", ["sent", "draft", "overdue"]);
       return data?.reduce((s, i) => s + Number(i.balance || i.amount || 0), 0) ?? 0;
     },
