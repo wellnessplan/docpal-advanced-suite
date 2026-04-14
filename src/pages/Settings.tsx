@@ -23,6 +23,7 @@ import GoogleIntegrationTab from "@/components/settings/GoogleIntegrationTab";
 import WhatsAppTemplatesTab from "@/components/settings/WhatsAppTemplatesTab";
 import WebhooksTab from "@/components/settings/WebhooksTab";
 import ThemeBrandingTab from "@/components/settings/ThemeBrandingTab";
+import DataImportTab from "@/components/settings/DataImportTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -732,6 +733,7 @@ export default function SettingsPage() {
              <TabsTrigger value="billing">Billing/GST</TabsTrigger>
              <TabsTrigger value="branding">Branding</TabsTrigger>
              <TabsTrigger value="integrations">Integrations</TabsTrigger>
+             <TabsTrigger value="import">Data Import</TabsTrigger>
           </TabsList>
 
           <TabsContent value="clinic">
@@ -762,6 +764,10 @@ export default function SettingsPage() {
 
            <TabsContent value="integrations">
              <IntegrationsTab clinicId={clinicId} />
+           </TabsContent>
+
+           <TabsContent value="import">
+             <DataImportTab clinicId={clinicId} />
            </TabsContent>
         </Tabs>
       </div>
