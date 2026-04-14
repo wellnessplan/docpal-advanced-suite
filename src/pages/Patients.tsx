@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import {
   Plus, Search, Users, Smile, CalendarDays, Activity, Phone
 } from "lucide-react";
+import AppointmentSlotPicker from "@/components/patients/AppointmentSlotPicker";
 
 export default function PatientsPage() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function PatientsPage() {
 
   const [form, setForm] = useState({
     full_name: "", email: "", phone: "", date_of_birth: "", address: "", notes: "", gender: "",
-    appointment_date: "", appointment_time: "", appointment_type: "checkup"
+    appointment_date: "", appointment_time: "", appointment_type: "checkup", doctor_id: "any"
   });
 
   const { data: patients, isLoading } = useQuery({
@@ -98,14 +99,18 @@ export default function PatientsPage() {
       if (error) throw error;
 
       if (bookAppointment && form.appointment_date && form.appointment_time) {
-        const { error: aptError } = await supabase.from("appointments").insert({
+        const insertData: any = {
           clinic_id: clinicId,
           patient_id: patient.id,
           appointment_date: form.appointment_date,
           appointment_time: form.appointment_time,
           type: form.appointment_type,
           status: "scheduled",
-        });
+        };
+        if (form.doctor_id && form.doctor_id !== "any") {
+          insertData.doctor_id = form.doctor_id;
+        }
+        const { error: aptError } = await supabase.from("appointments").insert(insertData);
         if (aptError) {
           toast.warning("Patient added but appointment failed: " + aptError.message);
         }
@@ -117,7 +122,7 @@ export default function PatientsPage() {
       queryClient.invalidateQueries({ queryKey: ["patients"] });
       queryClient.invalidateQueries({ queryKey: ["patient-stats"] });
       setOpen(false);
-      setForm({ full_name: "", email: "", phone: "", date_of_birth: "", address: "", notes: "", gender: "", appointment_date: "", appointment_time: "", appointment_type: "checkup" });
+      setForm({ full_name: "", email: "", phone: "", date_of_birth: "", address: "", notes: "", gender: "", appointment_date: "", appointment_time: "", appointment_type: "checkup", doctor_id: "any" });
       setBookAppointment(false);
       setPhoneError("");
       toast.success("Patient added successfully!");
@@ -191,34 +196,17 @@ export default function PatientsPage() {
           <Switch checked={bookAppointment} onCheckedChange={setBookAppointment} />
         </div>
         {bookAppointment && (
-          <div className="space-y-3 pt-1">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Date <span className="text-destructive">*</span></Label>
-                <Input type="date" min={today} value={form.appointment_date} onChange={e => setForm(f => ({ ...f, appointment_date: e.target.value }))} required={bookAppointment} className="h-11" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Time <span className="text-destructive">*</span></Label>
-                <Input type="time" value={form.appointment_time} onChange={e => setForm(f => ({ ...f, appointment_time: e.target.value }))} required={bookAppointment} className="h-11" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Type</Label>
-              <Select value={form.appointment_type} onValueChange={v => setForm(f => ({ ...f, appointment_type: v }))}>
-                <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="checkup">Checkup</SelectItem>
-                  <SelectItem value="cleaning">Cleaning</SelectItem>
-                  <SelectItem value="filling">Filling</SelectItem>
-                  <SelectItem value="extraction">Extraction</SelectItem>
-                  <SelectItem value="root_canal">Root Canal</SelectItem>
-                  <SelectItem value="crown">Crown/Bridge</SelectItem>
-                  <SelectItem value="ortho">Orthodontics</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <AppointmentSlotPicker
+            selectedDate={form.appointment_date}
+            selectedTime={form.appointment_time}
+            selectedDoctor={form.doctor_id}
+            appointmentType={form.appointment_type}
+            onDateChange={(v) => setForm(f => ({ ...f, appointment_date: v }))}
+            onTimeChange={(v) => setForm(f => ({ ...f, appointment_time: v }))}
+            onDoctorChange={(v) => setForm(f => ({ ...f, doctor_id: v }))}
+            onTypeChange={(v) => setForm(f => ({ ...f, appointment_type: v }))}
+            required={bookAppointment}
+          />
         )}
       </div>
       <Button type="submit" className="w-full h-12 text-base" disabled={addPatient.isPending || !!phoneError}>
