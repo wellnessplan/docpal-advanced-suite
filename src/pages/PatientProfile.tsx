@@ -206,6 +206,48 @@ export default function PatientProfilePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Record partial/full payment
+  const recordPayment = useMutation({
+    mutationFn: async () => {
+      if (!paymentInvoice || !paymentAmount) throw new Error("Missing payment data");
+      const amt = Number(paymentAmount);
+      if (amt <= 0) throw new Error("Amount must be positive");
+      const currentBalance = Number(paymentInvoice.balance ?? (paymentInvoice.amount - (paymentInvoice.paid_amount || 0)));
+      if (amt > currentBalance) throw new Error("Amount exceeds balance");
+
+      // Insert payment record
+      const { error: payErr } = await supabase.from("payments").insert({
+        clinic_id: clinicId!,
+        patient_id: id!,
+        invoice_id: paymentInvoice.id,
+        amount: amt,
+        payment_method: paymentMethod,
+        payment_date: new Date().toISOString().split("T")[0],
+      });
+      if (payErr) throw payErr;
+
+      // Update invoice paid_amount and status
+      const newPaid = (Number(paymentInvoice.paid_amount) || 0) + amt;
+      const invoiceTotal = Number(paymentInvoice.amount);
+      const newStatus = newPaid >= invoiceTotal ? "paid" : "partial";
+
+      const { error: invErr } = await supabase.from("invoices").update({
+        paid_amount: newPaid,
+        status: newStatus,
+        ...(newPaid >= invoiceTotal ? { paid_at: new Date().toISOString() } : {}),
+      }).eq("id", paymentInvoice.id);
+      if (invErr) throw invErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
+      setShowPaymentDialog(false);
+      setPaymentInvoice(null);
+      setPaymentAmount("");
+      toast.success("Payment recorded!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (isLoading) {
     return <DashboardLayout><div className="flex items-center justify-center min-h-[400px] text-muted-foreground">Loading...</div></DashboardLayout>;
   }
