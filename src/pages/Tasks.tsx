@@ -53,32 +53,53 @@ export default function TasksPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"all" | FollowUpType>("all");
 
-  // Fetch no-show appointments (status = 'no-show' or 'no_show', last 30 days)
+  // Fetch no-show appointments: explicitly marked no-show OR today's morning appointments still "scheduled" (past time = likely no-show)
   const { data: noShows, isLoading: loadingNS } = useQuery({
     queryKey: ["followup-noshows", clinicId],
     queryFn: async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const { data } = await supabase
+      const today = new Date().toISOString().split("T")[0];
+      const nowTime = new Date().toTimeString().slice(0, 5);
+
+      // 1. Explicitly marked no-shows
+      const { data: explicit } = await supabase
         .from("appointments")
         .select("id, patient_id, appointment_date, appointment_time, type, patients(full_name, phone)")
         .eq("clinic_id", clinicId!)
         .in("status", ["no-show", "no_show", "No Show"])
         .gte("appointment_date", thirtyDaysAgo.toISOString().split("T")[0])
         .order("appointment_date", { ascending: false });
-      return data ?? [];
+
+      // 2. Today's appointments still "scheduled" whose time has passed (likely no-shows)
+      const { data: todayMissed } = await supabase
+        .from("appointments")
+        .select("id, patient_id, appointment_date, appointment_time, type, patients(full_name, phone)")
+        .eq("clinic_id", clinicId!)
+        .eq("appointment_date", today)
+        .eq("status", "scheduled")
+        .lt("appointment_time", nowTime)
+        .order("appointment_time", { ascending: false });
+
+      // Combine and deduplicate
+      const all = [...(explicit ?? []), ...(todayMissed ?? [])];
+      const seen = new Set<string>();
+      return all.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
     },
     enabled: !!clinicId,
   });
 
-  // Fetch incomplete treatments (status = 'planned' or 'in-progress')
+  // Fetch incomplete treatments — only those older than 30 days (need follow-up call)
   const { data: incompleteTx, isLoading: loadingTx } = useQuery({
     queryKey: ["followup-incomplete", clinicId],
     queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const { data } = await supabase
         .from("tooth_treatments")
-        .select("id, treatment_name, status, tooth_record_id, tooth_records(tooth_number, patient_id, clinic_id, patients(full_name, phone))")
+        .select("id, treatment_name, status, created_at, tooth_record_id, tooth_records(tooth_number, patient_id, clinic_id, patients(full_name, phone))")
         .in("status", ["planned", "in-progress", "in_progress"])
+        .lte("created_at", thirtyDaysAgo.toISOString())
         .order("created_at", { ascending: false });
       // Filter client-side by clinic_id since it's on tooth_records
       return (data ?? []).filter((t: any) => t.tooth_records?.clinic_id === clinicId);
