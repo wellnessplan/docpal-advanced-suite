@@ -100,7 +100,10 @@ export default function MedicationPanel({ medications, treatmentPlan, onMedicati
         {/* Add medication */}
         <div className="p-3 rounded-lg bg-muted/50 border space-y-2">
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Medicine</Label>
-          <Select value={form.name} onValueChange={v => setForm(f => ({ ...f, name: v }))}>
+          <Select value={form.name} onValueChange={v => {
+            const defaults = SMART_DEFAULTS[v];
+            setForm(f => ({ ...f, name: v, ...(defaults || {}) }));
+          }}>
             <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select medicine..." /></SelectTrigger>
             <SelectContent>
               {COMMON_MEDICINES.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
