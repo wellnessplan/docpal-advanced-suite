@@ -57,7 +57,6 @@ export default function PatientProfilePage() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [receiptInvoice, setReceiptInvoice] = useState<any>(null);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
 
   const { data: patient, isLoading } = useQuery({
     queryKey: ["patient", id],
