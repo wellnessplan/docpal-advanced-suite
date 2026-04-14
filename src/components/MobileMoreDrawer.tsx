@@ -55,10 +55,15 @@ const sections = [
     ],
   },
   {
+    label: "Partners",
+    items: [
+      { href: "/partners", label: "Partners", icon: Package },
+    ],
+  },
+  {
     label: "Admin",
     items: [
       { href: "/staff", label: "Staff", icon: UserCog },
-      { href: "/integrations", label: "Integrations", icon: Plug },
       { href: "/audit-log", label: "Audit Log", icon: ScrollText },
     ],
   },

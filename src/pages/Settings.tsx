@@ -17,12 +17,11 @@ import { toast } from "sonner";
 import {
   Building2, Globe, MapPin, Phone, Mail, Link2, Facebook, Instagram, Twitter,
   Users, Plus, Trash2, Save, Package, Settings as SettingsIcon, QrCode, Plug,
-  Clock, Receipt, UserPlus
+  Clock, Receipt, UserPlus, Download, Printer, Copy, ExternalLink
 } from "lucide-react";
 import GoogleIntegrationTab from "@/components/settings/GoogleIntegrationTab";
 import WhatsAppTemplatesTab from "@/components/settings/WhatsAppTemplatesTab";
 import WebhooksTab from "@/components/settings/WebhooksTab";
-import LabDirectoryTab from "@/components/settings/LabDirectoryTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -248,90 +247,128 @@ function BillingTab({ clinicId }: { clinicId: string }) {
   );
 }
 
-// ─── Invite Staff Tab ───────────────────────────────────────────────
+// ─── Invite Staff Tab (with role selection) ─────────────────────────
 function InviteStaffTab({ clinicId }: { clinicId: string }) {
-  const [emails, setEmails] = useState<string[]>([""]);
+  const queryClient = useQueryClient();
+  const [invites, setInvites] = useState<{ email: string; role: string; name: string }[]>([
+    { email: "", role: "receptionist", name: "" },
+  ]);
   const [sending, setSending] = useState(false);
 
+  const addRow = () => setInvites(prev => [...prev, { email: "", role: "receptionist", name: "" }]);
+  const removeRow = (i: number) => setInvites(prev => prev.filter((_, j) => j !== i));
+  const updateRow = (i: number, field: string, val: string) =>
+    setInvites(prev => prev.map((r, j) => j === i ? { ...r, [field]: val } : r));
+
+  const rolePermissions: Record<string, string[]> = {
+    owner: ["Full access to all modules", "Manage staff & settings", "View financials & reports"],
+    doctor: ["View & manage patients", "Create treatments & prescriptions", "Access dental chart", "View own appointments"],
+    dentist: ["View & manage patients", "Create treatments & prescriptions", "Access dental chart", "View own appointments"],
+    hygienist: ["View patients", "Record clinical notes", "Access dental chart", "View own schedule"],
+    receptionist: ["Manage appointments & queue", "Patient registration", "Basic billing", "No clinical access"],
+    assistant: ["View patient list", "Assist with queue management", "View schedule", "No billing or settings access"],
+  };
+
   const handleInvite = async () => {
-    const validEmails = emails.filter(e => e.trim() && e.includes("@"));
-    if (!validEmails.length) { toast.error("Enter at least one valid email"); return; }
+    const valid = invites.filter(r => r.email.trim() && r.email.includes("@"));
+    if (!valid.length) { toast.error("Enter at least one valid email"); return; }
     setSending(true);
-    // Store invitations as communications for now
-    for (const email of validEmails) {
-      await supabase.from("patient_communications").insert({
+
+    for (const inv of valid) {
+      // Create a profile entry for the invited staff
+      const newId = crypto.randomUUID();
+      await supabase.from("profiles").insert({
+        id: newId,
+        user_id: newId,
         clinic_id: clinicId,
-        patient_id: clinicId, // placeholder
-        type: "email",
-        subject: "Staff Invitation",
-        content: `Invitation sent to ${email}`,
-        direction: "outbound",
+        full_name: inv.name || inv.email.split("@")[0],
+        role: inv.role as any,
+      } as any);
+
+      // Log the invitation
+      await supabase.from("audit_log").insert({
+        clinic_id: clinicId,
+        action: "staff_invited",
+        table_name: "profiles",
+        record_id: newId,
+        details: { email: inv.email, role: inv.role, name: inv.name },
       } as any);
     }
-    toast.success(`Invitation(s) sent to ${validEmails.length} staff member(s)!`);
-    setEmails([""]);
+
+    toast.success(`${valid.length} staff member(s) invited successfully!`);
+    queryClient.invalidateQueries({ queryKey: ["team"] });
+    queryClient.invalidateQueries({ queryKey: ["staff-profiles"] });
+    setInvites([{ email: "", role: "receptionist", name: "" }]);
     setSending(false);
   };
 
   return (
-    <Card className="shadow-card border-0">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-heading text-lg"><UserPlus className="h-5 w-5 text-primary" /> Invite Staff</CardTitle>
-        <CardDescription>Send email invitations to your team members</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {emails.map((email, i) => (
-          <div key={i} className="flex gap-2">
-            <Input value={email} onChange={e => { const arr = [...emails]; arr[i] = e.target.value; setEmails(arr); }} placeholder="staff@clinic.com" type="email" />
-            {i === emails.length - 1 && (
-              <Button type="button" variant="outline" size="sm" onClick={() => setEmails([...emails, ""])}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        ))}
-        <p className="text-xs text-muted-foreground">Staff members will receive an email with login instructions.</p>
-        <Button onClick={handleInvite} disabled={sending}>{sending ? "Sending..." : "Send Invitations"}</Button>
-      </CardContent>
-    </Card>
-  );
-}
+    <div className="space-y-6">
+      <Card className="shadow-card border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-lg"><UserPlus className="h-5 w-5 text-primary" /> Invite Staff</CardTitle>
+          <CardDescription>Add team members with role-specific access</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {invites.map((inv, i) => (
+            <div key={i} className="grid gap-3 sm:grid-cols-[1fr_1fr_180px_40px] items-end border-b border-border pb-3 last:border-0">
+              <div className="space-y-1">
+                <Label className="text-xs">Full Name</Label>
+                <Input value={inv.name} onChange={e => updateRow(i, "name", e.target.value)} placeholder="Dr. John" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Email *</Label>
+                <Input value={inv.email} onChange={e => updateRow(i, "email", e.target.value)} placeholder="staff@clinic.com" type="email" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Role</Label>
+                <Select value={inv.role} onValueChange={v => updateRow(i, "role", v)}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["owner", "doctor", "dentist", "hygienist", "receptionist", "assistant"].map(r =>
+                      <SelectItem key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                {invites.length > 1 && (
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeRow(i)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
 
-// ─── Quick Add Patient Tab ──────────────────────────────────────────
-function QuickPatientTab({ clinicId }: { clinicId: string }) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [dob, setDob] = useState("");
-  const [saving, setSaving] = useState(false);
+          <Button type="button" variant="outline" size="sm" onClick={addRow} className="gap-1.5">
+            <Plus className="h-3.5 w-3.5" /> Add Another
+          </Button>
 
-  const handleAdd = async () => {
-    if (!name.trim()) { toast.error("Patient name is required"); return; }
-    setSaving(true);
-    const { error } = await supabase.from("patients").insert({
-      clinic_id: clinicId, full_name: name.trim(), phone: phone || null, date_of_birth: dob || null,
-    });
-    if (error) { toast.error(error.message); } else {
-      toast.success(`Patient "${name}" added!`);
-      setName(""); setPhone(""); setDob("");
-    }
-    setSaving(false);
-  };
+          {/* Role permissions preview */}
+          {invites[0]?.role && (
+            <Card className="bg-muted/30 border-dashed">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">
+                  {invites[0].role.charAt(0).toUpperCase() + invites[0].role.slice(1)} Permissions:
+                </p>
+                <ul className="space-y-1">
+                  {(rolePermissions[invites[0].role] || []).map((p, i) => (
+                    <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <span className="h-1 w-1 rounded-full bg-primary shrink-0" /> {p}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
-  return (
-    <Card className="shadow-card border-0">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-heading text-lg"><UserPlus className="h-5 w-5 text-primary" /> Quick Add Patient</CardTitle>
-        <CardDescription>Quickly add a new patient to your clinic</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2"><Label>Patient Name *</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="John Doe" /></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2"><Label>Phone</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210" /></div>
-          <div className="space-y-2"><Label>Date of Birth</Label><Input value={dob} onChange={e => setDob(e.target.value)} type="date" /></div>
-        </div>
-        <Button onClick={handleAdd} disabled={saving || !name.trim()}>{saving ? "Adding..." : "Add Patient"}</Button>
-      </CardContent>
-    </Card>
+          <Button onClick={handleInvite} disabled={sending} className="w-full sm:w-auto">
+            <UserPlus className="mr-2 h-4 w-4" />{sending ? "Adding..." : "Add Staff Members"}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -376,7 +413,7 @@ function TeamTab({ clinicId }: { clinicId: string }) {
                   <Select value={m.role} onValueChange={v => updateRole.mutate({ id: m.id, role: v })}>
                     <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {["owner", "dentist", "hygienist", "receptionist", "assistant"].map(r =>
+                      {["owner", "doctor", "dentist", "hygienist", "receptionist", "assistant"].map(r =>
                         <SelectItem key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</SelectItem>
                       )}
                     </SelectContent>
@@ -392,11 +429,14 @@ function TeamTab({ clinicId }: { clinicId: string }) {
   );
 }
 
-// ─── Vendors Tab ────────────────────────────────────────────────────
+// ─── Vendors Tab (Enhanced) ─────────────────────────────────────────
 function VendorsTab({ clinicId }: { clinicId: string }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", category: "", contact_name: "", email: "", phone: "", notes: "" });
+  const [form, setForm] = useState({
+    name: "", category: "", contact_name: "", email: "", phone: "", notes: "",
+    gpay_id: "", gst_number: "", remarks: "",
+  });
 
   const { data: vendors, isLoading } = useQuery({
     queryKey: ["vendors", clinicId],
@@ -413,7 +453,8 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] }); setOpen(false);
-      setForm({ name: "", category: "", contact_name: "", email: "", phone: "", notes: "" }); toast.success("Vendor added!");
+      setForm({ name: "", category: "", contact_name: "", email: "", phone: "", notes: "", gpay_id: "", gst_number: "", remarks: "" });
+      toast.success("Vendor added!");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -423,13 +464,19 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["vendors"] }); toast.success("Vendor removed!"); },
   });
 
+  const updateVendorField = async (id: string, field: string, value: any) => {
+    const { error } = await (supabase as any).from("vendors").update({ [field]: value }).eq("id", id);
+    if (error) toast.error(error.message);
+    else { queryClient.invalidateQueries({ queryKey: ["vendors"] }); toast.success("Updated!"); }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div><h3 className="font-heading text-lg font-semibold">Vendors & Suppliers</h3><p className="text-sm text-muted-foreground">Manage your dental supply vendors</p></div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add Vendor</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>Add Vendor</DialogTitle></DialogHeader>
             <form onSubmit={e => { e.preventDefault(); addVendor.mutate(); }} className="space-y-4">
               <div className="grid gap-4 grid-cols-2">
@@ -446,32 +493,71 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2"><Label>Contact Name</Label><Input value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))} /></div>
               <div className="grid gap-4 grid-cols-2">
-                <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Contact Person</Label><Input value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))} placeholder="Person name" /></div>
                 <div className="space-y-2"><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
               </div>
-              <div className="space-y-2"><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} /></div>
+              <div className="grid gap-4 grid-cols-2">
+                <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>GPay ID / UPI</Label><Input value={form.gpay_id} onChange={e => setForm(f => ({ ...f, gpay_id: e.target.value }))} placeholder="vendor@upi" /></div>
+              </div>
+              <div className="space-y-2"><Label>GST Number</Label><Input value={form.gst_number} onChange={e => setForm(f => ({ ...f, gst_number: e.target.value }))} placeholder="22AAAAA0000A1Z5" /></div>
+              <div className="space-y-2"><Label>Remarks</Label><Textarea value={form.remarks} onChange={e => setForm(f => ({ ...f, remarks: e.target.value }))} rows={2} placeholder="Any notes about this vendor..." /></div>
               <Button type="submit" className="w-full" disabled={addVendor.isPending}>{addVendor.isPending ? "Adding..." : "Add Vendor"}</Button>
             </form>
           </DialogContent>
         </Dialog>
       </div>
       <Card className="shadow-card border-0">
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
-            <TableHeader><TableRow><TableHead>Vendor</TableHead><TableHead>Category</TableHead><TableHead>Contact</TableHead><TableHead>Phone</TableHead><TableHead className="w-12"></TableHead></TableRow></TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Vendor</TableHead>
+                <TableHead>Contact Person</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>GPay / UPI</TableHead>
+                <TableHead>GST No.</TableHead>
+                <TableHead className="text-right">Total Business</TableHead>
+                <TableHead className="text-right">Orders</TableHead>
+                <TableHead className="text-right">Paid</TableHead>
+                <TableHead>Remarks</TableHead>
+                <TableHead className="w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
               ) : !vendors?.length ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No vendors yet</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No vendors yet</TableCell></TableRow>
               ) : vendors.map((v: any) => (
                 <TableRow key={v.id}>
-                  <TableCell className="font-medium">{v.name}</TableCell>
-                  <TableCell>{v.category ? <Badge variant="secondary">{v.category}</Badge> : "—"}</TableCell>
-                  <TableCell>{v.contact_name || "—"}</TableCell>
-                  <TableCell>{v.phone || "—"}</TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium text-sm">{v.name}</p>
+                      {v.phone && <p className="text-xs text-muted-foreground">{v.phone}</p>}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm">{v.contact_name || "—"}</TableCell>
+                  <TableCell>{v.category ? <Badge variant="secondary" className="text-[10px]">{v.category}</Badge> : "—"}</TableCell>
+                  <TableCell className="text-xs">{v.gpay_id || "—"}</TableCell>
+                  <TableCell className="text-xs">{v.gst_number || "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <Input type="number" className="h-7 w-24 text-xs text-right ml-auto" defaultValue={v.total_business || 0}
+                      onBlur={e => updateVendorField(v.id, "total_business", Number(e.target.value))} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Input type="number" className="h-7 w-16 text-xs text-right ml-auto" defaultValue={v.total_orders || 0}
+                      onBlur={e => updateVendorField(v.id, "total_orders", Number(e.target.value))} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Input type="number" className="h-7 w-24 text-xs text-right ml-auto" defaultValue={v.total_paid || 0}
+                      onBlur={e => updateVendorField(v.id, "total_paid", Number(e.target.value))} />
+                  </TableCell>
+                  <TableCell>
+                    <Input className="h-7 w-28 text-xs" defaultValue={v.remarks || ""}
+                      onBlur={e => updateVendorField(v.id, "remarks", e.target.value)} placeholder="Add remark" />
+                  </TableCell>
                   <TableCell><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteVendor.mutate(v.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>
                 </TableRow>
               ))}
@@ -483,9 +569,143 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
   );
 }
 
+// ─── QR Code Tab (Redesigned) ───────────────────────────────────────
+function QRCodeTab({ clinicId, clinicName }: { clinicId: string; clinicName: string }) {
+  const registrationUrl = `${window.location.origin}/register?clinic=${clinicId}`;
+
+  const downloadQR = () => {
+    const svg = document.querySelector("#clinic-qr-code svg") as SVGElement;
+    if (!svg) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = 600; canvas.height = 600;
+    const ctx = canvas.getContext("2d")!;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, 600, 600);
+      ctx.drawImage(img, 50, 50, 500, 500);
+      const a = document.createElement("a");
+      a.download = "clinic-qr-code.png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const printQR = () => {
+    const printWin = window.open("", "_blank")!;
+    const svg = document.querySelector("#clinic-qr-code svg");
+    if (!svg || !printWin) return;
+    printWin.document.write(`
+      <html><head><title>QR Code - ${clinicName}</title>
+      <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif}
+      h2{margin-bottom:8px} p{color:#666;margin:4px 0}</style></head>
+      <body><h2>${clinicName}</h2><p>Scan to register & book</p>
+      ${svg.outerHTML}<p style="margin-top:16px;font-size:12px">${registrationUrl}</p>
+      <script>setTimeout(()=>window.print(),300)</script></body></html>
+    `);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-heading text-xl font-bold">QR Code Registration</h2>
+        <p className="text-sm text-muted-foreground">Let patients self-register and book appointments by scanning a QR code</p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* QR Code Display */}
+        <Card className="shadow-card border-0">
+          <CardContent className="pt-6 flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+              <QrCode className="h-4 w-4" /> Your Clinic QR Code
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Place this at reception, entrance, or share online</p>
+            <div id="clinic-qr-code" className="p-6 bg-white rounded-2xl border shadow-sm">
+              <QRCodeSVG value={registrationUrl} size={220} level="H" fgColor="#0e7490" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold">{clinicName || "My Dental Clinic"}</p>
+              <p className="text-xs text-muted-foreground">Scan to register & book</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Actions */}
+        <div className="space-y-4">
+          <Card className="shadow-card border-0">
+            <CardHeader><CardTitle className="text-sm font-semibold">Share & Print</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <Button variant="outline" className="w-full justify-start gap-2" onClick={downloadQR}>
+                <Download className="h-4 w-4" /> Download QR as Image
+              </Button>
+              <Button variant="outline" className="w-full justify-start gap-2" onClick={printQR}>
+                <Printer className="h-4 w-4" /> Print QR Poster
+              </Button>
+              <Button variant="outline" className="w-full justify-start gap-2" onClick={() => { navigator.clipboard.writeText(registrationUrl); toast.success("Link copied!"); }}>
+                <Copy className="h-4 w-4" /> Copy Booking Link
+              </Button>
+              <Button variant="outline" className="w-full justify-start gap-2" onClick={() => window.open(registrationUrl, "_blank")}>
+                <ExternalLink className="h-4 w-4" /> Preview Patient Portal
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card border-0">
+            <CardHeader><CardTitle className="text-sm font-semibold">Portal Link</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Input readOnly value={registrationUrl} className="text-xs font-mono bg-muted/50" />
+                <Button variant="ghost" size="icon" className="shrink-0" onClick={() => { navigator.clipboard.writeText(registrationUrl); toast.success("Copied!"); }}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Share this link on WhatsApp, Instagram, or your website. Patients can register themselves and book available time slots.</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="pt-4 pb-3">
+              <p className="text-xs font-semibold mb-2">✨ How it works</p>
+              <ol className="space-y-1 text-xs text-muted-foreground">
+                <li>1. Patient scans QR code or opens link</li>
+                <li>2. Fills in their details (name, phone, medical info)</li>
+                <li>3. Gets a queue token number instantly</li>
+                <li>4. Patient appears in your Queue page</li>
+                <li>5. Returning patients are recognized by phone number</li>
+              </ol>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Integrations Tab (WhatsApp + Webhooks + Google combined) ───────
+function IntegrationsTab({ clinicId }: { clinicId: string }) {
+  return (
+    <div className="space-y-8">
+      <WhatsAppTemplatesTab clinicId={clinicId} />
+      <WebhooksTab clinicId={clinicId} />
+      <GoogleIntegrationTab />
+    </div>
+  );
+}
+
 // ─── Main Settings Page ─────────────────────────────────────────────
 export default function SettingsPage() {
   const { clinicId } = useAuth();
+  const { data: clinic } = useQuery({
+    queryKey: ["clinic-name", clinicId],
+    queryFn: async () => {
+      if (!clinicId) return null;
+      const { data } = await supabase.from("clinics").select("name").eq("id", clinicId).single();
+      return data;
+    },
+    enabled: !!clinicId,
+  });
 
   if (!clinicId) {
     return (
@@ -506,51 +726,37 @@ export default function SettingsPage() {
         <Tabs defaultValue="clinic" className="space-y-6">
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="clinic">Clinic Info</TabsTrigger>
-            <TabsTrigger value="hours">Working Hours</TabsTrigger>
-            <TabsTrigger value="billing">Billing & GST</TabsTrigger>
+            <TabsTrigger value="letterhead">Letterhead & PDF</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
-            <TabsTrigger value="invite">Invite Staff</TabsTrigger>
-            <TabsTrigger value="patient">Add Patient</TabsTrigger>
-            <TabsTrigger value="vendors">Vendors</TabsTrigger>
-            <TabsTrigger value="qr">Patient QR</TabsTrigger>
+            <TabsTrigger value="billing">Billing/GST</TabsTrigger>
             <TabsTrigger value="integrations">Integrations</TabsTrigger>
-            <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-            <TabsTrigger value="labs">Lab Directory</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="clinic"><ClinicInfoTab clinicId={clinicId} /></TabsContent>
-          <TabsContent value="hours"><WorkingHoursTab clinicId={clinicId} /></TabsContent>
-          <TabsContent value="billing"><BillingTab clinicId={clinicId} /></TabsContent>
-          <TabsContent value="team"><TeamTab clinicId={clinicId} /></TabsContent>
-          <TabsContent value="invite"><InviteStaffTab clinicId={clinicId} /></TabsContent>
-          <TabsContent value="patient"><QuickPatientTab clinicId={clinicId} /></TabsContent>
-          <TabsContent value="vendors"><VendorsTab clinicId={clinicId} /></TabsContent>
-
-          <TabsContent value="qr">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><QrCode className="h-5 w-5" /> Patient Self-Registration QR Code</CardTitle>
-                <CardDescription>Print or display this QR code in your clinic. Patients scan it to register themselves.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center gap-4">
-                <div className="p-6 bg-white rounded-xl border shadow-sm">
-                  <QRCodeSVG value={`${window.location.origin}/register?clinic=${clinicId}`} size={250} level="H" />
-                </div>
-                <p className="text-xs text-muted-foreground text-center max-w-sm break-all">
-                  {`${window.location.origin}/register?clinic=${clinicId}`}
-                </p>
-                <Button variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/register?clinic=${clinicId}`); toast.success("Registration link copied!"); }}>
-                  Copy Registration Link
-                </Button>
-              </CardContent>
-            </Card>
+          <TabsContent value="clinic">
+            <div className="space-y-6">
+              <ClinicInfoTab clinicId={clinicId} />
+              <WorkingHoursTab clinicId={clinicId} />
+            </div>
           </TabsContent>
 
-          <TabsContent value="integrations"><GoogleIntegrationTab /></TabsContent>
-          <TabsContent value="whatsapp"><WhatsAppTemplatesTab clinicId={clinicId} /></TabsContent>
-          <TabsContent value="webhooks"><WebhooksTab clinicId={clinicId} /></TabsContent>
-          <TabsContent value="labs"><LabDirectoryTab clinicId={clinicId} /></TabsContent>
+          <TabsContent value="letterhead">
+            <QRCodeTab clinicId={clinicId} clinicName={clinic?.name || "My Dental Clinic"} />
+          </TabsContent>
+
+          <TabsContent value="team">
+            <div className="space-y-6">
+              <TeamTab clinicId={clinicId} />
+              <InviteStaffTab clinicId={clinicId} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="billing">
+            <BillingTab clinicId={clinicId} />
+          </TabsContent>
+
+          <TabsContent value="integrations">
+            <IntegrationsTab clinicId={clinicId} />
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>

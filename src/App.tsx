@@ -44,6 +44,7 @@ import Memberships from "./pages/Memberships";
 import Staff from "./pages/Staff";
 import Integrations from "./pages/Integrations";
 import AuditLog from "./pages/AuditLog";
+import Partners from "./pages/Partners";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => (
             <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
             <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
+            <Route path="/partners" element={<ProtectedRoute><Partners /></ProtectedRoute>} />
             <Route path="/ortho" element={<ProtectedRoute><Orthodontics /></ProtectedRoute>} />
             <Route path="/ortho/:caseId" element={<ProtectedRoute><OrthoCase /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

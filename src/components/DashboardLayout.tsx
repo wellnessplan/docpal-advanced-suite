@@ -80,13 +80,20 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "PARTNERS",
+    groupIcon: Package,
+    collapsible: true,
+    items: [
+      { href: "/partners", label: "Partners", icon: Package },
+    ],
+  },
+  {
     label: "ADMIN",
     groupIcon: Settings,
     collapsible: true,
     items: [
       { href: "/settings", label: "Settings", icon: Settings },
       { href: "/staff", label: "Staff", icon: UserCog },
-      { href: "/integrations", label: "Integrations", icon: Plug },
       { href: "/audit-log", label: "Audit Log", icon: ScrollText },
     ],
   },

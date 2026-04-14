@@ -2904,10 +2904,16 @@ export type Database = {
           contact_name: string | null
           created_at: string
           email: string | null
+          gpay_id: string | null
+          gst_number: string | null
           id: string
           name: string
           notes: string | null
           phone: string | null
+          remarks: string | null
+          total_business: number | null
+          total_orders: number | null
+          total_paid: number | null
         }
         Insert: {
           category?: string | null
@@ -2915,10 +2921,16 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           email?: string | null
+          gpay_id?: string | null
+          gst_number?: string | null
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
+          remarks?: string | null
+          total_business?: number | null
+          total_orders?: number | null
+          total_paid?: number | null
         }
         Update: {
           category?: string | null
@@ -2926,10 +2938,16 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           email?: string | null
+          gpay_id?: string | null
+          gst_number?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          remarks?: string | null
+          total_business?: number | null
+          total_orders?: number | null
+          total_paid?: number | null
         }
         Relationships: [
           {
