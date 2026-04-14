@@ -44,7 +44,7 @@ export default function ReportsPage() {
   const { data: appointments = [] } = useQuery({
     queryKey: ["report-appointments", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("appointments").select("status, scheduled_at, type, provider_id")
+      const { data } = await supabase.from("appointments").select("status, appointment_date, type, provider_id")
         .eq("clinic_id", clinicId!);
       return data ?? [];
     },
@@ -94,7 +94,7 @@ export default function ReportsPage() {
       if (months[key]) months[key].expenses += Number(exp.amount);
     });
     appointments.forEach((apt: any) => {
-      const key = apt.scheduled_at?.substring(0, 7);
+      const key = apt.appointment_date?.substring(0, 7);
       if (months[key] && apt.status === "no_show") months[key].noShows++;
     });
     Object.values(months).forEach(m => { m.profit = m.revenue - m.expenses; });

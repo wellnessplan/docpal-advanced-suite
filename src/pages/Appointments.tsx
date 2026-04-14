@@ -85,9 +85,9 @@ export default function AppointmentsPage() {
       const { data } = await supabase.from("appointments")
         .select("*, patients(full_name)")
         .eq("clinic_id", clinicId)
-        .gte("scheduled_at", start)
-        .lte("scheduled_at", end)
-        .order("scheduled_at", { ascending: true });
+        .gte("appointment_date", format(rangeStart, "yyyy-MM-dd"))
+        .lte("appointment_date", format(rangeEnd, "yyyy-MM-dd"))
+        .order("appointment_date", { ascending: true });
       return data ?? [];
     },
     enabled: !!clinicId,
@@ -174,13 +174,14 @@ export default function AppointmentsPage() {
   const getAptsForHour = (hour: number, date?: Date) => {
     const targetDate = date || currentDate;
     return filteredAppointments.filter((a: any) => {
-      const d = new Date(a.scheduled_at);
-      return d.getHours() === hour && isSameDay(d, targetDate);
+      const timeParts = a.appointment_time?.split(":");
+      const aptHour = timeParts ? parseInt(timeParts[0]) : -1;
+      return aptHour === hour && isSameDay(new Date(a.appointment_date + "T00:00:00"), targetDate);
     });
   };
 
   const getAptsForDay = (date: Date) => {
-    return filteredAppointments.filter((a: any) => isSameDay(new Date(a.scheduled_at), date));
+    return filteredAppointments.filter((a: any) => isSameDay(new Date(a.appointment_date + "T00:00:00"), date));
   };
 
   const AppointmentBlock = ({ apt, compact = false }: { apt: any; compact?: boolean }) => (
@@ -189,7 +190,7 @@ export default function AppointmentsPage() {
       {!compact && <div className="text-[10px] opacity-75">{apt.type} · {apt.duration_minutes}m</div>}
       <div className="hidden group-hover:block absolute top-full left-0 z-10 mt-1 bg-popover border rounded-lg shadow-lg p-3 min-w-[200px]">
         <p className="font-medium text-sm text-foreground">{apt.patients?.full_name}</p>
-        <p className="text-xs text-muted-foreground">{format(new Date(apt.scheduled_at), "h:mm a")} · {apt.duration_minutes} min</p>
+        <p className="text-xs text-muted-foreground">{apt.appointment_time?.slice(0, 5)} · {apt.duration_minutes} min</p>
         <p className="text-xs mt-1">{apt.type}</p>
         <div className="mt-2 flex gap-1 flex-wrap">
           {["scheduled", "confirmed", "in_progress", "completed", "cancelled"].map(s => (
@@ -460,8 +461,8 @@ export default function AppointmentsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="text-sm font-medium">{format(new Date(apt.scheduled_at), "MMM d, yyyy")}</p>
-                      <p className="text-xs text-muted-foreground">{format(new Date(apt.scheduled_at), "h:mm a")}</p>
+                      <p className="text-sm font-medium">{apt.appointment_date}</p>
+                      <p className="text-xs text-muted-foreground">{apt.appointment_time?.slice(0, 5)}</p>
                     </div>
                     <Select value={apt.status} onValueChange={v => updateStatus.mutate({ id: apt.id, status: v })}>
                       <SelectTrigger className="w-32">

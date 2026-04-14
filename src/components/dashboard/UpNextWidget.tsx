@@ -31,12 +31,11 @@ export default function UpNextWidget() {
 
       // Get next appointment info if available
       const { data: appt } = await supabase.from("appointments")
-        .select("type, duration_minutes, scheduled_at")
+        .select("type, duration_minutes, appointment_date, appointment_time")
         .eq("clinic_id", clinicId!)
         .eq("patient_id", token.patients?.id ?? "")
-        .gte("scheduled_at", today + "T00:00:00")
-        .lt("scheduled_at", today + "T23:59:59")
-        .order("scheduled_at", { ascending: true })
+        .eq("appointment_date", today)
+        .order("appointment_time", { ascending: true })
         .limit(1);
 
       return {
@@ -51,9 +50,10 @@ export default function UpNextWidget() {
   const [countdown, setCountdown] = useState("");
 
   useEffect(() => {
-    if (!nextPatient?.appointment?.scheduled_at) { setCountdown(""); return; }
+    if (!nextPatient?.appointment?.appointment_time) { setCountdown(""); return; }
     const interval = setInterval(() => {
-      const endTime = new Date(nextPatient.appointment.scheduled_at);
+      const today = new Date().toISOString().split("T")[0];
+      const endTime = new Date(`${today}T${nextPatient.appointment.appointment_time}`);
       endTime.setMinutes(endTime.getMinutes() + (nextPatient.appointment.duration_minutes || 30));
       const diff = endTime.getTime() - Date.now();
       if (diff <= 0) { setCountdown("Overdue"); return; }
