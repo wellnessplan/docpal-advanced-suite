@@ -143,7 +143,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <Stethoscope className="h-4.5 w-4.5 text-sidebar-primary-foreground" />
               </div>
               {!collapsed && (
-                <span className="font-heading text-sm font-bold text-sidebar-primary-foreground tracking-tight">
+                <span className="font-heading text-base font-bold text-white tracking-tight">
                   DoctorsBuddy
                 </span>
               )}
@@ -157,8 +157,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     {initials}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-sidebar-foreground truncate">{profile?.full_name || "Doctor"}</p>
-                    <p className="text-[10px] text-sidebar-foreground/50 truncate">{profile?.role || "Admin"}</p>
+                    <p className="text-sm font-semibold text-white truncate">{profile?.full_name || "Doctor"}</p>
+                    <p className="text-xs text-sidebar-foreground/70 truncate">{profile?.role || "Admin"}</p>
                   </div>
                 </div>
               </div>
@@ -181,8 +181,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         className="flex w-full items-center justify-between px-2.5 mb-1 group/label"
                       >
                         <div className="flex items-center gap-1.5">
-                          <group.groupIcon className="h-3 w-3 text-sidebar-foreground/30" />
-                          <span className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase group-hover/label:text-sidebar-foreground/60 transition-colors">
+                          <group.groupIcon className="h-3.5 w-3.5 text-sidebar-foreground/50" />
+                          <span className="text-[11px] font-bold tracking-[0.08em] text-sidebar-foreground/60 uppercase group-hover/label:text-sidebar-foreground/80 transition-colors">
                             {group.label}
                           </span>
                         </div>
@@ -190,8 +190,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       </button>
                     ) : !collapsed ? (
                       <div className="flex items-center gap-1.5 px-2.5 mb-1">
-                        <group.groupIcon className="h-3 w-3 text-sidebar-foreground/30" />
-                        <p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase">
+                        <group.groupIcon className="h-3.5 w-3.5 text-sidebar-foreground/50" />
+                        <p className="text-[11px] font-bold tracking-[0.08em] text-sidebar-foreground/60 uppercase">
                           {group.label}
                         </p>
                       </div>
@@ -207,10 +207,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                               to={item.href}
                               title={collapsed ? item.label : undefined}
                               className={cn(
-                                "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium transition-all duration-200",
+                                "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-semibold transition-all duration-200",
                                 isActive
                                   ? "bg-sidebar-primary/15 text-sidebar-primary shadow-sm backdrop-blur-sm"
-                                  : "text-sidebar-foreground hover:bg-white/[0.06] hover:text-sidebar-accent-foreground"
+                                  : "text-sidebar-foreground/90 hover:bg-white/[0.08] hover:text-white"
                               )}
                             >
                               <item.icon className={cn(
