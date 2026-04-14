@@ -17,8 +17,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Smile, CalendarDays, ChevronLeft, Plus,
-  Phone, Mail, User2, HeartPulse, FileText, Clock, IndianRupee
+  Phone, Mail, User2, HeartPulse, FileText, Clock, IndianRupee, Printer
 } from "lucide-react";
+import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
 import MedicalHistoryTab from "@/components/patients/MedicalHistoryTab";
 import DocumentsTab from "@/components/patients/DocumentsTab";
 import TreatmentTimeline from "@/components/patients/TreatmentTimeline";
@@ -55,6 +56,7 @@ export default function PatientProfilePage() {
   const [paymentInvoice, setPaymentInvoice] = useState<any>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [receiptInvoice, setReceiptInvoice] = useState<any>(null);
 
   const { data: patient, isLoading } = useQuery({
     queryKey: ["patient", id],
@@ -95,6 +97,35 @@ export default function PatientProfilePage() {
       return data ?? [];
     },
     enabled: !!id,
+  });
+
+  const { data: clinic } = useQuery({
+    queryKey: ["clinic", clinicId],
+    queryFn: async () => {
+      const { data } = await supabase.from("clinics").select("*").eq("id", clinicId!).single();
+      return data;
+    },
+    enabled: !!clinicId,
+  });
+
+  const { data: receiptItems = [] } = useQuery({
+    queryKey: ["receipt-items", receiptInvoice?.id],
+    queryFn: async () => {
+      if (!receiptInvoice?.id) return [];
+      const { data } = await supabase.from("invoice_items").select("*").eq("invoice_id", receiptInvoice.id);
+      return data ?? [];
+    },
+    enabled: !!receiptInvoice?.id,
+  });
+
+  const { data: receiptPayments = [] } = useQuery({
+    queryKey: ["receipt-payments", receiptInvoice?.id],
+    queryFn: async () => {
+      if (!receiptInvoice?.id) return [];
+      const { data } = await supabase.from("payments").select("*").eq("invoice_id", receiptInvoice.id).order("payment_date");
+      return data ?? [];
+    },
+    enabled: !!receiptInvoice?.id,
   });
 
   // Add new treatment directly
@@ -501,14 +532,11 @@ export default function PatientProfilePage() {
                                   <IndianRupee className="h-3 w-3" /> Pay
                                 </Button>
                               )}
-                              {isPaid && (
-                                <>
-                                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
-                                    onClick={() => window.print()}>
-                                    <FileText className="h-3 w-3" /> Print
-                                  </Button>
-                                </>
-                              )}
+                              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
+                                onClick={() => setReceiptInvoice(inv)}
+                                disabled={paid <= 0}>
+                                <Printer className="h-3 w-3" /> Receipt
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -619,6 +647,22 @@ export default function PatientProfilePage() {
                   </Button>
                 </div>
               </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Receipt Dialog */}
+        <Dialog open={!!receiptInvoice} onOpenChange={open => { if (!open) setReceiptInvoice(null); }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Payment Receipt</DialogTitle></DialogHeader>
+            {receiptInvoice && (
+              <InvoiceReceipt
+                invoice={receiptInvoice}
+                clinic={clinic}
+                patient={patient}
+                items={receiptItems}
+                payments={receiptPayments}
+              />
             )}
           </DialogContent>
         </Dialog>
