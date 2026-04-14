@@ -3,9 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function FinancialSummary() {
   const { clinicId } = useAuth();
+  const navigate = useNavigate();
 
   const firstDay = new Date();
   firstDay.setDate(1);
@@ -35,7 +37,7 @@ export default function FinancialSummary() {
   return (
     <Card className="shadow-card border-0">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 font-heading text-base">
+        <CardTitle className="flex items-center gap-2 font-heading text-base cursor-pointer" onClick={() => navigate("/finance")}>
           <TrendingUp className="h-4 w-4 text-success" />
           This Month
         </CardTitle>

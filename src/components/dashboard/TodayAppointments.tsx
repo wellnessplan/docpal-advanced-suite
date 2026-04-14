@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const statusColor: Record<string, string> = {
   scheduled: "bg-accent text-accent-foreground",
@@ -16,6 +17,7 @@ const statusColor: Record<string, string> = {
 
 export default function TodayAppointments() {
   const { clinicId } = useAuth();
+  const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
 
   const { data: appointments = [] } = useQuery({
@@ -46,7 +48,11 @@ export default function TodayAppointments() {
         ) : (
           <div className="space-y-2 max-h-72 overflow-y-auto">
             {appointments.map((apt: any) => (
-              <div key={apt.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+              <div
+                key={apt.id}
+                className="flex items-center justify-between rounded-lg bg-muted/50 p-3 cursor-pointer hover:bg-muted/80 transition-colors"
+                onClick={() => navigate(`/patient/${apt.patient_id}`)}
+              >
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full gradient-primary text-xs font-bold text-primary-foreground">
                     {(apt.patients?.full_name || "?")[0]}

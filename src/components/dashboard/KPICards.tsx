@@ -153,8 +153,8 @@ export default function KPICards() {
               </div>
             </div>
             <div className="mt-3">
-              <p className="text-2xl font-bold font-heading text-foreground">{card.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{card.title}</p>
+              <p className="text-2xl md:text-3xl font-bold font-heading text-foreground">{card.value}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{card.title}</p>
             </div>
             {"sparkline" in card && card.sparkline && <MiniSparkline data={card.sparkline} />}
           </CardContent>
