@@ -34,7 +34,7 @@ export default function PatientsPage() {
 
   const [form, setForm] = useState({
     full_name: "", email: "", phone: "", date_of_birth: "", address: "", notes: "", gender: "",
-    appointment_date: "", appointment_time: "", appointment_type: "checkup"
+    appointment_date: "", appointment_time: "", appointment_type: "checkup", doctor_id: "any"
   });
 
   const { data: patients, isLoading } = useQuery({
