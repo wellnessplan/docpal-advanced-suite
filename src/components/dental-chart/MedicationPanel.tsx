@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,22 @@ const DURATIONS = ["3 days", "5 days", "7 days", "10 days", "14 days", "1 month"
 
 export default function MedicationPanel({ medications, treatmentPlan, onMedicationsChange, onTreatmentPlanChange }: MedicationPanelProps) {
   const [form, setForm] = useState<Medication>({ name: "", dosage: "1 tab", frequency: "Twice daily", duration: "5 days" });
+
+  // Restore draft medications from localStorage
+  useEffect(() => {
+    try {
+      const savedMeds = localStorage.getItem("draft:medications");
+      const savedPlan = localStorage.getItem("draft:treatmentPlan");
+      if (savedMeds && medications.length === 0) onMedicationsChange(JSON.parse(savedMeds));
+      if (savedPlan && !treatmentPlan) onTreatmentPlanChange(savedPlan);
+    } catch { /* ignore */ }
+  }, []); // eslint-disable-line
+
+  // Auto-save drafts
+  useEffect(() => {
+    if (medications.length > 0) localStorage.setItem("draft:medications", JSON.stringify(medications));
+    if (treatmentPlan) localStorage.setItem("draft:treatmentPlan", treatmentPlan);
+  }, [medications, treatmentPlan]);
 
   const addMed = () => {
     if (!form.name) return;
