@@ -31,6 +31,22 @@ const COMMON_MEDICINES = [
 const FREQUENCIES = ["Once daily", "Twice daily", "Thrice daily", "Four times daily", "As needed (SOS)", "Before meals", "After meals"];
 const DURATIONS = ["3 days", "5 days", "7 days", "10 days", "14 days", "1 month", "As directed"];
 
+// Smart Rx defaults: pre-fill dosage/frequency/duration by medicine
+const SMART_DEFAULTS: Record<string, Partial<Medication>> = {
+  "Amoxicillin 500mg": { dosage: "1 cap", frequency: "Thrice daily", duration: "5 days" },
+  "Metronidazole 400mg": { dosage: "1 tab", frequency: "Thrice daily", duration: "5 days" },
+  "Ibuprofen 400mg": { dosage: "1 tab", frequency: "Thrice daily", duration: "3 days" },
+  "Paracetamol 500mg": { dosage: "1 tab", frequency: "Thrice daily", duration: "3 days" },
+  "Diclofenac 50mg": { dosage: "1 tab", frequency: "Twice daily", duration: "3 days" },
+  "Clindamycin 300mg": { dosage: "1 cap", frequency: "Thrice daily", duration: "5 days" },
+  "Azithromycin 500mg": { dosage: "1 tab", frequency: "Once daily", duration: "3 days" },
+  "Aceclofenac 100mg": { dosage: "1 tab", frequency: "Twice daily", duration: "5 days" },
+  "Ornidazole 500mg": { dosage: "1 tab", frequency: "Twice daily", duration: "5 days" },
+  "Fluconazole 150mg": { dosage: "1 cap", frequency: "Once daily", duration: "As directed" },
+  "Chlorhexidine Mouthwash": { dosage: "10ml rinse", frequency: "Twice daily", duration: "14 days" },
+  "Povidone Iodine Gargle": { dosage: "15ml gargle", frequency: "Thrice daily", duration: "7 days" },
+};
+
 export default function MedicationPanel({ medications, treatmentPlan, onMedicationsChange, onTreatmentPlanChange }: MedicationPanelProps) {
   const [form, setForm] = useState<Medication>({ name: "", dosage: "1 tab", frequency: "Twice daily", duration: "5 days" });
 
@@ -84,7 +100,10 @@ export default function MedicationPanel({ medications, treatmentPlan, onMedicati
         {/* Add medication */}
         <div className="p-3 rounded-lg bg-muted/50 border space-y-2">
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Medicine</Label>
-          <Select value={form.name} onValueChange={v => setForm(f => ({ ...f, name: v }))}>
+          <Select value={form.name} onValueChange={v => {
+            const defaults = SMART_DEFAULTS[v];
+            setForm(f => ({ ...f, name: v, ...(defaults || {}) }));
+          }}>
             <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select medicine..." /></SelectTrigger>
             <SelectContent>
               {COMMON_MEDICINES.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
