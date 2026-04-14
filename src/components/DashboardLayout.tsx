@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useThemeLoader } from "@/hooks/useThemeLoader";
+import { useSuperAdmin } from "@/hooks/useSubscription";
 import MobileBottomNav from "./MobileBottomNav";
 import InstallPromptBanner from "./InstallPromptBanner";
 import GlobalSearchDialog from "./GlobalSearchDialog";
@@ -14,7 +15,7 @@ import {
   ListOrdered, Package, TrendingUp, BarChart3, Stethoscope,
   ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
-  Target, Star, Gift, Crown, UserCog, Plug, ScrollText, CalendarClock
+  Target, Star, Gift, Crown, UserCog, Plug, ScrollText, CalendarClock, Shield
 } from "lucide-react";
 
 interface NavGroup {
