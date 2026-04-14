@@ -51,6 +51,10 @@ export default function PatientProfilePage() {
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [invoiceData, setInvoiceData] = useState<{ treatmentId: string; name: string; cost: number; discount: number } | null>(null);
   const [newTx, setNewTx] = useState({ tooth_number: "", treatment_name: "", cost: "", notes: "", shade: "", material: "", lab_name: "" });
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentInvoice, setPaymentInvoice] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
 
   const { data: patient, isLoading } = useQuery({
     queryKey: ["patient", id],
