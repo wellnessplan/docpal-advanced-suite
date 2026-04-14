@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import {
   Plus, Search, Users, Smile, CalendarDays, Activity, Phone
 } from "lucide-react";
+import AppointmentSlotPicker from "@/components/patients/AppointmentSlotPicker";
 
 export default function PatientsPage() {
   const navigate = useNavigate();
