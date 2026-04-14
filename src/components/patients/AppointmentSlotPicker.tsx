@@ -134,8 +134,9 @@ export default function AppointmentSlotPicker({
   }, []);
 
   const totalBooked = bookedTimesSet.size;
+  const totalPast = pastTimesSet.size;
   const totalSlots = ALL_SLOTS.length;
-  const totalAvailable = totalSlots - totalBooked;
+  const totalAvailable = totalSlots - totalBooked - totalPast;
 
   return (
     <div className="space-y-4">
