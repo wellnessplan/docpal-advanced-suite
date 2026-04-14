@@ -47,6 +47,7 @@ import AuditLog from "./pages/AuditLog";
 import Partners from "./pages/Partners";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import SuperAdmin from "./pages/SuperAdmin";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,7 @@ const App = () => (
               <Route path="/ortho" element={<ProtectedRoute><Orthodontics /></ProtectedRoute>} />
               <Route path="/ortho/:caseId" element={<ProtectedRoute><OrthoCase /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/super-admin" element={<SuperAdmin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
