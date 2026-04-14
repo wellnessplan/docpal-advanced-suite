@@ -25,7 +25,7 @@ import { ArrowLeft, User, Phone, Calendar, Stethoscope, ClipboardList, FileImage
 export default function DentalChartPage() {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
-  const { clinicId } = useAuth();
+  const { clinicId, profile } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
