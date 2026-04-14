@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Stethoscope, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Stethoscope, Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -21,6 +21,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!authLoading && session) {
@@ -188,8 +189,11 @@ export default function AuthPage() {
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)}
-                      required placeholder="••••••••" className="pl-10" />
+                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
+                      required placeholder="••••••••" className="pl-10 pr-10" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -233,8 +237,11 @@ export default function AuthPage() {
                   <Label htmlFor="signup-password">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input id="signup-password" type="password" value={password} onChange={e => setPassword(e.target.value)}
-                      required minLength={6} placeholder="••••••••" className="pl-10" />
+                    <Input id="signup-password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
+                      required minLength={6} placeholder="••••••••" className="pl-10 pr-10" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
