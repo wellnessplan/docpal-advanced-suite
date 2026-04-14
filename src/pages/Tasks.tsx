@@ -122,14 +122,15 @@ export default function TasksPage() {
     });
 
     (incompleteTx ?? []).forEach((t: any) => {
+      const rec = t.tooth_records;
       list.push({
         id: `it-${t.id}`,
         type: "incomplete",
-        patientName: t.patients?.full_name || "Unknown",
-        patientPhone: t.patients?.phone || null,
-        detail: `${t.treatment_name} (Tooth #${t.tooth_number}) — ${t.status}`,
+        patientName: rec?.patients?.full_name || "Unknown",
+        patientPhone: rec?.patients?.phone || null,
+        detail: `${t.treatment_name} (Tooth #${rec?.tooth_number ?? "?"}) — ${t.status}`,
         priority: "low",
-        patientId: t.patient_id,
+        patientId: rec?.patient_id || "",
       });
     });
 
