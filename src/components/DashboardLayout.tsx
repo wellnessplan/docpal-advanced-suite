@@ -7,6 +7,7 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useThemeLoader } from "@/hooks/useThemeLoader";
 import MobileBottomNav from "./MobileBottomNav";
 import InstallPromptBanner from "./InstallPromptBanner";
+import GlobalSearchDialog from "./GlobalSearchDialog";
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
   Settings, LogOut, ChevronLeft, ChevronRight,
@@ -254,6 +255,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-base md:text-lg font-semibold text-foreground">{currentPageLabel}</h2>
             <div className="flex items-center gap-2 md:gap-3">
+              <GlobalSearchDialog />
               <span className="text-xs md:text-sm text-muted-foreground hidden sm:block">{profile?.full_name || "User"}</span>
               <div className="h-7 w-7 md:h-8 md:w-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground ring-2 ring-primary/20">
                 {initials}
