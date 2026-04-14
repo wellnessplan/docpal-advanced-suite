@@ -532,14 +532,11 @@ export default function PatientProfilePage() {
                                   <IndianRupee className="h-3 w-3" /> Pay
                                 </Button>
                               )}
-                              {isPaid && (
-                                <>
-                                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
-                                    onClick={() => window.print()}>
-                                    <FileText className="h-3 w-3" /> Print
-                                  </Button>
-                                </>
-                              )}
+                              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
+                                onClick={() => setReceiptInvoice(inv)}
+                                disabled={paid <= 0}>
+                                <Printer className="h-3 w-3" /> Receipt
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
