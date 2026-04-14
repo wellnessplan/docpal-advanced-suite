@@ -14,11 +14,18 @@ import { Plus, Trash2, ClipboardList, CalendarDays, IndianRupee, CheckCircle2, S
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 
+interface ExamFinding {
+  tooth: number | string;
+  condition: string;
+  treatment: string;
+}
+
 interface TreatmentPlanBuilderProps {
   patientId: string;
   clinicId: string;
   patient: any;
   clinic: any;
+  examFindings?: ExamFinding[];
 }
 
 const TREATMENTS = [
@@ -60,7 +67,7 @@ interface PlanItem {
   status: string;
 }
 
-export default function TreatmentPlanBuilder({ patientId, clinicId, patient, clinic }: TreatmentPlanBuilderProps) {
+export default function TreatmentPlanBuilder({ patientId, clinicId, patient, clinic, examFindings = [] }: TreatmentPlanBuilderProps) {
   const queryClient = useQueryClient();
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
   const [planName, setPlanName] = useState("Treatment Plan");
@@ -146,7 +153,23 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
       setActivePlanId(data.id);
       setPlanName("Treatment Plan");
       setDoctorNotes("");
-      setItems([]);
+      // Auto-import exam findings if available
+      if (examFindings.length > 0) {
+        const imported: PlanItem[] = examFindings.map(f => ({
+          tooth_number: typeof f.tooth === "number" ? f.tooth : Number(f.tooth) || null,
+          procedure_name: f.treatment || f.condition || "—",
+          treatment_type: "",
+          treatment_options: [],
+          selected_option: "",
+          estimated_cost: pricingMap?.[f.treatment] || 0,
+          scheduled_date: "",
+          notes: f.condition ? `Dx: ${f.condition}` : "",
+          status: "planned",
+        }));
+        setItems(imported);
+      } else {
+        setItems([]);
+      }
       refetchPlans();
       toast.success("New plan created");
     },
@@ -376,9 +399,18 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
             <ClipboardList className="h-4 w-4 text-primary" />
             Treatment Plans
           </h3>
-          <Button size="sm" className="gap-1" onClick={() => createNewPlan.mutate()} disabled={createNewPlan.isPending}>
-            <Plus className="h-3 w-3" />{createNewPlan.isPending ? "Creating..." : "New Plan"}
-          </Button>
+          <div className="flex gap-1.5">
+            {examFindings.length > 0 && (
+              <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => {
+                createNewPlan.mutate();
+              }}>
+                Import from Exam ({examFindings.length})
+              </Button>
+            )}
+            <Button size="sm" className="gap-1" onClick={() => createNewPlan.mutate()} disabled={createNewPlan.isPending}>
+              <Plus className="h-3 w-3" />{createNewPlan.isPending ? "Creating..." : "New Plan"}
+            </Button>
+          </div>
         </div>
 
         {existingPlans.length === 0 ? (

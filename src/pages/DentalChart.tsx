@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -8,13 +8,17 @@ import DashboardLayout from "@/components/DashboardLayout";
 import DentalChartGrid from "@/components/dental-chart/DentalChartGrid";
 import UnifiedToothEntry from "@/components/dental-chart/UnifiedToothEntry";
 import ClinicalExamPanel from "@/components/dental-chart/ClinicalExamPanel";
+import MedicationPanel from "@/components/dental-chart/MedicationPanel";
+import type { Medication } from "@/components/dental-chart/MedicationPanel";
+import PrescriptionDownload from "@/components/dental-chart/PrescriptionDownload";
 import TreatmentPlanBuilder from "@/components/dental-chart/TreatmentPlanBuilder";
 import XRayVault from "@/components/xray/XRayVault";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Phone, Calendar, Stethoscope, ClipboardList, FileImage } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, User, Phone, Calendar, Stethoscope, ClipboardList, FileImage, FileText } from "lucide-react";
 
 export default function DentalChartPage() {
   const { patientId } = useParams<{ patientId: string }>();
@@ -30,8 +34,9 @@ export default function DentalChartPage() {
   const [gumCondition, setGumCondition] = useState("normal");
   const [alignmentCondition, setAlignmentCondition] = useState("normal");
   const [diagnosisNotes, setDiagnosisNotes] = useState("");
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [treatmentPlanText, setTreatmentPlanText] = useState("");
 
-  // Prescription ID for tooth entry linkage
   const [prescriptionId, setPrescriptionId] = useState<string | null>(null);
 
   const { data: patient } = useQuery({
@@ -61,7 +66,20 @@ export default function DentalChartPage() {
     enabled: !!patientId,
   });
 
-  // Auto-create prescription for tooth entry linkage
+  // Fetch all prescription items for this patient's current prescription to derive treatment list
+  const { data: prescriptionItems = [] } = useQuery({
+    queryKey: ["prescription-items-all", prescriptionId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("prescription_items")
+        .select("*")
+        .eq("prescription_id", prescriptionId!)
+        .order("created_at", { ascending: true });
+      return data ?? [];
+    },
+    enabled: !!prescriptionId,
+  });
+
   useEffect(() => {
     if (!patientId || !clinicId) return;
     const loadPrescription = async () => {
@@ -92,6 +110,15 @@ export default function DentalChartPage() {
 
   const selectedRecord = toothRecords?.find((r: any) => r.tooth_number === selectedTooth);
 
+  // Derive treatments list (no cost) from prescription items for prescription PDF
+  const treatmentsList = prescriptionItems
+    .filter((i: any) => i.treatment || i.condition)
+    .map((i: any) => ({
+      tooth: i.tooth_number,
+      condition: i.condition || "",
+      treatment: i.treatment || "",
+    }));
+
   if (!patientId || !clinicId) return null;
 
   return (
@@ -116,9 +143,10 @@ export default function DentalChartPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full">
-            <TabsTrigger value="chart" className="flex-1 gap-1"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
-            <TabsTrigger value="plan" className="flex-1 gap-1"><ClipboardList className="h-3 w-3" />Treatment Plan</TabsTrigger>
-            <TabsTrigger value="xrays" className="flex-1 gap-1"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
+            <TabsTrigger value="chart" className="flex-1 gap-1 text-xs"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
+            <TabsTrigger value="rx" className="flex-1 gap-1 text-xs"><FileText className="h-3 w-3" />Prescription</TabsTrigger>
+            <TabsTrigger value="plan" className="flex-1 gap-1 text-xs"><ClipboardList className="h-3 w-3" />Treatment Plan</TabsTrigger>
+            <TabsTrigger value="xrays" className="flex-1 gap-1 text-xs"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
           </TabsList>
 
           {/* EXAMINE TAB */}
@@ -143,7 +171,6 @@ export default function DentalChartPage() {
               </CardContent>
             </Card>
 
-            {/* Tooth detail — bottom sheet on mobile, inline on desktop */}
             {selectedTooth && prescriptionId && isMobile ? (
               <Drawer open={!!selectedTooth} onOpenChange={(open) => { if (!open) setSelectedTooth(null); }}>
                 <DrawerContent className="max-h-[85vh]">
@@ -188,6 +215,76 @@ export default function DentalChartPage() {
             )}
           </TabsContent>
 
+          {/* PRESCRIPTION TAB */}
+          <TabsContent value="rx" className="mt-3 space-y-3">
+            <MedicationPanel
+              medications={medications}
+              treatmentPlan={treatmentPlanText}
+              onMedicationsChange={setMedications}
+              onTreatmentPlanChange={setTreatmentPlanText}
+            />
+
+            {/* Prescription download / print / share */}
+            <Card className="shadow-card border-0">
+              <CardContent className="p-4 space-y-3">
+                <h3 className="font-heading text-sm font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Download / Print Prescription
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Generates a professional prescription with clinic header, doctor details, complaint, treatment summary (no cost), and medications.
+                </p>
+                <Separator />
+                <PrescriptionDownload
+                  patient={patient}
+                  clinic={clinic}
+                  doctorName="" // TODO: from profile
+                  doctorRegistration=""
+                  doctorDegree=""
+                  chiefComplaint={chiefComplaint}
+                  diagnosisNotes={diagnosisNotes}
+                  treatments={treatmentsList}
+                  medications={medications}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Summary preview of what will appear */}
+            {(treatmentsList.length > 0 || medications.length > 0) && (
+              <Card className="shadow-card border-0">
+                <CardContent className="p-4 space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Preview</h4>
+                  {chiefComplaint && (
+                    <div>
+                      <span className="text-[10px] font-bold text-muted-foreground">Complaint:</span>
+                      <p className="text-xs">{chiefComplaint}</p>
+                    </div>
+                  )}
+                  {treatmentsList.length > 0 && (
+                    <div>
+                      <span className="text-[10px] font-bold text-muted-foreground">Treatments ({treatmentsList.length}):</span>
+                      {treatmentsList.map((t, i) => (
+                        <p key={i} className="text-xs text-muted-foreground">
+                          • Tooth #{t.tooth} — {t.condition}{t.condition && t.treatment ? " → " : ""}{t.treatment}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {medications.length > 0 && (
+                    <div>
+                      <span className="text-[10px] font-bold text-muted-foreground">Medications ({medications.length}):</span>
+                      {medications.map((m, i) => (
+                        <p key={i} className="text-xs text-muted-foreground">
+                          {i + 1}. {m.name} — {m.dosage} · {m.frequency} · {m.duration}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
           {/* TREATMENT PLAN TAB */}
           <TabsContent value="plan" className="mt-3">
             <TreatmentPlanBuilder
@@ -195,6 +292,7 @@ export default function DentalChartPage() {
               clinicId={clinicId}
               patient={patient}
               clinic={clinic}
+              examFindings={treatmentsList}
             />
           </TabsContent>
 
