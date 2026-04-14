@@ -27,6 +27,29 @@ export default function PatientSelfRegister() {
       toast.error("Invalid registration link. Please scan the QR code again.");
       return;
     }
+
+    // Validate clinic_id is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(clinicId)) {
+      toast.error("Invalid clinic ID format.");
+      return;
+    }
+
+    // Input validation
+    const trimmedName = fullName.trim();
+    if (!trimmedName || trimmedName.length > 200) {
+      toast.error("Name must be between 1 and 200 characters.");
+      return;
+    }
+    if (phone && (phone.length < 7 || phone.length > 20)) {
+      toast.error("Phone number must be between 7 and 20 characters.");
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
 
     // Generate patient ID client-side to avoid needing SELECT permission
@@ -38,7 +61,7 @@ export default function PatientSelfRegister() {
       .insert({
         id: patientId,
         clinic_id: clinicId,
-        full_name: fullName,
+        full_name: trimmedName,
         phone: phone || null,
         email: email || null,
         date_of_birth: dob || null,
