@@ -122,7 +122,7 @@ export default function PatientsPage() {
       queryClient.invalidateQueries({ queryKey: ["patients"] });
       queryClient.invalidateQueries({ queryKey: ["patient-stats"] });
       setOpen(false);
-      setForm({ full_name: "", email: "", phone: "", date_of_birth: "", address: "", notes: "", gender: "", appointment_date: "", appointment_time: "", appointment_type: "checkup" });
+      setForm({ full_name: "", email: "", phone: "", date_of_birth: "", address: "", notes: "", gender: "", appointment_date: "", appointment_time: "", appointment_type: "checkup", doctor_id: "any" });
       setBookAppointment(false);
       setPhoneError("");
       toast.success("Patient added successfully!");
