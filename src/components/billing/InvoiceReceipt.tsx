@@ -80,8 +80,17 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     y += 8;
 
     // Patient box
+    const patientAge = patient?.date_of_birth
+      ? Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+      : null;
+    const patientMeta = [
+      patient?.op_number,
+      patientAge ? `${patientAge}y` : null,
+      patient?.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : null,
+    ].filter(Boolean).join(" · ");
+
     doc.setFillColor(245, 245, 245);
-    doc.roundedRect(lm, y - 2, rm - lm, 18, 2, 2, "F");
+    doc.roundedRect(lm, y - 2, rm - lm, patientMeta ? 24 : 18, 2, 2, "F");
     doc.setFontSize(10);
     doc.setTextColor(30);
     doc.setFont("helvetica", "bold");
@@ -89,7 +98,8 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     doc.setFont("helvetica", "normal");
     doc.text(patient?.full_name || "—", lm + 24, y + 4);
     if (patient?.phone) doc.text(`Phone: ${patient.phone}`, lm + 4, y + 10);
-    y += 22;
+    if (patientMeta) { doc.setFontSize(9); doc.setTextColor(100); doc.text(patientMeta, lm + 4, y + 16); doc.setTextColor(30); }
+    y += patientMeta ? 28 : 22;
 
     // PAID watermark
     if (isPaid) {
@@ -269,6 +279,13 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
         <div style={{ background: "#f9fafb", padding: 12, borderRadius: 6, marginBottom: 16, fontSize: 12 }}>
           <p style={{ margin: 0 }}><strong>Patient:</strong> {patient?.full_name}</p>
           {patient?.phone && <p style={{ margin: "2px 0" }}><strong>Phone:</strong> {patient.phone}</p>}
+          <p style={{ margin: "2px 0", color: "#64748b", fontSize: 11 }}>
+            {[
+              patient?.op_number,
+              patient?.date_of_birth ? `${Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}y` : null,
+              patient?.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : null,
+            ].filter(Boolean).join(" · ")}
+          </p>
         </div>
 
         {/* Items table */}

@@ -209,25 +209,62 @@ export default function PatientProfilePage() {
     mutationFn: async () => {
       if (!invoiceData) return;
       const finalAmount = invoiceData.cost - invoiceData.discount;
-      const { data: inv, error: invErr } = await supabase.from("invoices").insert({
-        clinic_id: clinicId!,
-        patient_id: id!,
-        amount: finalAmount,
-        total: finalAmount,
-        subtotal: invoiceData.cost,
-        discount: invoiceData.discount,
-        status: "pending",
-        invoice_date: new Date().toISOString().split("T")[0],
-      }).select("id").single();
-      if (invErr) throw invErr;
 
-      await supabase.from("invoice_items").insert({
-        invoice_id: inv!.id,
-        description: invoiceData.name,
-        unit_price: invoiceData.cost,
-        quantity: 1,
-        total: invoiceData.cost,
-      });
+      // Check for existing unpaid/draft/pending invoice for this patient today
+      const today = new Date().toISOString().split("T")[0];
+      const { data: existingInvoice } = await supabase
+        .from("invoices")
+        .select("id, amount, total, subtotal, discount")
+        .eq("clinic_id", clinicId!)
+        .eq("patient_id", id!)
+        .in("status", ["draft", "pending", "unpaid"])
+        .eq("invoice_date", today)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingInvoice) {
+        // Add item to existing invoice and update totals
+        await supabase.from("invoice_items").insert({
+          invoice_id: existingInvoice.id,
+          description: invoiceData.name,
+          unit_price: invoiceData.cost,
+          quantity: 1,
+          total: invoiceData.cost,
+        });
+
+        const newSubtotal = Number(existingInvoice.subtotal || existingInvoice.amount) + invoiceData.cost;
+        const newDiscount = Number(existingInvoice.discount || 0) + invoiceData.discount;
+        const newTotal = newSubtotal - newDiscount;
+
+        await supabase.from("invoices").update({
+          subtotal: newSubtotal,
+          amount: newTotal,
+          total: newTotal,
+          discount: newDiscount,
+        }).eq("id", existingInvoice.id);
+      } else {
+        // Create new invoice
+        const { data: inv, error: invErr } = await supabase.from("invoices").insert({
+          clinic_id: clinicId!,
+          patient_id: id!,
+          amount: finalAmount,
+          total: finalAmount,
+          subtotal: invoiceData.cost,
+          discount: invoiceData.discount,
+          status: "pending",
+          invoice_date: today,
+        }).select("id").single();
+        if (invErr) throw invErr;
+
+        await supabase.from("invoice_items").insert({
+          invoice_id: inv!.id,
+          description: invoiceData.name,
+          unit_price: invoiceData.cost,
+          quantity: 1,
+          total: invoiceData.cost,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
