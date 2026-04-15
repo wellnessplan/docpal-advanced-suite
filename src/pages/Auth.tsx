@@ -15,7 +15,7 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const { session, profile, loading: authLoading } = useAuth();
   const searchParams = new URLSearchParams(window.location.search);
-  const defaultMode = searchParams.get("mode") === "login" ? "login" : "signup";
+  const defaultMode = searchParams.get("mode") === "signup" ? "signup" : "login";
   const [mode, setMode] = useState<Mode>(defaultMode);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
