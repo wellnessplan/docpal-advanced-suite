@@ -209,7 +209,7 @@ export default function UnifiedToothEntry({
               </Select>
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-wider">Cost (₹)</Label>
+              <Label className="text-[10px] uppercase tracking-wider">Cost (Rs )</Label>
               <Input className="h-8 text-xs" type="number" placeholder="0" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: e.target.value }))} />
             </div>
           </div>
@@ -229,7 +229,7 @@ export default function UnifiedToothEntry({
                     {item.condition && <Badge variant="secondary" className="text-[10px]">Dx: {item.condition}</Badge>}
                     {item.treatment && <Badge className="text-[10px]">Tx: {item.treatment}</Badge>}
                   </div>
-                  {item.cost > 0 && <span className="text-muted-foreground">₹{Number(item.cost).toLocaleString()}</span>}
+                  {item.cost > 0 && <span className="text-muted-foreground">Rs {Number(item.cost).toLocaleString()}</span>}
                 </div>
                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => deleteItem.mutate(item.id)}>
                   <Trash2 className="h-3 w-3 text-destructive" />

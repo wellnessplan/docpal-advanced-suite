@@ -116,7 +116,7 @@ export default function AuditTrailTab({ patientId }: AuditTrailTabProps) {
           date: i.created_at,
           type: "invoice",
           title: i.invoice_number || "Invoice",
-          detail: `₹${Number(i.total || i.amount).toLocaleString()}`,
+          detail: `Rs ${Number(i.total || i.amount).toLocaleString()}`,
           status: i.status,
           amount: Number(i.total || i.amount),
         })
@@ -200,7 +200,7 @@ export default function AuditTrailTab({ patientId }: AuditTrailTabProps) {
                       )}
                       {ev.amount !== undefined && (
                         <span className="text-xs font-medium text-muted-foreground ml-auto">
-                          ₹{ev.amount.toLocaleString()}
+                          Rs {ev.amount.toLocaleString()}
                         </span>
                       )}
                     </div>

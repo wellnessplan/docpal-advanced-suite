@@ -106,9 +106,9 @@ function VendorsTab({ clinicId }: { clinicId: string }) {
                 <TableHead>Category</TableHead>
                 <TableHead>GPay/UPI</TableHead>
                 <TableHead>GST No.</TableHead>
-                <TableHead className="text-right">Business (₹)</TableHead>
+                <TableHead className="text-right">Business (Rs )</TableHead>
                 <TableHead className="text-right">Orders</TableHead>
-                <TableHead className="text-right">Paid (₹)</TableHead>
+                <TableHead className="text-right">Paid (Rs )</TableHead>
                 <TableHead>Remarks</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>

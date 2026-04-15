@@ -106,7 +106,7 @@ export default function Orthodontics() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground">Pipeline Value</p>
-                  <p className="text-2xl font-bold">₹{totalPipeline.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">Rs {totalPipeline.toLocaleString()}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-primary/30" />
               </div>
@@ -154,7 +154,7 @@ export default function Orthodontics() {
                           <TableCell>
                             <Badge variant="secondary" className={STATUS_COLORS[c.status] || ""}>{c.status}</Badge>
                           </TableCell>
-                          <TableCell className="font-medium">₹{Number(c.total_estimated_cost || 0).toLocaleString()}</TableCell>
+                          <TableCell className="font-medium">Rs {Number(c.total_estimated_cost || 0).toLocaleString()}</TableCell>
                           <TableCell>
                             <Button size="sm" variant="ghost" onClick={e => { e.stopPropagation(); navigate(`/ortho/${c.id}`); }}>View</Button>
                           </TableCell>

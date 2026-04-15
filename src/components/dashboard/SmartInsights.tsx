@@ -104,14 +104,14 @@ export default function SmartInsights() {
         icon: TrendingDown,
         message: `Revenue dropped ${Math.abs(Math.round(change))}% this week compared to last week`,
         type: "danger",
-        metric: `₹${thisWeekRevenue.toLocaleString()} vs ₹${lastWeekRevenue.toLocaleString()}`,
+        metric: `Rs ${thisWeekRevenue.toLocaleString()} vs Rs ${lastWeekRevenue.toLocaleString()}`,
       });
     } else if (change > 5) {
       insights.push({
         icon: TrendingUp,
         message: `Revenue grew ${Math.round(change)}% this week — great momentum!`,
         type: "success",
-        metric: `₹${thisWeekRevenue.toLocaleString()}`,
+        metric: `Rs ${thisWeekRevenue.toLocaleString()}`,
       });
     }
   }
@@ -137,7 +137,7 @@ export default function SmartInsights() {
   if (pendingPayments > 0) {
     insights.push({
       icon: AlertTriangle,
-      message: `₹${pendingPayments.toLocaleString()} in outstanding payments pending collection`,
+      message: `Rs ${pendingPayments.toLocaleString()} in outstanding payments pending collection`,
       type: "danger",
       metric: "Overdue",
     });

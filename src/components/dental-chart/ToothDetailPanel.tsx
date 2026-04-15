@@ -276,7 +276,7 @@ export default function ToothDetailPanel({
                     <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
-                <Input type="number" placeholder="Cost (₹)" value={treatmentForm.cost} onChange={e => setTreatmentForm(f => ({ ...f, cost: e.target.value }))} />
+                <Input type="number" placeholder="Cost (Rs )" value={treatmentForm.cost} onChange={e => setTreatmentForm(f => ({ ...f, cost: e.target.value }))} />
                 <Textarea placeholder="Notes..." value={treatmentForm.notes} onChange={e => setTreatmentForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
                 <Button size="sm" type="submit" disabled={!treatmentForm.treatment_name || addTreatment.isPending}>
                   {addTreatment.isPending ? "Saving..." : "Save"}
@@ -304,7 +304,7 @@ export default function ToothDetailPanel({
                     </SelectContent>
                   </Select>
                 </div>
-                {t.cost > 0 && <p className="text-xs font-medium">₹{Number(t.cost).toLocaleString()}</p>}
+                {t.cost > 0 && <p className="text-xs font-medium">Rs {Number(t.cost).toLocaleString()}</p>}
                 {t.notes && <p className="text-xs text-muted-foreground">{t.notes}</p>}
                 <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</p>
               </div>

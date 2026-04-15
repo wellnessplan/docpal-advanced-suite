@@ -132,7 +132,7 @@ export default function FinancePage() {
     toast.success("GST-ready report exported");
   };
 
-  const fmt = (n: number) => `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 0 })}`;
+  const fmt = (n: number) => `Rs ${n.toLocaleString("en-IN", { minimumFractionDigits: 0 })}`;
 
   return (
     <DashboardLayout>
@@ -166,7 +166,7 @@ export default function FinancePage() {
                         <SelectContent>{EXPENSE_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
-                    <div><Label>Amount (₹)</Label><Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
+                    <div><Label>Amount (Rs )</Label><Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
                   </div>
                   <div><Label>Description</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
                   <div className="grid grid-cols-2 gap-3">

@@ -87,7 +87,7 @@ export function RevenueTrendMini() {
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,13%,91%)" />
             <XAxis dataKey="day" tick={{ fontSize: 10 }} />
             <YAxis tick={{ fontSize: 10 }} />
-            <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} />
+            <Tooltip formatter={(v: number) => `Rs ${v.toLocaleString()}`} />
             <Area type="monotone" dataKey="revenue" stroke="hsl(152, 44%, 46%)" fill="hsl(152, 44%, 46%)" fillOpacity={0.15} strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>

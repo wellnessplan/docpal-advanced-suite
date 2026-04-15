@@ -161,7 +161,7 @@ export default function OrthoCaseForm({ clinicId, onClose, onSuccess }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label>Total Estimated Cost (₹)</Label>
+            <Label>Total Estimated Cost (Rs )</Label>
             <Input type="number" value={cost} onChange={e => setCost(e.target.value)} placeholder="e.g. 45000" />
           </div>
 

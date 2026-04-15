@@ -250,9 +250,9 @@ export default function ReportsPage() {
     doc.line(15, 28, 195, 28);
 
     const summaryItems = [
-      ["Total Revenue", `₹${totals.totalRevenue.toLocaleString()}`],
-      ["Total Expenses", `₹${totals.totalExpenses.toLocaleString()}`],
-      ["Net Profit", `₹${totals.profit.toLocaleString()}`],
+      ["Total Revenue", `Rs ${totals.totalRevenue.toLocaleString()}`],
+      ["Total Expenses", `Rs ${totals.totalExpenses.toLocaleString()}`],
+      ["Net Profit", `Rs ${totals.profit.toLocaleString()}`],
       ["Profit Margin", `${margin}%`],
       ["Total Patients", `${patients.length}`],
       ["Total Appointments", `${filteredAppointments.length}`],
@@ -292,11 +292,11 @@ export default function ReportsPage() {
 
     monthlyData.forEach(m => {
       doc.text(m.month, 20, y);
-      doc.text(`₹${m.revenue.toLocaleString()}`, 60, y);
-      doc.text(`₹${m.expenses.toLocaleString()}`, 100, y);
+      doc.text(`Rs ${m.revenue.toLocaleString()}`, 60, y);
+      doc.text(`Rs ${m.expenses.toLocaleString()}`, 100, y);
       const profitColor = m.profit >= 0 ? [46, 125, 50] : [211, 47, 47];
       doc.setTextColor(...(profitColor as [number, number, number]));
-      doc.text(`₹${m.profit.toLocaleString()}`, 140, y);
+      doc.text(`Rs ${m.profit.toLocaleString()}`, 140, y);
       doc.text(`${m.revenue > 0 ? ((m.profit / m.revenue) * 100).toFixed(1) : "0"}%`, 175, y);
       doc.setTextColor(30, 41, 59);
       y += 7;
@@ -325,7 +325,7 @@ export default function ReportsPage() {
       doc.text(`${t.count}`, 90, y);
       doc.text(`${t.completed}`, 115, y);
       doc.text(`${t.count > 0 ? ((t.completed / t.count) * 100).toFixed(0) : 0}%`, 145, y);
-      doc.text(`₹${t.revenue.toLocaleString()}`, 170, y);
+      doc.text(`Rs ${t.revenue.toLocaleString()}`, 170, y);
       y += 7;
     });
 
@@ -370,7 +370,7 @@ export default function ReportsPage() {
     const insights = [];
 
     if (totals.totalRevenue > 0) {
-      insights.push(`• Total revenue for the period: ₹${totals.totalRevenue.toLocaleString()} with ${margin}% profit margin.`);
+      insights.push(`• Total revenue for the period: Rs ${totals.totalRevenue.toLocaleString()} with ${margin}% profit margin.`);
     }
     if (totals.totalNoShows > 0) {
       const noShowRate = filteredAppointments.length > 0 ? ((totals.totalNoShows / filteredAppointments.length) * 100).toFixed(1) : "0";
@@ -381,7 +381,7 @@ export default function ReportsPage() {
     }
     if (patients.length > 0) {
       const arpp = Math.round(totals.totalRevenue / patients.length);
-      insights.push(`• Average Revenue Per Patient: ₹${arpp.toLocaleString()}.`);
+      insights.push(`• Average Revenue Per Patient: Rs ${arpp.toLocaleString()}.`);
     }
     insights.push(`• ${filteredTreatments.filter((t: any) => t.status === "planned").length} planned treatments pending conversion.`);
 
@@ -508,8 +508,8 @@ export default function ReportsPage() {
         {/* Summary KPIs */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Revenue", value: `₹${totals.totalRevenue.toLocaleString()}`, color: "bg-success/10 text-success" },
-            { label: "Net Profit", value: `₹${totals.profit.toLocaleString()}`, color: totals.profit >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive" },
+            { label: "Revenue", value: `Rs ${totals.totalRevenue.toLocaleString()}`, color: "bg-success/10 text-success" },
+            { label: "Net Profit", value: `Rs ${totals.profit.toLocaleString()}`, color: totals.profit >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive" },
             { label: "Total Patients", value: patients.length, color: "bg-primary/10 text-primary" },
             { label: "Treatments Done", value: filteredTreatments.filter((t: any) => t.status === "completed").length, color: "bg-accent text-accent-foreground" },
           ].map(kpi => (
@@ -557,15 +557,15 @@ export default function ReportsPage() {
                 <CardContent className="space-y-3">
                   <div className="rounded-xl bg-muted/50 p-3">
                     <p className="text-xs text-muted-foreground">Gross Revenue</p>
-                    <p className="text-xl font-bold font-heading">₹{totals.totalRevenue.toLocaleString()}</p>
+                    <p className="text-xl font-bold font-heading">Rs {totals.totalRevenue.toLocaleString()}</p>
                   </div>
                   <div className="rounded-xl bg-muted/50 p-3">
                     <p className="text-xs text-muted-foreground">Total Expenses</p>
-                    <p className="text-xl font-bold font-heading text-destructive">₹{totals.totalExpenses.toLocaleString()}</p>
+                    <p className="text-xl font-bold font-heading text-destructive">Rs {totals.totalExpenses.toLocaleString()}</p>
                   </div>
                   <div className="rounded-xl bg-muted/50 p-3">
                     <p className="text-xs text-muted-foreground">Net Profit</p>
-                    <p className={`text-xl font-bold font-heading ${totals.profit >= 0 ? "text-success" : "text-destructive"}`}>₹{totals.profit.toLocaleString()}</p>
+                    <p className={`text-xl font-bold font-heading ${totals.profit >= 0 ? "text-success" : "text-destructive"}`}>Rs {totals.profit.toLocaleString()}</p>
                   </div>
                   <div>
                     <div className="flex justify-between text-xs mb-1">
@@ -614,9 +614,9 @@ export default function ReportsPage() {
                       {monthlyData.map(m => (
                         <TableRow key={m.month}>
                           <TableCell className="font-medium">{m.month}</TableCell>
-                          <TableCell>₹{m.revenue.toLocaleString()}</TableCell>
-                          <TableCell className="text-destructive">₹{m.expenses.toLocaleString()}</TableCell>
-                          <TableCell className={m.profit >= 0 ? "text-success" : "text-destructive"}>₹{m.profit.toLocaleString()}</TableCell>
+                          <TableCell>Rs {m.revenue.toLocaleString()}</TableCell>
+                          <TableCell className="text-destructive">Rs {m.expenses.toLocaleString()}</TableCell>
+                          <TableCell className={m.profit >= 0 ? "text-success" : "text-destructive"}>Rs {m.profit.toLocaleString()}</TableCell>
                           <TableCell>{m.revenue > 0 ? ((m.profit / m.revenue) * 100).toFixed(1) : "0.0"}%</TableCell>
                         </TableRow>
                       ))}
@@ -688,7 +688,7 @@ export default function ReportsPage() {
                             {t.count > 0 ? ((t.completed / t.count) * 100).toFixed(0) : 0}%
                           </Badge>
                         </TableCell>
-                        <TableCell>₹{t.revenue.toLocaleString()}</TableCell>
+                        <TableCell>Rs {t.revenue.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                     {!treatmentBreakdown.length && (

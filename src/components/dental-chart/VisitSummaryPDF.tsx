@@ -165,12 +165,12 @@ export default function VisitSummaryPDF({
       section("Billing Summary");
       const totalBilled = activeInvoices.reduce((s, i) => s + Number(i.total), 0);
       const totalPaid = activeInvoices.reduce((s, i) => s + Number(i.paid_amount), 0);
-      doc.text(`Total Billed: ₹${totalBilled.toLocaleString()}`, lm + 2, y);
+      doc.text(`Total Billed: Rs ${totalBilled.toLocaleString()}`, lm + 2, y);
       y += 5;
-      doc.text(`Total Paid: ₹${totalPaid.toLocaleString()}`, lm + 2, y);
+      doc.text(`Total Paid: Rs ${totalPaid.toLocaleString()}`, lm + 2, y);
       y += 5;
       doc.setFont("helvetica", "bold");
-      doc.text(`Balance: ₹${(totalBilled - totalPaid).toLocaleString()}`, lm + 2, y);
+      doc.text(`Balance: Rs ${(totalBilled - totalPaid).toLocaleString()}`, lm + 2, y);
       doc.setFont("helvetica", "normal");
       y += 6;
     }

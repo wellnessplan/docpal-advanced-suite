@@ -101,7 +101,7 @@ export default function Revenue() {
   const outstanding = invoices.filter((i: any) => i.status !== "paid").reduce((s: number, i: any) => s + Number(i.balance || i.amount || 0), 0);
   const arpp = patients.length > 0 ? Math.round(totalRevenue / patients.length) : 0;
 
-  const fmt = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+  const fmt = (n: number) => `Rs ${n.toLocaleString("en-IN")}`;
 
   return (
     <DashboardLayout>
@@ -152,7 +152,7 @@ export default function Revenue() {
               <AreaChart data={monthlyRevenue}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,13%,91%)" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `Rs ${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v: number) => fmt(v)} />
                 <Area type="monotone" dataKey="revenue" stroke="hsl(152, 44%, 46%)" fill="hsl(152, 44%, 46%)" fillOpacity={0.12} strokeWidth={2.5} />
               </AreaChart>
@@ -193,7 +193,7 @@ export default function Revenue() {
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={treatmentRevenue} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,13%,91%)" />
-                    <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                    <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `Rs ${(v / 1000).toFixed(0)}k`} />
                     <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={100} />
                     <Tooltip formatter={(v: number) => fmt(v)} />
                     <Bar dataKey="revenue" fill="hsl(197, 71%, 63%)" radius={[0, 4, 4, 0]} />

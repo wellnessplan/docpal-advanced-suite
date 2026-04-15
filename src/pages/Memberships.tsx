@@ -158,7 +158,7 @@ export default function Memberships() {
                       <Input type="number" value={planForm.discount_percent} onChange={e => setPlanForm(f => ({ ...f, discount_percent: e.target.value }))} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Amount (₹) *</Label>
+                      <Label>Amount (Rs ) *</Label>
                       <Input type="number" value={planForm.amount} onChange={e => setPlanForm(f => ({ ...f, amount: e.target.value }))} required placeholder="500" />
                     </div>
                   </div>
@@ -194,7 +194,7 @@ export default function Memberships() {
                     <Label>Plan *</Label>
                     <Select value={enrollForm.plan_id} onValueChange={v => setEnrollForm(f => ({ ...f, plan_id: v }))}>
                       <SelectTrigger><SelectValue placeholder="Select plan..." /></SelectTrigger>
-                      <SelectContent>{plans.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.plan_name} — ₹{p.amount}</SelectItem>)}</SelectContent>
+                      <SelectContent>{plans.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.plan_name} — Rs {p.amount}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <Button type="submit" className="w-full" disabled={enrollPatient.isPending || !enrollForm.patient_id || !enrollForm.plan_id}>
@@ -217,7 +217,7 @@ export default function Memberships() {
           <Card>
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Revenue</p>
-              <p className="text-2xl font-bold mt-1 text-green-600">₹{totalRevenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold mt-1 text-green-600">Rs {totalRevenue.toLocaleString()}</p>
             </CardContent>
           </Card>
         </div>
@@ -250,7 +250,7 @@ export default function Memberships() {
                               </p>
                             )}
                           </div>
-                          <p className="text-lg font-bold whitespace-nowrap ml-3">₹{p.amount}</p>
+                          <p className="text-lg font-bold whitespace-nowrap ml-3">Rs {p.amount}</p>
                         </div>
                         <div className="flex justify-end mt-1">
                           <Button

@@ -352,7 +352,7 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
     doc.setFont("helvetica", "bold");
     doc.setFillColor(245, 245, 245);
     doc.rect(lm, y - 4, pw, 7, "F");
-    ["#", "Treatment", "Type/Material", "Tooth", "Cost (₹)", "Decision"].forEach((h, i) => doc.text(h, cols[i], y));
+    ["#", "Treatment", "Type/Material", "Tooth", "Cost (Rs )", "Decision"].forEach((h, i) => doc.text(h, cols[i], y));
     y += 6;
     doc.setFont("helvetica", "normal");
 
@@ -362,7 +362,7 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
       doc.text(doc.splitTextToSize(item.procedure_name, 40)[0], cols[1], y);
       doc.text(doc.splitTextToSize(item.selected_option || "—", 37)[0], cols[2], y);
       doc.text(item.tooth_number ? `#${item.tooth_number}` : "—", cols[3], y);
-      doc.text(`₹${item.estimated_cost.toLocaleString()}`, cols[4], y);
+      doc.text(`Rs ${item.estimated_cost.toLocaleString()}`, cols[4], y);
       const dec = item.decision === "accepted" ? "✓ Accept" : item.decision === "rejected" ? "✗ Reject" : item.decision === "later" ? "⏳ Later" : "Pending";
       doc.text(dec, cols[5], y);
       if (item.notes) { y += 3.5; doc.setTextColor(120); doc.setFontSize(6.5); doc.text(`Note: ${item.notes}`, cols[1], y); doc.setTextColor(40); doc.setFontSize(7.5); }
@@ -371,9 +371,9 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
 
     y += 4;
     doc.setFont("helvetica", "bold");
-    doc.text(`Total: ₹${totalCost.toLocaleString()}`, rm, y, { align: "right" });
+    doc.text(`Total: Rs ${totalCost.toLocaleString()}`, rm, y, { align: "right" });
     y += 5;
-    doc.text(`Accepted: ₹${acceptedCost.toLocaleString()}`, rm, y, { align: "right" });
+    doc.text(`Accepted: Rs ${acceptedCost.toLocaleString()}`, rm, y, { align: "right" });
     y += 15;
 
     doc.setFont("helvetica", "normal");
@@ -425,7 +425,7 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
                 <CardContent className="p-3 flex items-center justify-between">
                   <div>
                     <p className="font-semibold text-sm">{plan.plan_name}</p>
-                    <p className="text-xs text-muted-foreground">₹{(plan.total_estimated_cost || 0).toLocaleString()} · {new Date(plan.created_at).toLocaleDateString("en-IN")}</p>
+                    <p className="text-xs text-muted-foreground">Rs {(plan.total_estimated_cost || 0).toLocaleString()} · {new Date(plan.created_at).toLocaleDateString("en-IN")}</p>
                   </div>
                   <Badge className={STATUS_COLORS[plan.status] || ""}>{plan.status.replace("_", " ")}</Badge>
                 </CardContent>
@@ -498,7 +498,7 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
                         </p>
                       )}
                     </div>
-                    <p className="font-bold text-sm whitespace-nowrap">₹{item.estimated_cost.toLocaleString()}</p>
+                    <p className="font-bold text-sm whitespace-nowrap">Rs {item.estimated_cost.toLocaleString()}</p>
                   </div>
 
                   {/* Per-item decision buttons */}
@@ -536,12 +536,12 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
             <div className="space-y-1.5">
               <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50 border">
                 <p className="text-sm text-muted-foreground">Total Estimated Cost</p>
-                <p className="font-bold">₹{totalCost.toLocaleString()}</p>
+                <p className="font-bold">Rs {totalCost.toLocaleString()}</p>
               </div>
               {items.some(i => i.decision === "accepted") && (
                 <div className="flex justify-between items-center p-3 rounded-lg bg-green-50 border border-green-200">
                   <p className="text-sm font-semibold text-green-800">Accepted Treatments Cost</p>
-                  <p className="text-lg font-bold text-green-700">₹{acceptedCost.toLocaleString()}</p>
+                  <p className="text-lg font-bold text-green-700">Rs {acceptedCost.toLocaleString()}</p>
                 </div>
               )}
             </div>
@@ -685,7 +685,7 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
                   {tx.types.map(type => (
                     <button key={type} onClick={() => addItemForTeeth(tx.name, type)}
                       className="px-2 py-1 text-[10px] rounded-md border bg-background hover:bg-primary/10 hover:border-primary transition-colors">
-                      {type}{pricingMap?.[tx.name] ? <span className="ml-1 opacity-50">₹{pricingMap[tx.name]}</span> : null}
+                      {type}{pricingMap?.[tx.name] ? <span className="ml-1 opacity-50">Rs {pricingMap[tx.name]}</span> : null}
                     </button>
                   ))}
                 </div>
@@ -718,7 +718,7 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-[10px]">Cost (₹)</Label>
+                    <Label className="text-[10px]">Cost (Rs )</Label>
                     <Input type="number" value={item.estimated_cost} onChange={e => updateItem(idx, "estimated_cost", Number(e.target.value))} className="h-7 text-xs" />
                   </div>
                   <div>

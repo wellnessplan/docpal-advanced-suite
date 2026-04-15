@@ -110,7 +110,7 @@ export default function LabDirectoryTab({ clinicId }: { clinicId: string }) {
                   <Input type="number" value={form.default_tat_days} onChange={e => setForm(f => ({ ...f, default_tat_days: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Default Cost (₹)</Label>
+                  <Label>Default Cost (Rs )</Label>
                   <Input type="number" value={form.default_cost} onChange={e => setForm(f => ({ ...f, default_cost: e.target.value }))} />
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function LabDirectoryTab({ clinicId }: { clinicId: string }) {
                   </TableCell>
                   <TableCell>{lab.speciality ? <Badge variant="secondary" className="text-[10px]">{lab.speciality}</Badge> : "—"}</TableCell>
                   <TableCell>{lab.default_tat_days} days</TableCell>
-                  <TableCell>₹{Number(lab.default_cost || 0).toLocaleString()}</TableCell>
+                  <TableCell>Rs {Number(lab.default_cost || 0).toLocaleString()}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       {lab.phone && (

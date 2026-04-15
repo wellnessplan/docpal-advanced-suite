@@ -272,7 +272,7 @@ export default function BillingPage() {
                             <span className="text-sm font-medium">{t.treatment_name}</span>
                             <span className="text-xs text-muted-foreground ml-2">Tooth #{t.tooth_number}</span>
                           </div>
-                          <span className="text-sm font-medium">₹{Number(t.cost || 0).toLocaleString()}</span>
+                          <span className="text-sm font-medium">Rs {Number(t.cost || 0).toLocaleString()}</span>
                         </label>
                       ))}
                     </div>
@@ -285,7 +285,7 @@ export default function BillingPage() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Discount (₹)</Label>
+                    <Label className="text-xs">Discount (Rs )</Label>
                     <Input type="number" step="0.01" value={form.discount_amount} onChange={e => setForm(f => ({ ...f, discount_amount: e.target.value }))} />
                   </div>
                   <div className="space-y-1">
@@ -311,10 +311,10 @@ export default function BillingPage() {
 
                 {selectedTreatments.length > 0 && (
                   <div className="rounded-md border p-3 space-y-1 text-sm">
-                    <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toLocaleString()}</span></div>
-                    {discountTotal > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-₹{discountTotal.toLocaleString()}</span></div>}
-                    {taxAmount > 0 && <div className="flex justify-between"><span>Tax ({taxRate}%)</span><span>₹{taxAmount.toLocaleString()}</span></div>}
-                    <div className="flex justify-between font-bold border-t pt-1"><span>Total Payable</span><span>₹{finalAmount.toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span>Subtotal</span><span>Rs {subtotal.toLocaleString()}</span></div>
+                    {discountTotal > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-Rs {discountTotal.toLocaleString()}</span></div>}
+                    {taxAmount > 0 && <div className="flex justify-between"><span>Tax ({taxRate}%)</span><span>Rs {taxAmount.toLocaleString()}</span></div>}
+                    <div className="flex justify-between font-bold border-t pt-1"><span>Total Payable</span><span>Rs {finalAmount.toLocaleString()}</span></div>
                   </div>
                 )}
 
@@ -324,7 +324,7 @@ export default function BillingPage() {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={addInvoice.isPending || !form.patient_id || !selectedTreatments.length}>
-                  {addInvoice.isPending ? "Creating..." : `Create Invoice · ₹${finalAmount.toLocaleString()}`}
+                  {addInvoice.isPending ? "Creating..." : `Create Invoice · Rs ${finalAmount.toLocaleString()}`}
                 </Button>
               </form>
             </DialogContent>
@@ -335,13 +335,13 @@ export default function BillingPage() {
           <Card className="shadow-card border-0">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground">Balance Due</p>
-              <p className="mt-1 text-2xl font-bold font-heading text-warning">₹{totalPending.toLocaleString()}</p>
+              <p className="mt-1 text-2xl font-bold font-heading text-warning">Rs {totalPending.toLocaleString()}</p>
             </CardContent>
           </Card>
           <Card className="shadow-card border-0">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground">Collected</p>
-              <p className="mt-1 text-2xl font-bold font-heading text-success">₹{totalPaid.toLocaleString()}</p>
+              <p className="mt-1 text-2xl font-bold font-heading text-success">Rs {totalPaid.toLocaleString()}</p>
             </CardContent>
           </Card>
         </div>
@@ -379,13 +379,13 @@ export default function BillingPage() {
                           {inv.patients?.phone && <p className="text-xs text-muted-foreground">{inv.patients.phone}</p>}
                         </div>
                       </TableCell>
-                      <TableCell className="font-medium">₹{total.toLocaleString()}</TableCell>
-                      <TableCell className="text-success font-medium">₹{paid.toLocaleString()}</TableCell>
+                      <TableCell className="font-medium">Rs {total.toLocaleString()}</TableCell>
+                      <TableCell className="text-success font-medium">Rs {paid.toLocaleString()}</TableCell>
                       <TableCell className={`font-medium ${balance > 0 ? "text-destructive" : "text-success"}`}>
-                        {isPaid ? "Cleared" : `₹${balance.toLocaleString()}`}
+                        {isPaid ? "Cleared" : `Rs ${balance.toLocaleString()}`}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {discount > 0 ? `₹${discount.toLocaleString()}` : "—"}
+                        {discount > 0 ? `Rs ${discount.toLocaleString()}` : "—"}
                       </TableCell>
                       <TableCell>
                         <Badge className={statusColors[inv.status] || ""} variant="secondary">
@@ -442,12 +442,12 @@ export default function BillingPage() {
             {paymentInvoice && (
               <div className="space-y-4">
                 <div className="bg-muted/50 rounded-md p-3 text-sm space-y-1">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Invoice Total</span><span className="font-medium">₹{Number(paymentInvoice.amount).toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Already Paid</span><span className="text-success">₹{Number(paymentInvoice.paid_amount || 0).toLocaleString()}</span></div>
-                  <div className="flex justify-between border-t pt-1"><span className="font-medium">Balance Due</span><span className="font-bold text-destructive">₹{(Number(paymentInvoice.amount) - Number(paymentInvoice.paid_amount || 0)).toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Invoice Total</span><span className="font-medium">Rs {Number(paymentInvoice.amount).toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Already Paid</span><span className="text-success">Rs {Number(paymentInvoice.paid_amount || 0).toLocaleString()}</span></div>
+                  <div className="flex justify-between border-t pt-1"><span className="font-medium">Balance Due</span><span className="font-bold text-destructive">Rs {(Number(paymentInvoice.amount) - Number(paymentInvoice.paid_amount || 0)).toLocaleString()}</span></div>
                 </div>
                 <div>
-                  <Label className="text-xs">Payment Amount (₹)</Label>
+                  <Label className="text-xs">Payment Amount (Rs )</Label>
                   <Input type="number" className="h-9" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} />
                 </div>
                 <div>
