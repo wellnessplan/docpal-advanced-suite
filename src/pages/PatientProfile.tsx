@@ -210,15 +210,13 @@ export default function PatientProfilePage() {
       if (!invoiceData) return;
       const finalAmount = invoiceData.cost - invoiceData.discount;
 
-      // Check for existing unpaid/draft/pending invoice for this patient today
-      const today = new Date().toISOString().split("T")[0];
+      // Check for existing open invoice for this patient (any non-paid, non-cancelled)
       const { data: existingInvoice } = await supabase
         .from("invoices")
         .select("id, amount, total, subtotal, discount")
         .eq("clinic_id", clinicId!)
         .eq("patient_id", id!)
-        .in("status", ["draft", "pending", "unpaid"])
-        .eq("invoice_date", today)
+        .in("status", ["draft", "pending", "unpaid", "partial"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -245,6 +243,7 @@ export default function PatientProfilePage() {
         }).eq("id", existingInvoice.id);
       } else {
         // Create new invoice
+        const today = new Date().toISOString().split("T")[0];
         const { data: inv, error: invErr } = await supabase.from("invoices").insert({
           clinic_id: clinicId!,
           patient_id: id!,
