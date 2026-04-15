@@ -315,13 +315,13 @@ export default function PrescriptionSummary({
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>{item.condition || "—"}</td>
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>{item.treatment || "—"}</td>
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>{item.treatment_status?.replace("_", " ") || "—"}</td>
-                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9", textAlign: "right", fontWeight: 600 }}>{Number(item.cost) > 0 ? `₹${Number(item.cost).toLocaleString()}` : "—"}</td>
+                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9", textAlign: "right", fontWeight: 600 }}>{Number(item.cost) > 0 ? `Rs ${Number(item.cost).toLocaleString()}` : "—"}</td>
                     </tr>
                   ))}
                   {items.some((i: any) => Number(i.cost) > 0) && (
                     <tr style={{ background: "#f8fafc" }}>
                       <td colSpan={4} style={{ padding: "8px 12px", fontWeight: 700, textAlign: "right" }}>Total</td>
-                      <td style={{ padding: "8px 12px", fontWeight: 700, textAlign: "right", color: "#0284c7" }}>₹{items.reduce((s: number, i: any) => s + (Number(i.cost) || 0), 0).toLocaleString()}</td>
+                      <td style={{ padding: "8px 12px", fontWeight: 700, textAlign: "right", color: "#0284c7" }}>Rs {items.reduce((s: number, i: any) => s + (Number(i.cost) || 0), 0).toLocaleString()}</td>
                     </tr>
                   )}
                 </tbody>

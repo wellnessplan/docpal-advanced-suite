@@ -136,8 +136,8 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
         const lineTotal = (item.quantity || 1) * Number(item.unit_price);
         doc.text(String(item.description).substring(0, 50), cols[0] + 2, y + 4);
         doc.text(String(item.quantity || 1), cols[1] + 2, y + 4);
-        doc.text(`₹${Number(item.unit_price).toLocaleString()}`, cols[2] + 2, y + 4);
-        doc.text(`₹${lineTotal.toLocaleString()}`, cols[3] + 2, y + 4);
+        doc.text(`Rs ${Number(item.unit_price).toLocaleString()}`, cols[2] + 2, y + 4);
+        doc.text(`Rs ${lineTotal.toLocaleString()}`, cols[3] + 2, y + 4);
         doc.setDrawColor(220);
         doc.line(lm, y + 6, rm, y + 6);
         y += 8;
@@ -154,20 +154,20 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text("Subtotal", summaryX, y);
-    doc.text(`₹${subtotal.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+    doc.text(`Rs ${subtotal.toLocaleString("en-IN")}`, valX, y, { align: "right" });
     y += 6;
 
     if (discountTotal > 0) {
       doc.setTextColor(22, 163, 74);
       doc.text(`Discount${discountPct > 0 ? ` (${discountPct}%)` : ""}`, summaryX, y);
-      doc.text(`-₹${discountTotal.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+      doc.text(`-Rs ${discountTotal.toLocaleString("en-IN")}`, valX, y, { align: "right" });
       y += 6;
       doc.setTextColor(30);
     }
 
     if (taxRate > 0) {
       doc.text(`Tax (${taxRate}%)`, summaryX, y);
-      doc.text(`₹${taxAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+      doc.text(`Rs ${taxAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
       y += 6;
     }
 
@@ -178,7 +178,7 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text("Total", summaryX, y);
-    doc.text(`₹${totalAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+    doc.text(`Rs ${totalAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
     y += 8;
 
     // Paid & Balance
@@ -186,14 +186,14 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     doc.setFont("helvetica", "normal");
     doc.setTextColor(22, 163, 74);
     doc.text("Paid", summaryX, y);
-    doc.text(`₹${paidAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+    doc.text(`Rs ${paidAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
     y += 6;
 
     if (balance > 0) {
       doc.setTextColor(220, 38, 38);
       doc.setFont("helvetica", "bold");
       doc.text("Balance Due", summaryX, y);
-      doc.text(`₹${balance.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+      doc.text(`Rs ${balance.toLocaleString("en-IN")}`, valX, y, { align: "right" });
       y += 6;
     }
     doc.setTextColor(30);
@@ -209,7 +209,7 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
       doc.setFont("helvetica", "normal");
       payments.forEach((p: any) => {
         doc.text(
-          `${new Date(p.payment_date).toLocaleDateString("en-IN")} — ₹${Number(p.amount).toLocaleString()} (${(p.payment_method || "cash").toUpperCase()})`,
+          `${new Date(p.payment_date).toLocaleDateString("en-IN")} — Rs ${Number(p.amount).toLocaleString()} (${(p.payment_method || "cash").toUpperCase()})`,
           lm + 2, y
         );
         y += 4;
@@ -306,8 +306,8 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
                   <tr key={idx}>
                     <td style={{ border: "1px solid #ddd", padding: "5px 8px" }}>{item.description}</td>
                     <td style={{ border: "1px solid #ddd", padding: "5px 8px", textAlign: "center" }}>{item.quantity}</td>
-                    <td style={{ border: "1px solid #ddd", padding: "5px 8px", textAlign: "right" }}>₹{Number(item.unit_price).toLocaleString()}</td>
-                    <td style={{ border: "1px solid #ddd", padding: "5px 8px", textAlign: "right" }}>₹{((item.quantity || 1) * Number(item.unit_price)).toLocaleString()}</td>
+                    <td style={{ border: "1px solid #ddd", padding: "5px 8px", textAlign: "right" }}>Rs {Number(item.unit_price).toLocaleString()}</td>
+                    <td style={{ border: "1px solid #ddd", padding: "5px 8px", textAlign: "right" }}>Rs {((item.quantity || 1) * Number(item.unit_price)).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -318,27 +318,27 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
         {/* Summary */}
         <div style={{ marginTop: 16, borderTop: "1px solid #ddd", paddingTop: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0" }}>
-            <span>Subtotal</span><span style={{ fontWeight: 600 }}>₹{subtotal.toLocaleString("en-IN")}</span>
+            <span>Subtotal</span><span style={{ fontWeight: 600 }}>Rs {subtotal.toLocaleString("en-IN")}</span>
           </div>
           {discountTotal > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0", color: "#16a34a" }}>
-              <span>Discount{discountPct > 0 ? ` (${discountPct}%)` : ""}</span><span>-₹{discountTotal.toLocaleString("en-IN")}</span>
+              <span>Discount{discountPct > 0 ? ` (${discountPct}%)` : ""}</span><span>-Rs {discountTotal.toLocaleString("en-IN")}</span>
             </div>
           )}
           {taxRate > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0" }}>
-              <span>Tax ({taxRate}%)</span><span>₹{taxAmount.toLocaleString("en-IN")}</span>
+              <span>Tax ({taxRate}%)</span><span>Rs {taxAmount.toLocaleString("en-IN")}</span>
             </div>
           )}
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: "bold", padding: "8px 0", borderTop: "2px solid #333" }}>
-            <span>Total</span><span>₹{totalAmount.toLocaleString("en-IN")}</span>
+            <span>Total</span><span>Rs {totalAmount.toLocaleString("en-IN")}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0", color: "#16a34a" }}>
-            <span>Paid</span><span style={{ fontWeight: 600 }}>₹{paidAmount.toLocaleString("en-IN")}</span>
+            <span>Paid</span><span style={{ fontWeight: 600 }}>Rs {paidAmount.toLocaleString("en-IN")}</span>
           </div>
           {balance > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: "bold", padding: "4px 0", color: "#dc2626" }}>
-              <span>Balance Due</span><span>₹{balance.toLocaleString("en-IN")}</span>
+              <span>Balance Due</span><span>Rs {balance.toLocaleString("en-IN")}</span>
             </div>
           )}
         </div>
@@ -350,7 +350,7 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
             {payments.map((p: any, i: number) => (
               <div key={i} style={{ fontSize: 11, padding: "3px 0", display: "flex", justifyContent: "space-between" }}>
                 <span>{new Date(p.payment_date).toLocaleDateString("en-IN")} — {(p.payment_method || "cash").toUpperCase()}</span>
-                <span style={{ fontWeight: 600, color: "#16a34a" }}>₹{Number(p.amount).toLocaleString()}</span>
+                <span style={{ fontWeight: 600, color: "#16a34a" }}>Rs {Number(p.amount).toLocaleString()}</span>
               </div>
             ))}
           </div>
