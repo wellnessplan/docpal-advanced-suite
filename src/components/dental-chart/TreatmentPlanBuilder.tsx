@@ -297,17 +297,42 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
 
       // Auto-create invoice for accepted items only
       if (acceptedCost > 0) {
-        const { data: invoice } = await supabase.from("invoices").insert({
-          patient_id: patientId, clinic_id: clinicId, amount: acceptedCost, total: acceptedCost, subtotal: acceptedCost,
-          status: "draft", invoice_date: new Date().toISOString().split("T")[0], notes: `Treatment Plan: ${planName}`,
-        }).select("id").single();
-        if (invoice) {
-          const lineItems = acceptedItems.filter(i => i.estimated_cost > 0).map(i => ({
-            invoice_id: invoice.id,
-            description: `${i.procedure_name}${i.selected_option ? ` (${i.selected_option})` : ""}${i.tooth_number ? ` - Tooth #${i.tooth_number}` : ""}`,
-            unit_price: i.estimated_cost, quantity: 1, total: i.estimated_cost,
-          }));
-          if (lineItems.length > 0) await supabase.from("invoice_items").insert(lineItems);
+        // Check for existing open invoice for this patient
+        const { data: existingInvoice } = await supabase
+          .from("invoices")
+          .select("id, amount, total, subtotal, discount")
+          .eq("clinic_id", clinicId)
+          .eq("patient_id", patientId)
+          .in("status", ["draft", "pending", "unpaid", "partial"])
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const lineItems = acceptedItems.filter(i => i.estimated_cost > 0).map(i => ({
+          invoice_id: "", // will be set below
+          description: `${i.procedure_name}${i.selected_option ? ` (${i.selected_option})` : ""}${i.tooth_number ? ` - Tooth #${i.tooth_number}` : ""}`,
+          unit_price: i.estimated_cost, quantity: 1, total: i.estimated_cost,
+        }));
+
+        if (existingInvoice) {
+          // Add items to existing invoice
+          if (lineItems.length > 0) {
+            await supabase.from("invoice_items").insert(lineItems.map(li => ({ ...li, invoice_id: existingInvoice.id })));
+          }
+          const newSubtotal = Number(existingInvoice.subtotal || existingInvoice.amount) + acceptedCost;
+          const newDiscount = Number(existingInvoice.discount || 0);
+          const newTotal = newSubtotal - newDiscount;
+          await supabase.from("invoices").update({
+            subtotal: newSubtotal, amount: newTotal, total: newTotal,
+          }).eq("id", existingInvoice.id);
+        } else {
+          const { data: invoice } = await supabase.from("invoices").insert({
+            patient_id: patientId, clinic_id: clinicId, amount: acceptedCost, total: acceptedCost, subtotal: acceptedCost,
+            status: "draft", invoice_date: new Date().toISOString().split("T")[0], notes: `Treatment Plan: ${planName}`,
+          }).select("id").single();
+          if (invoice && lineItems.length > 0) {
+            await supabase.from("invoice_items").insert(lineItems.map(li => ({ ...li, invoice_id: invoice.id })));
+          }
         }
       }
     },
