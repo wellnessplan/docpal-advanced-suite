@@ -224,7 +224,7 @@ export default function ChairSideQuickMode({
                   <div>
                     <p className="text-xs font-semibold leading-tight">{t.name}</p>
                     {pricingMap?.[t.name] ? (
-                      <p className="text-[10px] opacity-70">₹{pricingMap[t.name]}</p>
+                      <p className="text-[10px] opacity-70">Rs {pricingMap[t.name]}</p>
                     ) : null}
                   </div>
                 </button>
@@ -245,7 +245,7 @@ export default function ChairSideQuickMode({
                 on <span className="font-semibold text-foreground">Tooth #{selectedTooth}</span>
               </p>
               <div className="flex items-center justify-center gap-2 mt-2">
-                <Label className="text-xs text-muted-foreground">Cost ₹</Label>
+                <Label className="text-xs text-muted-foreground">Cost Rs </Label>
                 <Input
                   type="number"
                   placeholder={pricingMap?.[selectedTreatment!] ? String(pricingMap[selectedTreatment!]) : "0"}
@@ -255,7 +255,7 @@ export default function ChairSideQuickMode({
                 />
               </div>
               <p className="text-[10px] text-muted-foreground">
-                {!customCost && pricingMap?.[selectedTreatment!] ? `Default: ₹${pricingMap[selectedTreatment!]}` : ""}
+                {!customCost && pricingMap?.[selectedTreatment!] ? `Default: Rs ${pricingMap[selectedTreatment!]}` : ""}
               </p>
             </div>
             <Button

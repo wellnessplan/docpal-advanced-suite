@@ -89,7 +89,7 @@ export default function InsuranceClaims() {
                     <p className="text-xs text-muted-foreground">{claim.insurer_name} · {claim.claim_number || "No claim #"}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-sm">₹{claim.claim_amount?.toLocaleString() || 0}</p>
+                    <p className="font-bold text-sm">Rs {claim.claim_amount?.toLocaleString() || 0}</p>
                     <Badge className={statusColors[claim.status] || ""} variant="secondary">{claim.status}</Badge>
                   </div>
                 </CardContent>

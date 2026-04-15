@@ -280,7 +280,7 @@ export default function LabOrdersPage() {
                     <Input type="date" value={form.expected_date} onChange={e => setForm(f => ({ ...f, expected_date: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Cost (₹)</Label>
+                    <Label>Cost (Rs )</Label>
                     <Input type="number" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: e.target.value }))} />
                   </div>
                 </div>
@@ -364,7 +364,7 @@ export default function LabOrdersPage() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {order.item_description} · {order.lab_name || "No lab"}
-                          {order.cost > 0 ? ` · ₹${Number(order.cost).toLocaleString()}` : ""}
+                          {order.cost > 0 ? ` · Rs ${Number(order.cost).toLocaleString()}` : ""}
                         </p>
 
                         {/* Status pipeline */}

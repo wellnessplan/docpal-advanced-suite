@@ -209,25 +209,62 @@ export default function PatientProfilePage() {
     mutationFn: async () => {
       if (!invoiceData) return;
       const finalAmount = invoiceData.cost - invoiceData.discount;
-      const { data: inv, error: invErr } = await supabase.from("invoices").insert({
-        clinic_id: clinicId!,
-        patient_id: id!,
-        amount: finalAmount,
-        total: finalAmount,
-        subtotal: invoiceData.cost,
-        discount: invoiceData.discount,
-        status: "pending",
-        invoice_date: new Date().toISOString().split("T")[0],
-      }).select("id").single();
-      if (invErr) throw invErr;
 
-      await supabase.from("invoice_items").insert({
-        invoice_id: inv!.id,
-        description: invoiceData.name,
-        unit_price: invoiceData.cost,
-        quantity: 1,
-        total: invoiceData.cost,
-      });
+      // Check for existing unpaid/draft/pending invoice for this patient today
+      const today = new Date().toISOString().split("T")[0];
+      const { data: existingInvoice } = await supabase
+        .from("invoices")
+        .select("id, amount, total, subtotal, discount")
+        .eq("clinic_id", clinicId!)
+        .eq("patient_id", id!)
+        .in("status", ["draft", "pending", "unpaid"])
+        .eq("invoice_date", today)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingInvoice) {
+        // Add item to existing invoice and update totals
+        await supabase.from("invoice_items").insert({
+          invoice_id: existingInvoice.id,
+          description: invoiceData.name,
+          unit_price: invoiceData.cost,
+          quantity: 1,
+          total: invoiceData.cost,
+        });
+
+        const newSubtotal = Number(existingInvoice.subtotal || existingInvoice.amount) + invoiceData.cost;
+        const newDiscount = Number(existingInvoice.discount || 0) + invoiceData.discount;
+        const newTotal = newSubtotal - newDiscount;
+
+        await supabase.from("invoices").update({
+          subtotal: newSubtotal,
+          amount: newTotal,
+          total: newTotal,
+          discount: newDiscount,
+        }).eq("id", existingInvoice.id);
+      } else {
+        // Create new invoice
+        const { data: inv, error: invErr } = await supabase.from("invoices").insert({
+          clinic_id: clinicId!,
+          patient_id: id!,
+          amount: finalAmount,
+          total: finalAmount,
+          subtotal: invoiceData.cost,
+          discount: invoiceData.discount,
+          status: "pending",
+          invoice_date: today,
+        }).select("id").single();
+        if (invErr) throw invErr;
+
+        await supabase.from("invoice_items").insert({
+          invoice_id: inv!.id,
+          description: invoiceData.name,
+          unit_price: invoiceData.cost,
+          quantity: 1,
+          total: invoiceData.cost,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
@@ -408,7 +445,7 @@ export default function PatientProfilePage() {
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs">Cost (₹)</Label>
+                        <Label className="text-xs">Cost (Rs )</Label>
                         <Input className="h-8 text-xs" type="number" placeholder="0"
                           value={newTx.cost} onChange={e => setNewTx(f => ({ ...f, cost: e.target.value }))} />
                       </div>
@@ -484,7 +521,7 @@ export default function PatientProfilePage() {
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell>{t.cost ? `₹${Number(t.cost).toLocaleString()}` : "—"}</TableCell>
+                        <TableCell>{t.cost ? `Rs ${Number(t.cost).toLocaleString()}` : "—"}</TableCell>
                         <TableCell className="text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString()}</TableCell>
                       </TableRow>
                     ))}
@@ -522,11 +559,11 @@ export default function PatientProfilePage() {
                       return (
                         <TableRow key={inv.id}>
                           <TableCell className="text-sm">{new Date(inv.created_at).toLocaleDateString()}</TableCell>
-                          <TableCell className="font-medium">₹{total.toLocaleString()}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{inv.discount ? `₹${Number(inv.discount).toLocaleString()}` : "—"}</TableCell>
-                          <TableCell className="text-sm text-success font-medium">₹{paid.toLocaleString()}</TableCell>
+                          <TableCell className="font-medium">Rs {total.toLocaleString()}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{inv.discount ? `Rs ${Number(inv.discount).toLocaleString()}` : "—"}</TableCell>
+                          <TableCell className="text-sm text-success font-medium">Rs {paid.toLocaleString()}</TableCell>
                           <TableCell className={`font-medium ${balance > 0 ? "text-destructive" : "text-success"}`}>
-                            {balance > 0 ? `₹${balance.toLocaleString()}` : "Cleared"}
+                            {balance > 0 ? `Rs ${balance.toLocaleString()}` : "Cleared"}
                           </TableCell>
                           <TableCell>
                             <Badge variant="secondary" className={`text-xs ${
@@ -569,15 +606,15 @@ export default function PatientProfilePage() {
               <div className="grid grid-cols-3 gap-3">
                 <Card><CardContent className="p-3 text-center">
                   <p className="text-xs text-muted-foreground">Total Billed</p>
-                  <p className="text-lg font-bold">₹{invoices.reduce((s: number, i: any) => s + Number(i.amount || 0), 0).toLocaleString()}</p>
+                  <p className="text-lg font-bold">Rs {invoices.reduce((s: number, i: any) => s + Number(i.amount || 0), 0).toLocaleString()}</p>
                 </CardContent></Card>
                 <Card><CardContent className="p-3 text-center">
                   <p className="text-xs text-muted-foreground">Paid</p>
-                  <p className="text-lg font-bold text-success">₹{invoices.reduce((s: number, i: any) => s + Number(i.paid_amount || 0), 0).toLocaleString()}</p>
+                  <p className="text-lg font-bold text-success">Rs {invoices.reduce((s: number, i: any) => s + Number(i.paid_amount || 0), 0).toLocaleString()}</p>
                 </CardContent></Card>
                 <Card><CardContent className="p-3 text-center">
                   <p className="text-xs text-muted-foreground">Balance</p>
-                  <p className="text-lg font-bold text-destructive">₹{invoices.reduce((s: number, i: any) => s + (Number(i.amount || 0) - Number(i.paid_amount || 0)), 0).toLocaleString()}</p>
+                  <p className="text-lg font-bold text-destructive">Rs {invoices.reduce((s: number, i: any) => s + (Number(i.amount || 0) - Number(i.paid_amount || 0)), 0).toLocaleString()}</p>
                 </CardContent></Card>
               </div>
             )}
@@ -601,18 +638,18 @@ export default function PatientProfilePage() {
                 </p>
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-xs">Amount (₹)</Label>
+                    <Label className="text-xs">Amount (Rs )</Label>
                     <Input type="number" className="h-9" value={invoiceData.cost}
                       onChange={e => setInvoiceData(d => d ? { ...d, cost: Number(e.target.value) } : null)} />
                   </div>
                   <div>
-                    <Label className="text-xs">Discount (₹)</Label>
+                    <Label className="text-xs">Discount (Rs )</Label>
                     <Input type="number" className="h-9" value={invoiceData.discount}
                       onChange={e => setInvoiceData(d => d ? { ...d, discount: Number(e.target.value) } : null)} />
                   </div>
                   <div className="bg-muted/50 rounded-md p-3 text-sm">
                     <span className="text-muted-foreground">Final Amount:</span>
-                    <span className="font-bold ml-2">₹{((invoiceData.cost || 0) - (invoiceData.discount || 0)).toLocaleString()}</span>
+                    <span className="font-bold ml-2">Rs {((invoiceData.cost || 0) - (invoiceData.discount || 0)).toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -637,12 +674,12 @@ export default function PatientProfilePage() {
             {paymentInvoice && (
               <div className="space-y-4">
                 <div className="bg-muted/50 rounded-md p-3 text-sm space-y-1">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Invoice Total</span><span className="font-medium">₹{Number(paymentInvoice.amount).toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Already Paid</span><span className="text-success">₹{Number(paymentInvoice.paid_amount || 0).toLocaleString()}</span></div>
-                  <div className="flex justify-between border-t pt-1"><span className="font-medium">Balance Due</span><span className="font-bold text-destructive">₹{(Number(paymentInvoice.amount) - Number(paymentInvoice.paid_amount || 0)).toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Invoice Total</span><span className="font-medium">Rs {Number(paymentInvoice.amount).toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Already Paid</span><span className="text-success">Rs {Number(paymentInvoice.paid_amount || 0).toLocaleString()}</span></div>
+                  <div className="flex justify-between border-t pt-1"><span className="font-medium">Balance Due</span><span className="font-bold text-destructive">Rs {(Number(paymentInvoice.amount) - Number(paymentInvoice.paid_amount || 0)).toLocaleString()}</span></div>
                 </div>
                 <div>
-                  <Label className="text-xs">Payment Amount (₹)</Label>
+                  <Label className="text-xs">Payment Amount (Rs )</Label>
                   <Input type="number" className="h-9" value={paymentAmount}
                     onChange={e => setPaymentAmount(e.target.value)} />
                 </div>

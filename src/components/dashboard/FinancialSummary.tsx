@@ -45,16 +45,16 @@ export default function FinancialSummary() {
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Revenue</span>
-          <span className="text-sm font-semibold text-foreground">₹{monthRevenue.toLocaleString()}</span>
+          <span className="text-sm font-semibold text-foreground">Rs {monthRevenue.toLocaleString()}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Expenses</span>
-          <span className="text-sm font-semibold text-destructive">₹{monthExpenses.toLocaleString()}</span>
+          <span className="text-sm font-semibold text-destructive">Rs {monthExpenses.toLocaleString()}</span>
         </div>
         <div className="border-t pt-3 flex items-center justify-between">
           <span className="text-sm font-medium text-foreground">Net Profit</span>
           <span className={`text-lg font-bold ${profit >= 0 ? "text-success" : "text-destructive"}`}>
-            ₹{profit.toLocaleString()}
+            Rs {profit.toLocaleString()}
           </span>
         </div>
         {monthRevenue > 0 && (

@@ -129,11 +129,11 @@ export default function KPICards() {
 
   const cards = [
     { title: "Today's Appointments", value: todayApptCount, icon: CalendarDays, color: "bg-accent text-primary", route: "/appointments" },
-    { title: "Today's Revenue", value: `₹${todayRevenue.toLocaleString()}`, icon: IndianRupee, color: "bg-success/10 text-success", route: "/finance" },
-    { title: "Pending Collections", value: `₹${pendingCollections.toLocaleString()}`, icon: AlertTriangle, color: "bg-warning/10 text-warning", route: "/billing" },
+    { title: "Today's Revenue", value: `Rs ${todayRevenue.toLocaleString()}`, icon: IndianRupee, color: "bg-success/10 text-success", route: "/finance" },
+    { title: "Pending Collections", value: `Rs ${pendingCollections.toLocaleString()}`, icon: AlertTriangle, color: "bg-warning/10 text-warning", route: "/billing" },
     { title: "No-show Rate (30d)", value: `${noShowRate}%`, icon: TrendingDown, color: "bg-destructive/10 text-destructive", route: "/appointments" },
     { title: "Low Stock Items", value: lowStockCount, icon: Package, color: lowStockCount > 0 ? "bg-destructive/10 text-destructive" : "bg-accent text-primary", route: "/inventory" },
-    { title: "Revenue Trend (6m)", value: `₹${(monthlyRevenueTrend[monthlyRevenueTrend.length - 1] ?? 0).toLocaleString()}`, icon: TrendingUp, color: "bg-success/10 text-success", sparkline: monthlyRevenueTrend, route: "/finance" },
+    { title: "Revenue Trend (6m)", value: `Rs ${(monthlyRevenueTrend[monthlyRevenueTrend.length - 1] ?? 0).toLocaleString()}`, icon: TrendingUp, color: "bg-success/10 text-success", sparkline: monthlyRevenueTrend, route: "/finance" },
     { title: "WhatsApp Sent (Month)", value: whatsappSentCount, icon: MessageSquare, color: "bg-accent text-primary", route: "/settings" },
     { title: "Lab Orders Pending", value: labPendingCount, icon: TestTubes, color: labPendingCount > 0 ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" : "bg-accent text-primary", route: "/lab-orders" },
   ];

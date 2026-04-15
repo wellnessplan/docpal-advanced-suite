@@ -35,17 +35,17 @@ export default function Payments() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="font-heading text-xl md:text-2xl font-bold">Payments</h1>
-            <p className="text-muted-foreground text-sm">₹{totalCollected.toLocaleString()} collected · {payments.length} payments</p>
+            <p className="text-muted-foreground text-sm">Rs {totalCollected.toLocaleString()} collected · {payments.length} payments</p>
           </div>
           <Button size="sm" className="gap-1.5"><Plus className="h-3.5 w-3.5" /> Record Payment</Button>
         </div>
 
         <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
           {[
-            { label: "Today", value: "₹0", color: "text-green-600" },
-            { label: "This Week", value: "₹0", color: "text-blue-600" },
-            { label: "Pending EMI", value: "₹0", color: "text-orange-600" },
-            { label: "Overdue", value: "₹0", color: "text-red-600" },
+            { label: "Today", value: "Rs 0", color: "text-green-600" },
+            { label: "This Week", value: "Rs 0", color: "text-blue-600" },
+            { label: "Pending EMI", value: "Rs 0", color: "text-orange-600" },
+            { label: "Overdue", value: "Rs 0", color: "text-red-600" },
           ].map(kpi => (
             <Card key={kpi.label}>
               <CardContent className="p-3 text-center">
@@ -83,7 +83,7 @@ export default function Payments() {
                     <p className="font-semibold text-sm truncate">{p.patients?.full_name}</p>
                     <p className="text-xs text-muted-foreground">{p.payment_method} · {format(new Date(p.payment_date), "dd MMM yyyy")}</p>
                   </div>
-                  <span className="font-bold text-green-700">₹{p.amount?.toLocaleString()}</span>
+                  <span className="font-bold text-green-700">Rs {p.amount?.toLocaleString()}</span>
                 </CardContent>
               </Card>
             ))}

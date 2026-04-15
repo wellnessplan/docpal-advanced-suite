@@ -121,11 +121,11 @@ export default function TreatmentCosting() {
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Avg. Price</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">₹{Math.round(avgPrice).toLocaleString()}</p></CardContent>
+          <CardContent><p className="text-2xl font-bold">Rs {Math.round(avgPrice).toLocaleString()}</p></CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1"><TrendingUp className="h-4 w-4" /> Avg. Profit</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold text-primary">₹{Math.round(avgProfit).toLocaleString()}</p></CardContent>
+          <CardContent><p className="text-2xl font-bold text-primary">Rs {Math.round(avgProfit).toLocaleString()}</p></CardContent>
         </Card>
       </div>
 
@@ -165,13 +165,13 @@ export default function TreatmentCosting() {
               return (
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.treatment_name}</TableCell>
-                  <TableCell className="text-right">₹{Number(p.base_price).toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">₹{Number(p.material_cost).toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">₹{Number(p.doctor_fee).toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">₹{Number(p.lab_cost).toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">₹{Number(p.other_cost).toLocaleString()}</TableCell>
+                  <TableCell className="text-right">Rs {Number(p.base_price).toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">Rs {Number(p.material_cost).toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">Rs {Number(p.doctor_fee).toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">Rs {Number(p.lab_cost).toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">Rs {Number(p.other_cost).toLocaleString()}</TableCell>
                   <TableCell className="text-right font-medium">
-                    <span className={prof >= 0 ? "text-primary" : "text-destructive"}>₹{prof.toLocaleString()}</span>
+                    <span className={prof >= 0 ? "text-primary" : "text-destructive"}>Rs {prof.toLocaleString()}</span>
                   </TableCell>
                   <TableCell className="text-right">
                     <Badge variant={Number(marg) >= 50 ? "default" : Number(marg) >= 20 ? "secondary" : "destructive"}>
@@ -209,25 +209,25 @@ export default function TreatmentCosting() {
             </div>
 
             <div>
-              <Label>Patient Price (₹)</Label>
+              <Label>Patient Price (Rs )</Label>
               <Input type="number" min="0" value={form.base_price} onChange={e => setForm(f => ({ ...f, base_price: e.target.value }))} className="mt-1" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Material Cost (₹)</Label>
+                <Label className="text-xs">Material Cost (Rs )</Label>
                 <Input type="number" min="0" value={form.material_cost} onChange={e => setForm(f => ({ ...f, material_cost: e.target.value }))} />
               </div>
               <div>
-                <Label className="text-xs">Doctor Fee (₹)</Label>
+                <Label className="text-xs">Doctor Fee (Rs )</Label>
                 <Input type="number" min="0" value={form.doctor_fee} onChange={e => setForm(f => ({ ...f, doctor_fee: e.target.value }))} />
               </div>
               <div>
-                <Label className="text-xs">Lab Cost (₹)</Label>
+                <Label className="text-xs">Lab Cost (Rs )</Label>
                 <Input type="number" min="0" value={form.lab_cost} onChange={e => setForm(f => ({ ...f, lab_cost: e.target.value }))} />
               </div>
               <div>
-                <Label className="text-xs">Other Cost (₹)</Label>
+                <Label className="text-xs">Other Cost (Rs )</Label>
                 <Input type="number" min="0" value={form.other_cost} onChange={e => setForm(f => ({ ...f, other_cost: e.target.value }))} />
               </div>
             </div>
@@ -237,11 +237,11 @@ export default function TreatmentCosting() {
               <CardContent className="p-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total Cost</span>
-                  <span className="font-medium">₹{totalCost.toLocaleString()}</span>
+                  <span className="font-medium">Rs {totalCost.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
                   <span className="text-muted-foreground">Profit</span>
-                  <span className={`font-bold ${profit >= 0 ? "text-primary" : "text-destructive"}`}>₹{profit.toLocaleString()}</span>
+                  <span className={`font-bold ${profit >= 0 ? "text-primary" : "text-destructive"}`}>Rs {profit.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
                   <span className="text-muted-foreground">Margin</span>

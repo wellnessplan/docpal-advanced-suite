@@ -155,7 +155,7 @@ export default function TreatmentTimeline({ patientId }: TreatmentTimelineProps)
                 <span className="text-sm font-medium">{ev.title}</span>
                 <div className="flex items-center gap-2 shrink-0">
                   {ev.cost !== undefined && ev.cost > 0 && (
-                    <span className="text-xs font-semibold">₹{ev.cost.toLocaleString()}</span>
+                    <span className="text-xs font-semibold">Rs {ev.cost.toLocaleString()}</span>
                   )}
                   {ev.status && (
                     <Badge variant="secondary" className={`text-[10px] ${statusColor(ev.status)}`}>

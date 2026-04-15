@@ -96,7 +96,7 @@ export default function VisitHistoryTab({ patientId }: VisitHistoryTabProps) {
                             <span className="text-muted-foreground">→</span>
                             <span className="font-medium">{item.treatment || "—"}</span>
                           </div>
-                          {item.cost > 0 && <span className="font-medium">₹{Number(item.cost).toLocaleString()}</span>}
+                          {item.cost > 0 && <span className="font-medium">Rs {Number(item.cost).toLocaleString()}</span>}
                         </div>
                       ))}
                     </div>
@@ -122,7 +122,7 @@ export default function VisitHistoryTab({ patientId }: VisitHistoryTabProps) {
                 {/* Total */}
                 {totalCost > 0 && (
                   <div className="text-right text-sm font-semibold border-t pt-2">
-                    Total: ₹{totalCost.toLocaleString()}
+                    Total: Rs {totalCost.toLocaleString()}
                   </div>
                 )}
               </CardContent>

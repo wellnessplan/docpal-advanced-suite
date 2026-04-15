@@ -130,7 +130,7 @@ export default function Inventory() {
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Items</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{items.length}</p></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Value</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">₹{totalValue.toLocaleString()}</p></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Value</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">Rs {totalValue.toLocaleString()}</p></CardContent></Card>
         <Card className={lowStockItems.length > 0 ? "border-destructive" : ""}>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1"><AlertTriangle className="h-4 w-4" /> Low Stock</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold text-destructive">{lowStockItems.length}</p></CardContent>
@@ -165,7 +165,7 @@ export default function Inventory() {
                 <div><Label>Quantity</Label><Input type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} /></div>
                 <div><Label>Unit</Label><Input value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} placeholder="pcs, ml, boxes" /></div>
                 <div><Label>Min Stock Level</Label><Input type="number" value={form.min_stock_level} onChange={e => setForm({ ...form, min_stock_level: e.target.value })} /></div>
-                <div><Label>Cost/Unit (₹)</Label><Input type="number" value={form.cost_per_unit} onChange={e => setForm({ ...form, cost_per_unit: e.target.value })} /></div>
+                <div><Label>Cost/Unit (Rs )</Label><Input type="number" value={form.cost_per_unit} onChange={e => setForm({ ...form, cost_per_unit: e.target.value })} /></div>
                 <div><Label>Supplier</Label><Input value={form.supplier_name} onChange={e => setForm({ ...form, supplier_name: e.target.value })} /></div>
                 <div><Label>Expiry Date</Label><Input type="date" value={form.expiry_date} onChange={e => setForm({ ...form, expiry_date: e.target.value })} /></div>
                 <div className="col-span-2"><Label>Notes</Label><Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
@@ -222,7 +222,7 @@ export default function Inventory() {
                         {isLow && <AlertTriangle className="inline h-3 w-3 ml-1 text-destructive" />}
                       </TableCell>
                       <TableCell>{item.unit}</TableCell>
-                      <TableCell>₹{item.cost_per_unit}</TableCell>
+                      <TableCell>Rs {item.cost_per_unit}</TableCell>
                       <TableCell>
                         {item.expiry_date ? (
                           <span className={daysToExpiry !== null && daysToExpiry <= 30 ? "text-orange-500 font-medium" : ""}>

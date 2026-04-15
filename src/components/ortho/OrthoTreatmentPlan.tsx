@@ -95,7 +95,7 @@ export default function OrthoTreatmentPlan({ caseId }: { caseId: string }) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-heading text-lg font-semibold">Treatment Plan</h3>
-          <p className="text-sm text-muted-foreground">{phases.length} phases • {totalVisits} visits est. • ₹{totalCost.toLocaleString()} total</p>
+          <p className="text-sm text-muted-foreground">{phases.length} phases • {totalVisits} visits est. • Rs {totalCost.toLocaleString()} total</p>
         </div>
         <div className="flex gap-2">
           {phases.length === 0 && (
@@ -120,7 +120,7 @@ export default function OrthoTreatmentPlan({ caseId }: { caseId: string }) {
                   <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                     {phase.estimated_visits && <span>{phase.estimated_visits} visits</span>}
                     {phase.visit_interval_weeks && <span>every {phase.visit_interval_weeks} weeks</span>}
-                    {phase.estimated_cost > 0 && <span>₹{Number(phase.estimated_cost).toLocaleString()}</span>}
+                    {phase.estimated_cost > 0 && <span>Rs {Number(phase.estimated_cost).toLocaleString()}</span>}
                   </div>
                 </div>
                 <Select value={phase.status} onValueChange={v => updatePhaseStatus.mutate({ id: phase.id, status: v })}>
@@ -150,7 +150,7 @@ export default function OrthoTreatmentPlan({ caseId }: { caseId: string }) {
               <div className="grid gap-3 grid-cols-3">
                 <div className="space-y-1"><Label>Est. Visits</Label><Input type="number" value={form.estimated_visits} onChange={e => setForm(f => ({ ...f, estimated_visits: e.target.value }))} /></div>
                 <div className="space-y-1"><Label>Interval (weeks)</Label><Input type="number" value={form.visit_interval_weeks} onChange={e => setForm(f => ({ ...f, visit_interval_weeks: e.target.value }))} /></div>
-                <div className="space-y-1"><Label>Cost (₹)</Label><Input type="number" value={form.estimated_cost} onChange={e => setForm(f => ({ ...f, estimated_cost: e.target.value }))} /></div>
+                <div className="space-y-1"><Label>Cost (Rs )</Label><Input type="number" value={form.estimated_cost} onChange={e => setForm(f => ({ ...f, estimated_cost: e.target.value }))} /></div>
               </div>
               <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button><Button onClick={() => addPhase.mutate()} disabled={!form.phase_name}>Add Phase</Button></div>
             </div>

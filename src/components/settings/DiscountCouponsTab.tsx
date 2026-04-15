@@ -131,7 +131,7 @@ export default function DiscountCouponsTab({ clinicId }: Props) {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="percent">Percentage (%)</SelectItem>
-                        <SelectItem value="fixed">Fixed Amount (₹)</SelectItem>
+                        <SelectItem value="fixed">Fixed Amount (Rs )</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -216,7 +216,7 @@ export default function DiscountCouponsTab({ clinicId }: Props) {
                         {c.discount_type === "percent" ? (
                           <><Percent className="h-3 w-3" />{c.discount_value}%</>
                         ) : (
-                          <><IndianRupee className="h-3 w-3" />₹{c.discount_value}</>
+                          <><IndianRupee className="h-3 w-3" />Rs {c.discount_value}</>
                         )}
                       </span>
                     </TableCell>

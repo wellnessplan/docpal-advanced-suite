@@ -79,7 +79,7 @@ export default function TreatmentPlans() {
                     <Badge className={statusColors[plan.status] || ""}>{plan.status}</Badge>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>₹{plan.total_estimated_cost?.toLocaleString() || 0}</span>
+                    <span>Rs {plan.total_estimated_cost?.toLocaleString() || 0}</span>
                     <span>{format(new Date(plan.created_at), "dd MMM yyyy")}</span>
                   </div>
                 </CardContent>

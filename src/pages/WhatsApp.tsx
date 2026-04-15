@@ -21,7 +21,7 @@ const TEMPLATES = [
   { id: "follow_up", label: "Post-Treatment Follow-Up", icon: Sparkles,
     text: "Hi {name}, we hope you're doing well after your recent {treatment}. If you experience any discomfort, please don't hesitate to contact us. Remember to follow the care instructions provided." },
   { id: "payment_reminder", label: "Payment Reminder", icon: FileText,
-    text: "Hi {name}, this is a gentle reminder that you have an outstanding balance of ₹{amount}. Please visit us or call to arrange payment at your earliest convenience." },
+    text: "Hi {name}, this is a gentle reminder that you have an outstanding balance of Rs {amount}. Please visit us or call to arrange payment at your earliest convenience." },
   { id: "recall", label: "Recall / Check-up", icon: Clock,
     text: "Hi {name}, it's been a while since your last dental check-up! Regular visits help maintain your oral health. Call us to schedule your next appointment." },
 ];

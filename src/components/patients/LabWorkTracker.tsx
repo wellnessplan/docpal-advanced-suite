@@ -105,7 +105,7 @@ export default function LabWorkTracker({ patientId, clinicId }: LabWorkTrackerPr
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Cost (₹)</Label>
+                <Label className="text-xs">Cost (Rs )</Label>
                 <Input className="h-8 text-xs" type="number" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: e.target.value }))} />
               </div>
               <div>
@@ -132,7 +132,7 @@ export default function LabWorkTracker({ patientId, clinicId }: LabWorkTrackerPr
                     <p className="text-sm font-medium">{order.item_description}</p>
                     <p className="text-[10px] text-muted-foreground">
                       {order.lab_name || "No lab specified"}
-                      {order.cost > 0 ? ` · ₹${Number(order.cost).toLocaleString()}` : ""}
+                      {order.cost > 0 ? ` · Rs ${Number(order.cost).toLocaleString()}` : ""}
                     </p>
                   </div>
                   {canAdvance && (

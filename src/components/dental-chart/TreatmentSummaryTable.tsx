@@ -114,7 +114,7 @@ export default function TreatmentSummaryTable({ patientId }: TreatmentSummaryTab
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right text-sm">
-                    {row.cost ? `₹${Number(row.cost).toLocaleString()}` : "—"}
+                    {row.cost ? `Rs ${Number(row.cost).toLocaleString()}` : "—"}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
                     {row.notes || "—"}

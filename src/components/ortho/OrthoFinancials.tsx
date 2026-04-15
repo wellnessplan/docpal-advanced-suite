@@ -68,7 +68,7 @@ export default function OrthoFinancials({ caseId }: { caseId: string }) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-heading text-lg font-semibold">Financial Tracking</h3>
-          <p className="text-sm text-muted-foreground">Total: ₹{totalAmount.toLocaleString()} • Paid: ₹{paidAmount.toLocaleString()} • Outstanding: <span className="text-destructive font-medium">₹{outstanding.toLocaleString()}</span></p>
+          <p className="text-sm text-muted-foreground">Total: Rs {totalAmount.toLocaleString()} • Paid: Rs {paidAmount.toLocaleString()} • Outstanding: <span className="text-destructive font-medium">Rs {outstanding.toLocaleString()}</span></p>
         </div>
         <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1"><Plus className="h-4 w-4" /> Add Milestone</Button>
       </div>
@@ -90,7 +90,7 @@ export default function OrthoFinancials({ caseId }: { caseId: string }) {
               {milestones.map((m: any) => (
                 <TableRow key={m.id}>
                   <TableCell className="font-medium">{m.milestone_name}</TableCell>
-                  <TableCell>₹{Number(m.amount).toLocaleString()}</TableCell>
+                  <TableCell>Rs {Number(m.amount).toLocaleString()}</TableCell>
                   <TableCell className="text-sm">{m.due_date || "—"}</TableCell>
                   <TableCell><Badge variant="secondary" className={STATUS_COLORS[m.status] || ""}>{m.status}</Badge></TableCell>
                   <TableCell className="text-sm">{m.paid_date || "—"}</TableCell>
@@ -114,7 +114,7 @@ export default function OrthoFinancials({ caseId }: { caseId: string }) {
             <div className="space-y-3">
               <div className="space-y-1"><Label>Milestone Name</Label><Input value={form.milestone_name} onChange={e => setForm(f => ({ ...f, milestone_name: e.target.value }))} placeholder="e.g. Case Start Fee" /></div>
               <div className="grid gap-3 grid-cols-2">
-                <div className="space-y-1"><Label>Amount (₹)</Label><Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
+                <div className="space-y-1"><Label>Amount (Rs )</Label><Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
                 <div className="space-y-1"><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
               </div>
               <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button><Button onClick={() => addMilestone.mutate()} disabled={!form.milestone_name || !form.amount}>Add</Button></div>

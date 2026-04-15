@@ -129,7 +129,7 @@ export default function Referrals() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Reward Amount (₹)</Label>
+                    <Label>Reward Amount (Rs )</Label>
                     <Input type="number" value={form.reward_amount} onChange={e => setForm(f => ({ ...f, reward_amount: e.target.value }))} />
                   </div>
                 </div>
@@ -172,7 +172,7 @@ export default function Referrals() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">{ref.patients?.full_name || "Unknown"} → {ref.referred_name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{ref.reward_type?.replace("_", " ")}: ₹{ref.reward_amount}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{ref.reward_type?.replace("_", " ")}: Rs {ref.reward_amount}</p>
                   </div>
                   <Badge className={statusColors[ref.status] || ""} variant="secondary">{ref.status}</Badge>
                   <DropdownMenu>

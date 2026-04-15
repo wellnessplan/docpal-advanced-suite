@@ -87,12 +87,22 @@ export default function PrescriptionSummary({
     if (clinic?.phone || clinic?.email) { doc.text(`${clinic?.phone || ""} · ${clinic?.email || ""}`, lm, y); y += 4; }
 
     // Patient info right-aligned
+    const ptAge = patient?.date_of_birth
+      ? Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+      : null;
+    const ptMeta = [
+      patient?.op_number,
+      ptAge ? `${ptAge}y` : null,
+      patient?.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : null,
+    ].filter(Boolean).join(" · ");
+
     doc.setTextColor(100);
     doc.text(`Date: ${new Date().toLocaleDateString("en-IN")}`, lm + pw, 20, { align: "right" });
     doc.setTextColor(30);
     doc.text(`${patient?.full_name || ""}`, lm + pw, 25, { align: "right" });
     doc.setTextColor(100);
     if (patient?.phone) doc.text(`Ph: ${patient.phone}`, lm + pw, 29, { align: "right" });
+    if (ptMeta) doc.text(ptMeta, lm + pw, 33, { align: "right" });
 
     // Accent line
     y += 2;
@@ -270,6 +280,12 @@ export default function PrescriptionSummary({
               <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{patient?.full_name}</div>
               {patient?.phone && <div style={{ fontSize: 11, color: "#64748b" }}>Ph: {patient.phone}</div>}
               {(patient as any)?.op_number && <div style={{ fontSize: 10, color: "#94a3b8" }}>{(patient as any).op_number}</div>}
+              <div style={{ fontSize: 10, color: "#94a3b8" }}>
+                {[
+                  patient?.date_of_birth ? `${Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}y` : null,
+                  patient?.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : null,
+                ].filter(Boolean).join(" · ")}
+              </div>
             </div>
           </div>
 
@@ -315,13 +331,13 @@ export default function PrescriptionSummary({
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>{item.condition || "—"}</td>
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>{item.treatment || "—"}</td>
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>{item.treatment_status?.replace("_", " ") || "—"}</td>
-                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9", textAlign: "right", fontWeight: 600 }}>{Number(item.cost) > 0 ? `₹${Number(item.cost).toLocaleString()}` : "—"}</td>
+                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9", textAlign: "right", fontWeight: 600 }}>{Number(item.cost) > 0 ? `Rs ${Number(item.cost).toLocaleString()}` : "—"}</td>
                     </tr>
                   ))}
                   {items.some((i: any) => Number(i.cost) > 0) && (
                     <tr style={{ background: "#f8fafc" }}>
                       <td colSpan={4} style={{ padding: "8px 12px", fontWeight: 700, textAlign: "right" }}>Total</td>
-                      <td style={{ padding: "8px 12px", fontWeight: 700, textAlign: "right", color: "#0284c7" }}>₹{items.reduce((s: number, i: any) => s + (Number(i.cost) || 0), 0).toLocaleString()}</td>
+                      <td style={{ padding: "8px 12px", fontWeight: 700, textAlign: "right", color: "#0284c7" }}>Rs {items.reduce((s: number, i: any) => s + (Number(i.cost) || 0), 0).toLocaleString()}</td>
                     </tr>
                   )}
                 </tbody>

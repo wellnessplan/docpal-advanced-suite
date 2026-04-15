@@ -295,12 +295,12 @@ export default function Performance() {
         {/* Top KPIs */}
         <div className="grid gap-3 grid-cols-2 md:grid-cols-4 xl:grid-cols-6">
           {[
-            { label: "Total Revenue", value: `₹${totalRevenue.toLocaleString()}`, icon: IndianRupee, color: "bg-success/10 text-success" },
+            { label: "Total Revenue", value: `Rs ${totalRevenue.toLocaleString()}`, icon: IndianRupee, color: "bg-success/10 text-success" },
             { label: "Patients Seen", value: totalPatients, icon: Users, color: "bg-accent text-primary" },
             { label: "Treatments Done", value: completedTreatments, icon: Activity, color: "bg-accent text-primary" },
             { label: "Case Acceptance", value: `${caseAcceptance}%`, icon: UserCheck, color: caseAcceptance >= 70 ? "bg-success/10 text-success" : "bg-warning/10 text-warning" },
             { label: "No-show Rate", value: `${noShowRate}%`, icon: AlertTriangle, color: noShowRate <= 10 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive" },
-            { label: "Discounts Given", value: `₹${totalDiscount.toLocaleString()}`, icon: TrendingUp, color: "bg-warning/10 text-warning" },
+            { label: "Discounts Given", value: `Rs ${totalDiscount.toLocaleString()}`, icon: TrendingUp, color: "bg-warning/10 text-warning" },
           ].map((kpi) => (
             <Card key={kpi.label} className="shadow-card border-0">
               <CardContent className="p-4">
@@ -333,7 +333,7 @@ export default function Performance() {
                   <Star className="h-5 w-5 text-success" />
                   <span className="text-sm">
                     <strong>{topDoctor.name}</strong> is the top performer with{" "}
-                    <strong>₹{topDoctor.revenue.toLocaleString()}</strong> revenue and{" "}
+                    <strong>Rs {topDoctor.revenue.toLocaleString()}</strong> revenue and{" "}
                     <strong>{topDoctor.patients}</strong> patients in the selected period.
                   </span>
                 </CardContent>
@@ -365,7 +365,7 @@ export default function Performance() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-muted/50 rounded-lg p-2.5">
                         <p className="text-xs text-muted-foreground">Revenue</p>
-                        <p className="font-bold text-sm">₹{doc.revenue.toLocaleString()}</p>
+                        <p className="font-bold text-sm">Rs {doc.revenue.toLocaleString()}</p>
                       </div>
                       <div className="bg-muted/50 rounded-lg p-2.5">
                         <p className="text-xs text-muted-foreground">Patients</p>
@@ -546,7 +546,7 @@ export default function Performance() {
                     <div className="mt-6 p-3 bg-muted/50 rounded-lg">
                       <p className="text-xs text-muted-foreground">Revenue Leakage (from pending treatments)</p>
                       <p className="text-lg font-bold text-destructive mt-1">
-                        ₹{treatments.filter(t => t.status === "planned" || t.status === "pending").reduce((s, t) => s + Number(t.cost || 0), 0).toLocaleString()}
+                        Rs {treatments.filter(t => t.status === "planned" || t.status === "pending").reduce((s, t) => s + Number(t.cost || 0), 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -559,9 +559,9 @@ export default function Performance() {
           <TabsContent value="clinic" className="space-y-4">
             <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
               {[
-                { label: "Avg Revenue/Day", value: `₹${Math.round(totalRevenue / Math.max(parseInt(dateRange), 1)).toLocaleString()}`, icon: IndianRupee },
+                { label: "Avg Revenue/Day", value: `Rs ${Math.round(totalRevenue / Math.max(parseInt(dateRange), 1)).toLocaleString()}`, icon: IndianRupee },
                 { label: "Walk-in Ratio", value: `${appointments.length ? Math.round((walkinCount / appointments.length) * 100) : 0}%`, icon: Users },
-                { label: "Avg Billing/Patient", value: `₹${totalPatients ? Math.round(totalRevenue / totalPatients).toLocaleString() : 0}`, icon: TrendingUp },
+                { label: "Avg Billing/Patient", value: `Rs ${totalPatients ? Math.round(totalRevenue / totalPatients).toLocaleString() : 0}`, icon: TrendingUp },
                 { label: "Total Appointments", value: appointments.length, icon: CalendarDays },
               ].map((item) => (
                 <Card key={item.label} className="shadow-card border-0">
@@ -643,12 +643,12 @@ export default function Performance() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <p className="text-xs text-muted-foreground">Total Discounts</p>
-                    <p className="text-lg font-bold text-warning">₹{totalDiscount.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-warning">Rs {totalDiscount.toLocaleString()}</p>
                   </div>
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <p className="text-xs text-muted-foreground">Pending Collections</p>
                     <p className="text-lg font-bold text-destructive">
-                      ₹{invoices.filter(i => i.status !== "paid").reduce((s, i) => s + Number(i.balance || i.total || 0), 0).toLocaleString()}
+                      Rs {invoices.filter(i => i.status !== "paid").reduce((s, i) => s + Number(i.balance || i.total || 0), 0).toLocaleString()}
                     </p>
                   </div>
                   <div className="p-3 bg-muted/50 rounded-lg">

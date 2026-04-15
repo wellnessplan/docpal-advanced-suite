@@ -46,7 +46,7 @@ const DEFAULT_TEMPLATES = [
   { template_name: "google_review_request", template_type: "review", timing_offset_hours: 2,
     message_body: "Hi {{patient_name}} 😊\n\nThank you for visiting *{{clinic_name}}* today! We hope your experience was comfortable.\n\nIf you have 30 seconds, your Google review means the world to us and helps other patients find trusted dental care:\n\n⭐⭐⭐⭐⭐ {{google_review_link}}\n\nThank you so much!\n— Dr. {{doctor_name}} & Team" },
   { template_name: "refer_a_friend", template_type: "referral", timing_offset_hours: 0,
-    message_body: "Hi {{patient_name}}! 👋\n\nWe love having you as a patient at *{{clinic_name}}!* 💙\n\nKnow someone who needs dental care? *Refer a friend* and both of you get:\n\n🎁 *You: ₹500 credit on your next visit*\n🎁 *Your friend: FREE first check-up*\n\nShare your referral link: {{referral_link}}\n\nThank you for spreading the smile! 😁\n— Dr. {{doctor_name}}" },
+    message_body: "Hi {{patient_name}}! 👋\n\nWe love having you as a patient at *{{clinic_name}}!* 💙\n\nKnow someone who needs dental care? *Refer a friend* and both of you get:\n\n🎁 *You: Rs 500 credit on your next visit*\n🎁 *Your friend: FREE first check-up*\n\nShare your referral link: {{referral_link}}\n\nThank you for spreading the smile! 😁\n— Dr. {{doctor_name}}" },
 
   // Existing operational templates
   { template_name: "appt_reminder_24h", template_type: "reminder", timing_offset_hours: 24,
@@ -54,7 +54,7 @@ const DEFAULT_TEMPLATES = [
   { template_name: "post_treatment_followup", template_type: "followup", timing_offset_hours: 72,
     message_body: "Hi {{patient_name}}, we hope you're recovering well after your {{treatment}}. Please follow the post-care instructions. Contact us if you have any concerns. — {{clinic_name}}" },
   { template_name: "payment_due_reminder", template_type: "payment", timing_offset_hours: 48,
-    message_body: "Hi {{patient_name}}, your payment of ₹{{amount}} is due on {{due_date}}. Please make the payment at your earliest convenience. — {{clinic_name}}" },
+    message_body: "Hi {{patient_name}}, your payment of Rs {{amount}} is due on {{due_date}}. Please make the payment at your earliest convenience. — {{clinic_name}}" },
   { template_name: "birthday_greeting", template_type: "greeting", timing_offset_hours: 0,
     message_body: "Happy Birthday {{patient_name}}! 🎂🎉\n\nWishing you a wonderful year filled with healthy smiles!\n\n— Dr. {{doctor_name}} & Team {{clinic_name}}" },
 ];
