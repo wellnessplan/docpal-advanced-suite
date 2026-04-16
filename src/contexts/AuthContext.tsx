@@ -32,12 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     if (DEV_BYPASS_AUTH) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    setProfile(data);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      if (error) {
+        console.error("fetchProfile error:", error.message);
+      }
+      setProfile(data);
+    } catch (err) {
+      console.error("fetchProfile exception:", err);
+      setProfile(null);
+    }
   };
 
   const refreshProfile = async () => {
