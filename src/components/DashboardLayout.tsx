@@ -31,6 +31,7 @@ const navGroups: NavGroup[] = [
     groupIcon: Stethoscope,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope },
       { href: "/today-schedule", label: "Today's Schedule", icon: CalendarClock },
       { href: "/queue", label: "Queue", icon: ListOrdered },
       { href: "/tasks", label: "Follow-Ups", icon: ClipboardList },
@@ -53,9 +54,9 @@ const navGroups: NavGroup[] = [
     groupIcon: Receipt,
     collapsible: true,
     items: [
-      { href: "/billing", label: "Billing & Invoices", icon: Receipt },
+      { href: "/billing", label: "Invoices", icon: Receipt },
       { href: "/payments", label: "Payments", icon: Wallet },
-      { href: "/insurance", label: "Insurance / Claims", icon: ShieldCheck },
+      { href: "/insurance", label: "Insurance", icon: ShieldCheck },
       { href: "/finance", label: "Expenses", icon: TrendingUp },
       { href: "/inventory", label: "Inventory", icon: Package },
     ],
@@ -80,14 +81,6 @@ const navGroups: NavGroup[] = [
       { href: "/reviews", label: "Feedback", icon: Star },
       { href: "/referrals", label: "Referrals", icon: Gift },
       { href: "/memberships", label: "Membership", icon: Crown },
-    ],
-  },
-  {
-    label: "PARTNERS",
-    groupIcon: Package,
-    collapsible: true,
-    items: [
-      { href: "/partners", label: "Partners", icon: Package },
     ],
   },
   {
