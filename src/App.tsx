@@ -44,6 +44,7 @@ const Reviews = lazy(() => import("./pages/Reviews"));
 const Referrals = lazy(() => import("./pages/Referrals"));
 const Memberships = lazy(() => import("./pages/Memberships"));
 const Staff = lazy(() => import("./pages/Staff"));
+const DrDashboard = lazy(() => import("./pages/DrDashboard"));
 const Integrations = lazy(() => import("./pages/Integrations"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const Partners = lazy(() => import("./pages/Partners"));
@@ -77,6 +78,7 @@ const App = () => (
                 <Route path="/onboarding" element={<AuthOnlyRoute><Onboarding /></AuthOnlyRoute>} />
                 <Route path="/register" element={<PatientSelfRegister />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/dr-dashboard" element={<ProtectedRoute><DrDashboard /></ProtectedRoute>} />
                 <Route path="/today-schedule" element={<ProtectedRoute><TodaySchedule /></ProtectedRoute>} />
                 <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
                 <Route path="/patients/:id" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
