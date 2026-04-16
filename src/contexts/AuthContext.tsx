@@ -32,12 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     if (DEV_BYPASS_AUTH) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    setProfile(data);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      if (error) {
+        console.error("fetchProfile error:", error.message);
+      }
+      setProfile(data);
+    } catch (err) {
+      console.error("fetchProfile exception:", err);
+      setProfile(null);
+    }
   };
 
   const refreshProfile = async () => {
@@ -48,34 +56,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (DEV_BYPASS_AUTH) return;
 
-    let initialLoad = true;
+    let mounted = true;
+
+    // Safety timeout: never stay loading for more than 5 seconds
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        setLoading(false);
+      }
+    }, 3000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
+        if (!mounted) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          fetchProfile(session.user.id).finally(() => {
+            if (mounted) setLoading(false);
+          });
         } else {
           setProfile(null);
-        }
-        if (!initialLoad) {
           setLoading(false);
         }
       }
     );
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         await fetchProfile(session.user.id);
       }
-      initialLoad = false;
       setLoading(false);
+    }).catch((err) => {
+      console.error("getSession error:", err);
+      if (mounted) setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
