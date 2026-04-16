@@ -81,6 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       initialLoad = false;
       setLoading(false);
+    }).catch((err) => {
+      console.error("getSession error:", err);
+      initialLoad = false;
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
