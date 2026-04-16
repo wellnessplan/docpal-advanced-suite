@@ -61,10 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Safety timeout: never stay loading for more than 5 seconds
     const timeout = setTimeout(() => {
       if (mounted) {
-        console.warn("Auth loading timeout - forcing loaded state");
         setLoading(false);
       }
-    }, 5000);
+    }, 3000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
