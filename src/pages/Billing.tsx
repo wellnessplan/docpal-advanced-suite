@@ -74,13 +74,41 @@ export default function BillingPage() {
 
   useEffect(() => { setSelectedTreatments([]); }, [form.patient_id]);
 
+  // Look up coupon by code (live as user types)
+  const { data: coupon } = useQuery({
+    queryKey: ["coupon-lookup", clinicId, form.coupon_code.trim().toUpperCase()],
+    queryFn: async () => {
+      const code = form.coupon_code.trim().toUpperCase();
+      if (!clinicId || !code) return null;
+      const { data } = await supabase
+        .from("discount_coupons")
+        .select("*")
+        .eq("clinic_id", clinicId)
+        .eq("code", code)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!data) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      if (data.valid_from && data.valid_from > today) return { ...data, _invalid: "Not yet valid" };
+      if (data.valid_until && data.valid_until < today) return { ...data, _invalid: "Expired" };
+      if (data.max_uses && data.used_count >= data.max_uses) return { ...data, _invalid: "Usage limit reached" };
+      return data;
+    },
+    enabled: !!clinicId && !!form.coupon_code.trim(),
+  });
+
   const subtotal = selectedTreatments.reduce((sum, id) => {
     const t = completedTreatments.find((ct: any) => ct.id === id);
     return sum + (t ? Number(t.cost || 0) : 0);
   }, 0);
   const discountAmt = Number(form.discount_amount) || 0;
   const discountPct = Number(form.discount_percent) || 0;
-  const discountTotal = discountAmt + (subtotal * discountPct / 100);
+  const couponDiscount = coupon && !(coupon as any)._invalid
+    ? (coupon.discount_type === "percent"
+        ? (subtotal * Number(coupon.discount_value) / 100)
+        : Number(coupon.discount_value))
+    : 0;
+  const discountTotal = discountAmt + (subtotal * discountPct / 100) + couponDiscount;
   const afterDiscount = Math.max(0, subtotal - discountTotal);
   const taxRate = Number(form.tax_rate) || 0;
   const taxAmount = afterDiscount * taxRate / 100;
