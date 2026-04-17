@@ -153,8 +153,8 @@ export default function DashboardPage() {
               👋 Welcome, {profile?.full_name?.split(" ").slice(0, 2).join(" ") || "Doctor"}
             </h1>
           </div>
-          <Button size="sm" onClick={() => navigate("/appointments")} className="gap-1.5">
-            <Plus className="h-3.5 w-3.5" /> Add Appointment
+          <Button size="sm" onClick={() => navigate("/patients")} className="gap-1.5">
+            <Plus className="h-3.5 w-3.5" /> Add Patient
           </Button>
         </div>
 

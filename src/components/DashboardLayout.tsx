@@ -31,10 +31,6 @@ const navGroups: NavGroup[] = [
     groupIcon: Stethoscope,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope },
-      { href: "/today-schedule", label: "Today's Schedule", icon: CalendarClock },
-      { href: "/queue", label: "Queue", icon: ListOrdered },
-      { href: "/tasks", label: "Follow-Ups", icon: ClipboardList },
     ],
   },
   {
@@ -44,9 +40,20 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/patients", label: "Patients", icon: Users },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
+      { href: "/queue", label: "Queue", icon: ListOrdered },
+    ],
+  },
+  {
+    label: "DOCTOR",
+    groupIcon: Stethoscope,
+    collapsible: true,
+    items: [
+      { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope },
+      { href: "/today-schedule", label: "Today's Schedule", icon: CalendarClock },
+      { href: "/tasks", label: "Follow-Ups", icon: ClipboardList },
       { href: "/treatment-plans", label: "Treatment Plans", icon: ClipboardCheck },
-      { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
       { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
+      { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
     ],
   },
   {
