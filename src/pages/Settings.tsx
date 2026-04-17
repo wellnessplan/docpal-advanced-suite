@@ -25,6 +25,7 @@ import WebhooksTab from "@/components/settings/WebhooksTab";
 import ThemeBrandingTab from "@/components/settings/ThemeBrandingTab";
 import DataImportTab from "@/components/settings/DataImportTab";
 import DiscountCouponsTab from "@/components/settings/DiscountCouponsTab";
+import SubscriptionPlanTab from "@/components/settings/SubscriptionPlanTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -700,6 +701,9 @@ function IntegrationsTab({ clinicId }: { clinicId: string }) {
 // ─── Main Settings Page ─────────────────────────────────────────────
 export default function SettingsPage() {
   const { clinicId } = useAuth();
+  const tabFromUrl = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("tab")
+    : null;
   const { data: clinic } = useQuery({
     queryKey: ["clinic-name", clinicId],
     queryFn: async () => {
@@ -726,13 +730,14 @@ export default function SettingsPage() {
           <p className="text-muted-foreground">Manage your clinic, schedule, billing, team, and more</p>
         </div>
 
-        <Tabs defaultValue="clinic" className="space-y-6">
+        <Tabs defaultValue={tabFromUrl || "clinic"} className="space-y-6">
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="clinic">Clinic Info</TabsTrigger>
              <TabsTrigger value="letterhead">Letterhead & PDF</TabsTrigger>
              <TabsTrigger value="team">Team</TabsTrigger>
              <TabsTrigger value="billing">Billing/GST</TabsTrigger>
              <TabsTrigger value="coupons">Coupons</TabsTrigger>
+             <TabsTrigger value="subscription">Subscription</TabsTrigger>
              <TabsTrigger value="branding">Branding</TabsTrigger>
              <TabsTrigger value="integrations">Integrations</TabsTrigger>
              <TabsTrigger value="import">Data Import</TabsTrigger>
@@ -762,6 +767,10 @@ export default function SettingsPage() {
 
            <TabsContent value="coupons">
              <DiscountCouponsTab clinicId={clinicId} />
+           </TabsContent>
+
+           <TabsContent value="subscription">
+             <SubscriptionPlanTab clinicId={clinicId} />
            </TabsContent>
 
            <TabsContent value="branding">

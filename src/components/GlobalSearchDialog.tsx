@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -110,7 +112,11 @@ export default function GlobalSearchDialog() {
         </kbd>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
+        <VisuallyHidden>
+          <DialogTitle>Global Search</DialogTitle>
+          <DialogDescription>Search patients and pages across the app</DialogDescription>
+        </VisuallyHidden>
         <CommandInput
           placeholder="Search patients, pages…"
           value={query}
@@ -122,7 +128,7 @@ export default function GlobalSearchDialog() {
           {patients.length > 0 && (
             <CommandGroup heading="Patients">
               {patients.map((p) => (
-                <CommandItem key={p.id} onSelect={() => go(`/patients/${p.id}`)} className="gap-2.5">
+                <CommandItem key={p.id} value={`patient-${p.id}`} onSelect={() => go(`/patients/${p.id}`)} className="gap-2.5">
                   <User className="h-4 w-4 text-primary" />
                   <div className="flex flex-col">
                     <span className="font-medium">{p.full_name}</span>
@@ -135,7 +141,7 @@ export default function GlobalSearchDialog() {
 
           <CommandGroup heading="Pages">
             {filteredPages.map((page) => (
-              <CommandItem key={page.href} onSelect={() => go(page.href)} className="gap-2.5">
+              <CommandItem key={page.href} value={page.label} onSelect={() => go(page.href)} className="gap-2.5">
                 <page.icon className="h-4 w-4 text-muted-foreground" />
                 <span>{page.label}</span>
               </CommandItem>

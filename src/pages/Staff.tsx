@@ -5,9 +5,11 @@ import { Plus, UserCog, Clock, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 export default function Staff() {
   const { clinicId } = useAuth();
+  const navigate = useNavigate();
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["staff-profiles", clinicId],
@@ -30,7 +32,9 @@ export default function Staff() {
             <h1 className="font-heading text-xl md:text-2xl font-bold">Staff Management</h1>
             <p className="text-muted-foreground text-sm">{profiles.length} team members</p>
           </div>
-          <Button size="sm" className="gap-1.5"><Plus className="h-3.5 w-3.5" /> Invite Staff</Button>
+          <Button size="sm" className="gap-1.5" onClick={() => navigate("/settings?tab=team")}>
+            <Plus className="h-3.5 w-3.5" /> Invite Staff
+          </Button>
         </div>
 
         {isLoading ? (

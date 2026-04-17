@@ -74,13 +74,41 @@ export default function BillingPage() {
 
   useEffect(() => { setSelectedTreatments([]); }, [form.patient_id]);
 
+  // Look up coupon by code (live as user types)
+  const { data: coupon } = useQuery({
+    queryKey: ["coupon-lookup", clinicId, form.coupon_code.trim().toUpperCase()],
+    queryFn: async () => {
+      const code = form.coupon_code.trim().toUpperCase();
+      if (!clinicId || !code) return null;
+      const { data } = await supabase
+        .from("discount_coupons")
+        .select("*")
+        .eq("clinic_id", clinicId)
+        .eq("code", code)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!data) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      if (data.valid_from && data.valid_from > today) return { ...data, _invalid: "Not yet valid" };
+      if (data.valid_until && data.valid_until < today) return { ...data, _invalid: "Expired" };
+      if (data.max_uses && data.used_count >= data.max_uses) return { ...data, _invalid: "Usage limit reached" };
+      return data;
+    },
+    enabled: !!clinicId && !!form.coupon_code.trim(),
+  });
+
   const subtotal = selectedTreatments.reduce((sum, id) => {
     const t = completedTreatments.find((ct: any) => ct.id === id);
     return sum + (t ? Number(t.cost || 0) : 0);
   }, 0);
   const discountAmt = Number(form.discount_amount) || 0;
   const discountPct = Number(form.discount_percent) || 0;
-  const discountTotal = discountAmt + (subtotal * discountPct / 100);
+  const couponDiscount = coupon && !(coupon as any)._invalid
+    ? (coupon.discount_type === "percent"
+        ? (subtotal * Number(coupon.discount_value) / 100)
+        : Number(coupon.discount_value))
+    : 0;
+  const discountTotal = discountAmt + (subtotal * discountPct / 100) + couponDiscount;
   const afterDiscount = Math.max(0, subtotal - discountTotal);
   const taxRate = Number(form.tax_rate) || 0;
   const taxAmount = afterDiscount * taxRate / 100;
@@ -140,9 +168,9 @@ export default function BillingPage() {
         amount: finalAmount,
         total: finalAmount,
         subtotal: subtotal,
-        discount: discountAmt,
+        discount: discountTotal,
         discount_percent: discountPct,
-        coupon_code: form.coupon_code || null,
+        coupon_code: coupon && !(coupon as any)._invalid ? coupon.code : null,
         tax_rate: taxRate,
         tax_amount: taxAmount,
         due_date: form.due_date || null,
@@ -162,6 +190,14 @@ export default function BillingPage() {
           };
         });
         await supabase.from("invoice_items").insert(items);
+      }
+
+      // Increment coupon usage if a valid coupon was applied
+      if (coupon && !(coupon as any)._invalid) {
+        await supabase
+          .from("discount_coupons")
+          .update({ used_count: (coupon.used_count || 0) + 1 })
+          .eq("id", coupon.id);
       }
     },
     onSuccess: () => {
@@ -301,7 +337,18 @@ export default function BillingPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Coupon Code</Label>
-                    <Input placeholder="e.g. SMILE10" value={form.coupon_code} onChange={e => setForm(f => ({ ...f, coupon_code: e.target.value }))} />
+                    <Input placeholder="e.g. SMILE10" value={form.coupon_code} onChange={e => setForm(f => ({ ...f, coupon_code: e.target.value.toUpperCase() }))} className="uppercase" />
+                    {form.coupon_code.trim() && coupon && !(coupon as any)._invalid && (
+                      <p className="text-xs text-success">
+                        ✓ Applied: {coupon.discount_type === "percent" ? `${coupon.discount_value}% off` : `Rs ${coupon.discount_value} off`}
+                      </p>
+                    )}
+                    {form.coupon_code.trim() && coupon && (coupon as any)._invalid && (
+                      <p className="text-xs text-destructive">✗ {(coupon as any)._invalid}</p>
+                    )}
+                    {form.coupon_code.trim() && !coupon && (
+                      <p className="text-xs text-destructive">✗ Invalid coupon</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Due Date</Label>
@@ -312,7 +359,18 @@ export default function BillingPage() {
                 {selectedTreatments.length > 0 && (
                   <div className="rounded-md border p-3 space-y-1 text-sm">
                     <div className="flex justify-between"><span>Subtotal</span><span>Rs {subtotal.toLocaleString()}</span></div>
-                    {discountTotal > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-Rs {discountTotal.toLocaleString()}</span></div>}
+                    {(discountAmt + (subtotal * discountPct / 100)) > 0 && (
+                      <div className="flex justify-between text-success">
+                        <span>Discount</span>
+                        <span>-Rs {(discountAmt + (subtotal * discountPct / 100)).toLocaleString()}</span>
+                      </div>
+                    )}
+                    {couponDiscount > 0 && (
+                      <div className="flex justify-between text-success">
+                        <span>Coupon ({coupon?.code})</span>
+                        <span>-Rs {couponDiscount.toLocaleString()}</span>
+                      </div>
+                    )}
                     {taxAmount > 0 && <div className="flex justify-between"><span>Tax ({taxRate}%)</span><span>Rs {taxAmount.toLocaleString()}</span></div>}
                     <div className="flex justify-between font-bold border-t pt-1"><span>Total Payable</span><span>Rs {finalAmount.toLocaleString()}</span></div>
                   </div>
