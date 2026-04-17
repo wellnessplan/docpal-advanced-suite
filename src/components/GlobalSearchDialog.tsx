@@ -112,7 +112,7 @@ export default function GlobalSearchDialog() {
         </kbd>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
         <VisuallyHidden>
           <DialogTitle>Global Search</DialogTitle>
           <DialogDescription>Search patients and pages across the app</DialogDescription>
@@ -122,7 +122,7 @@ export default function GlobalSearchDialog() {
           value={query}
           onValueChange={setQuery}
         />
-        <CommandList shouldFilter={false as any}>
+        <CommandList>
           <CommandEmpty>{loading ? "Searching…" : "No results found."}</CommandEmpty>
 
           {patients.length > 0 && (
