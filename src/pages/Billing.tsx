@@ -168,9 +168,9 @@ export default function BillingPage() {
         amount: finalAmount,
         total: finalAmount,
         subtotal: subtotal,
-        discount: discountAmt,
+        discount: discountTotal,
         discount_percent: discountPct,
-        coupon_code: form.coupon_code || null,
+        coupon_code: coupon && !(coupon as any)._invalid ? coupon.code : null,
         tax_rate: taxRate,
         tax_amount: taxAmount,
         due_date: form.due_date || null,
@@ -190,6 +190,14 @@ export default function BillingPage() {
           };
         });
         await supabase.from("invoice_items").insert(items);
+      }
+
+      // Increment coupon usage if a valid coupon was applied
+      if (coupon && !(coupon as any)._invalid) {
+        await supabase
+          .from("discount_coupons")
+          .update({ used_count: (coupon.used_count || 0) + 1 })
+          .eq("id", coupon.id);
       }
     },
     onSuccess: () => {
