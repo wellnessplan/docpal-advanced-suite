@@ -337,7 +337,18 @@ export default function BillingPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Coupon Code</Label>
-                    <Input placeholder="e.g. SMILE10" value={form.coupon_code} onChange={e => setForm(f => ({ ...f, coupon_code: e.target.value }))} />
+                    <Input placeholder="e.g. SMILE10" value={form.coupon_code} onChange={e => setForm(f => ({ ...f, coupon_code: e.target.value.toUpperCase() }))} className="uppercase" />
+                    {form.coupon_code.trim() && coupon && !(coupon as any)._invalid && (
+                      <p className="text-xs text-success">
+                        ✓ Applied: {coupon.discount_type === "percent" ? `${coupon.discount_value}% off` : `Rs ${coupon.discount_value} off`}
+                      </p>
+                    )}
+                    {form.coupon_code.trim() && coupon && (coupon as any)._invalid && (
+                      <p className="text-xs text-destructive">✗ {(coupon as any)._invalid}</p>
+                    )}
+                    {form.coupon_code.trim() && !coupon && (
+                      <p className="text-xs text-destructive">✗ Invalid coupon</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Due Date</Label>
@@ -348,7 +359,18 @@ export default function BillingPage() {
                 {selectedTreatments.length > 0 && (
                   <div className="rounded-md border p-3 space-y-1 text-sm">
                     <div className="flex justify-between"><span>Subtotal</span><span>Rs {subtotal.toLocaleString()}</span></div>
-                    {discountTotal > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-Rs {discountTotal.toLocaleString()}</span></div>}
+                    {(discountAmt + (subtotal * discountPct / 100)) > 0 && (
+                      <div className="flex justify-between text-success">
+                        <span>Discount</span>
+                        <span>-Rs {(discountAmt + (subtotal * discountPct / 100)).toLocaleString()}</span>
+                      </div>
+                    )}
+                    {couponDiscount > 0 && (
+                      <div className="flex justify-between text-success">
+                        <span>Coupon ({coupon?.code})</span>
+                        <span>-Rs {couponDiscount.toLocaleString()}</span>
+                      </div>
+                    )}
                     {taxAmount > 0 && <div className="flex justify-between"><span>Tax ({taxRate}%)</span><span>Rs {taxAmount.toLocaleString()}</span></div>}
                     <div className="flex justify-between font-bold border-t pt-1"><span>Total Payable</span><span>Rs {finalAmount.toLocaleString()}</span></div>
                   </div>
