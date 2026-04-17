@@ -701,6 +701,9 @@ function IntegrationsTab({ clinicId }: { clinicId: string }) {
 // ─── Main Settings Page ─────────────────────────────────────────────
 export default function SettingsPage() {
   const { clinicId } = useAuth();
+  const tabFromUrl = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("tab")
+    : null;
   const { data: clinic } = useQuery({
     queryKey: ["clinic-name", clinicId],
     queryFn: async () => {
@@ -727,7 +730,7 @@ export default function SettingsPage() {
           <p className="text-muted-foreground">Manage your clinic, schedule, billing, team, and more</p>
         </div>
 
-        <Tabs defaultValue="clinic" className="space-y-6">
+        <Tabs defaultValue={tabFromUrl || "clinic"} className="space-y-6">
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="clinic">Clinic Info</TabsTrigger>
              <TabsTrigger value="letterhead">Letterhead & PDF</TabsTrigger>
