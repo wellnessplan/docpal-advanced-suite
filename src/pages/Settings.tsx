@@ -25,6 +25,7 @@ import WebhooksTab from "@/components/settings/WebhooksTab";
 import ThemeBrandingTab from "@/components/settings/ThemeBrandingTab";
 import DataImportTab from "@/components/settings/DataImportTab";
 import DiscountCouponsTab from "@/components/settings/DiscountCouponsTab";
+import SubscriptionPlanTab from "@/components/settings/SubscriptionPlanTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -733,6 +734,7 @@ export default function SettingsPage() {
              <TabsTrigger value="team">Team</TabsTrigger>
              <TabsTrigger value="billing">Billing/GST</TabsTrigger>
              <TabsTrigger value="coupons">Coupons</TabsTrigger>
+             <TabsTrigger value="subscription">Subscription</TabsTrigger>
              <TabsTrigger value="branding">Branding</TabsTrigger>
              <TabsTrigger value="integrations">Integrations</TabsTrigger>
              <TabsTrigger value="import">Data Import</TabsTrigger>
@@ -762,6 +764,10 @@ export default function SettingsPage() {
 
            <TabsContent value="coupons">
              <DiscountCouponsTab clinicId={clinicId} />
+           </TabsContent>
+
+           <TabsContent value="subscription">
+             <SubscriptionPlanTab clinicId={clinicId} />
            </TabsContent>
 
            <TabsContent value="branding">
