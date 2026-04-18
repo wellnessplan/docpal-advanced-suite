@@ -2650,8 +2650,10 @@ export type Database = {
           clinic_id: string
           created_at: string
           email: string
+          expires_at: string | null
           full_name: string | null
           id: string
+          invite_token: string | null
           invited_at: string
           role: string
           status: string
@@ -2661,8 +2663,10 @@ export type Database = {
           clinic_id: string
           created_at?: string
           email: string
+          expires_at?: string | null
           full_name?: string | null
           id?: string
+          invite_token?: string | null
           invited_at?: string
           role?: string
           status?: string
@@ -2672,8 +2676,10 @@ export type Database = {
           clinic_id?: string
           created_at?: string
           email?: string
+          expires_at?: string | null
           full_name?: string | null
           id?: string
+          invite_token?: string | null
           invited_at?: string
           role?: string
           status?: string
@@ -3260,6 +3266,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_staff_invitation: { Args: { p_token: string }; Returns: Json }
       create_clinic_for_user: {
         Args: {
           p_address?: string
