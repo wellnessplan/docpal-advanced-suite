@@ -316,6 +316,13 @@ export default function BillingPage() {
                     <p><strong>Patient:</strong> {selectedPatient.full_name}</p>
                     {patientAge && <p><strong>Age:</strong> {patientAge} years</p>}
                     {selectedPatient.phone && <p><strong>Mobile:</strong> {selectedPatient.phone}</p>}
+                    {membership && (
+                      <p className="flex items-center gap-1.5 mt-1.5 text-primary font-medium">
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-primary/15 text-[11px] uppercase tracking-wide">Member</span>
+                        {membership.plan_name}
+                        {membershipDiscountPct > 0 && <span className="text-success">— {membershipDiscountPct}% auto-discount</span>}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -398,6 +405,12 @@ export default function BillingPage() {
                       <div className="flex justify-between text-success">
                         <span>Coupon ({coupon?.code})</span>
                         <span>-Rs {couponDiscount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {membershipDiscount > 0 && (
+                      <div className="flex justify-between text-success">
+                        <span>Membership ({membership?.plan_name} · {membershipDiscountPct}%)</span>
+                        <span>-Rs {membershipDiscount.toLocaleString()}</span>
                       </div>
                     )}
                     {taxAmount > 0 && <div className="flex justify-between"><span>Tax ({taxRate}%)</span><span>Rs {taxAmount.toLocaleString()}</span></div>}
