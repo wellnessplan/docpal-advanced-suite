@@ -16,7 +16,7 @@ import {
   ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
   Target, Star, Gift, Crown, UserCog, ScrollText, CalendarClock, Shield,
-  Truck
+  Truck, ListChecks
 } from "lucide-react";
 
 interface NavGroup {
@@ -28,7 +28,7 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    label: "OPERATIONS",
+    label: "DASHBOARD",
     groupIcon: LayoutDashboard,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -40,6 +40,7 @@ const navGroups: NavGroup[] = [
     collapsible: true,
     items: [
       { href: "/patients", label: "Patients", icon: Users },
+      { href: "/today-schedule", label: "Today's Schedule", icon: CalendarClock },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
       { href: "/queue", label: "Queue", icon: ListOrdered },
     ],
@@ -50,9 +51,9 @@ const navGroups: NavGroup[] = [
     collapsible: true,
     items: [
       { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope },
-      { href: "/today-schedule", label: "Today's Schedule", icon: CalendarClock },
       { href: "/tasks", label: "Follow-Ups", icon: ClipboardList },
       { href: "/treatment-plans", label: "Treatment Plans", icon: ClipboardCheck },
+      { href: "/treatment-costing", label: "Procedure List", icon: ListChecks },
       { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
       { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
     ],
