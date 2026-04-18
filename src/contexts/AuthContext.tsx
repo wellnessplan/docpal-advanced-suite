@@ -16,6 +16,9 @@ interface AuthContextType {
 }
 
 const DEV_BYPASS_AUTH = false;
+const DEMO_MODE = true;
+const DEMO_EMAIL = "demo@doctorsbuddy.app";
+const DEMO_PASSWORD = "DemoPass2026!";
 
 const AuthContext = createContext<AuthContextType>({
   session: null, user: null, profile: null, clinicId: null,
@@ -83,6 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
+      if (!session && DEMO_MODE) {
+        // Auto-login with shared demo account
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email: DEMO_EMAIL,
+          password: DEMO_PASSWORD,
+        });
+        if (mounted && signInData.session) {
+          setSession(signInData.session);
+          setUser(signInData.session.user);
+          await fetchProfile(signInData.session.user.id);
+        }
+        if (mounted) setLoading(false);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -107,6 +124,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setUser(null);
     setProfile(null);
+    if (DEMO_MODE) {
+      const { data } = await supabase.auth.signInWithPassword({
+        email: DEMO_EMAIL,
+        password: DEMO_PASSWORD,
+      });
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        await fetchProfile(data.session.user.id);
+      }
+    }
   };
 
   return (
