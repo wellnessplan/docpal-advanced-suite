@@ -74,6 +74,34 @@ export default function BillingPage() {
 
   useEffect(() => { setSelectedTreatments([]); }, [form.patient_id]);
 
+  // Look up active membership for selected patient — auto-apply discount
+  const { data: membership } = useQuery({
+    queryKey: ["patient-membership", form.patient_id],
+    queryFn: async () => {
+      if (!form.patient_id) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      const { data } = await supabase.from("memberships")
+        .select("*, membership_plans(discount_percent, plan_name, benefits)")
+        .eq("patient_id", form.patient_id)
+        .eq("status", "active")
+        .or(`end_date.is.null,end_date.gte.${today}`)
+        .order("created_at", { ascending: false })
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!form.patient_id,
+  });
+
+  // Resolve membership discount % (from joined plan or memberships.benefits)
+  const membershipDiscountPct: number = (() => {
+    if (!membership) return 0;
+    const planPct = (membership as any).membership_plans?.discount_percent;
+    if (planPct) return Number(planPct);
+    const benefits: any = (membership as any).benefits;
+    if (benefits && typeof benefits === "object" && benefits.discount_percent) return Number(benefits.discount_percent);
+    return 0;
+  })();
+
   // Look up coupon by code (live as user types)
   const { data: coupon } = useQuery({
     queryKey: ["coupon-lookup", clinicId, form.coupon_code.trim().toUpperCase()],
