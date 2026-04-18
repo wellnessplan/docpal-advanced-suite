@@ -1,13 +1,54 @@
-import { useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Stethoscope, CheckCircle2, UserPlus } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { Stethoscope, CheckCircle2, UserPlus, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+// Lazy-load the QR library (~50KB) so the registration form opens instantly
+const QRCode = lazy(() =>
+  import("qrcode.react").then((m) => ({ default: m.QRCodeSVG as any }))
+);
+
+const SLOT_INTERVAL_MIN = 15;
+const SLOTS_TO_SHOW = 8;
+
+function buildSlots(now: Date): { value: string; date: string; label: string; sublabel: string }[] {
+  // Round up to next 15-minute mark
+  const start = new Date(now);
+  start.setSeconds(0, 0);
+  const minutes = start.getMinutes();
+  const remainder = minutes % SLOT_INTERVAL_MIN;
+  if (remainder !== 0) start.setMinutes(minutes + (SLOT_INTERVAL_MIN - remainder));
+  else start.setMinutes(minutes + SLOT_INTERVAL_MIN);
+
+  const slots: { value: string; date: string; label: string; sublabel: string }[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < SLOTS_TO_SHOW; i++) {
+    const d = new Date(start.getTime() + i * SLOT_INTERVAL_MIN * 60_000);
+    const date = d.toISOString().split("T")[0];
+    const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    const dayStart = new Date(d); dayStart.setHours(0, 0, 0, 0);
+    const dayDiff = Math.round((dayStart.getTime() - today.getTime()) / 86_400_000);
+    const dayLabel = dayDiff === 0 ? "Today" : dayDiff === 1 ? "Tomorrow" : d.toLocaleDateString(undefined, { weekday: "short" });
+    const h = d.getHours();
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 || 12;
+    slots.push({
+      value: `${date}|${time}`,
+      date,
+      label: `${h12}:${String(d.getMinutes()).padStart(2, "0")} ${ampm}`,
+      sublabel: dayLabel,
+    });
+  }
+  return slots;
+}
 
 export default function PatientSelfRegister() {
   const [searchParams] = useSearchParams();
@@ -20,42 +61,26 @@ export default function PatientSelfRegister() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState<string>("now");
+
+  // Compute slots once on mount (cheap, no DB call)
+  const slots = useMemo(() => buildSlots(new Date()), []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clinicId) {
-      toast.error("Invalid registration link. Please scan the QR code again.");
-      return;
-    }
+    if (!clinicId) { toast.error("Invalid registration link. Please scan the QR code again."); return; }
 
-    // Validate clinic_id is a valid UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(clinicId)) {
-      toast.error("Invalid clinic ID format.");
-      return;
-    }
+    if (!uuidRegex.test(clinicId)) { toast.error("Invalid clinic ID format."); return; }
 
-    // Input validation
     const trimmedName = fullName.trim();
-    if (!trimmedName || trimmedName.length > 200) {
-      toast.error("Name must be between 1 and 200 characters.");
-      return;
-    }
-    if (phone && (phone.length < 7 || phone.length > 20)) {
-      toast.error("Phone number must be between 7 and 20 characters.");
-      return;
-    }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
+    if (!trimmedName || trimmedName.length > 200) { toast.error("Name must be between 1 and 200 characters."); return; }
+    if (phone && (phone.length < 7 || phone.length > 20)) { toast.error("Phone number must be between 7 and 20 characters."); return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Please enter a valid email address."); return; }
 
     setLoading(true);
-
-    // Generate patient ID client-side to avoid needing SELECT permission
     const patientId = crypto.randomUUID();
 
-    // Create patient
     const { error: patientError } = await supabase
       .from("patients")
       .insert({
@@ -67,22 +92,29 @@ export default function PatientSelfRegister() {
         date_of_birth: dob || null,
       });
 
-    if (patientError) {
-      toast.error("Registration failed: " + patientError.message);
-      setLoading(false);
-      return;
+    if (patientError) { toast.error("Registration failed: " + patientError.message); setLoading(false); return; }
+
+    const today = new Date().toISOString().split("T")[0];
+
+    // Create appointment if a future slot was picked
+    if (selectedSlot && selectedSlot !== "now") {
+      const [aDate, aTime] = selectedSlot.split("|");
+      await supabase.from("appointments").insert({
+        clinic_id: clinicId,
+        patient_id: patientId,
+        appointment_date: aDate,
+        appointment_time: aTime,
+        status: "scheduled",
+        type: "checkup",
+        duration_minutes: 30,
+      });
     }
 
-    // Get next token number and create queue entry
-    const today = new Date().toISOString().split("T")[0];
+    // Always issue a queue token for today (so they can be seen if they walk in)
     const { data: nextToken, error: tokenError } = await supabase
       .rpc("get_next_token_number", { p_clinic_id: clinicId, p_date: today });
 
-    if (tokenError) {
-      toast.error("Failed to generate token: " + tokenError.message);
-      setLoading(false);
-      return;
-    }
+    if (tokenError) { toast.error("Failed to generate token: " + tokenError.message); setLoading(false); return; }
 
     const { error: queueError } = await supabase
       .from("queue_tokens")
@@ -95,21 +127,14 @@ export default function PatientSelfRegister() {
         priority: "normal",
       });
 
-    if (queueError) {
-      toast.error("Failed to add to queue: " + queueError.message);
-      setLoading(false);
-      return;
-    }
+    if (queueError) { toast.error("Failed to add to queue: " + queueError.message); setLoading(false); return; }
 
     setTokenNumber(nextToken);
     setRegistered(true);
     setLoading(false);
   };
 
-  // Show QR code generator for clinic staff (no clinic param)
-  if (!clinicId) {
-    return <QRCodeGenerator />;
-  }
+  if (!clinicId) return <QRCodeGenerator />;
 
   if (registered && tokenNumber !== null) {
     return (
@@ -122,8 +147,13 @@ export default function PatientSelfRegister() {
               <p className="text-sm text-muted-foreground mb-1">Your Token Number</p>
               <p className="text-6xl font-bold text-blue-600">{tokenNumber}</p>
             </div>
+            {selectedSlot !== "now" && (
+              <p className="text-sm text-muted-foreground">
+                Appointment booked for <strong>{slots.find(s => s.value === selectedSlot)?.sublabel} at {slots.find(s => s.value === selectedSlot)?.label}</strong>
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
-              Please wait for your number to be called. Thank you, <strong>{fullName}</strong>!
+              Thank you, <strong>{fullName}</strong>!
             </p>
           </CardContent>
         </Card>
@@ -164,8 +194,47 @@ export default function PatientSelfRegister() {
                 <Label>Date of Birth</Label>
                 <Input value={dob} onChange={e => setDob(e.target.value)} type="date" max={new Date().toISOString().split("T")[0]} />
               </div>
+
+              {/* Quick Slot Picker */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" /> Preferred Time
+                </Label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSlot("now")}
+                    className={cn(
+                      "rounded-md border p-2 text-xs font-medium transition-all text-center",
+                      selectedSlot === "now"
+                        ? "bg-blue-600 text-white border-blue-600 shadow"
+                        : "bg-white border-border hover:border-blue-400 active:scale-95"
+                    )}
+                  >
+                    <div className="font-bold">Walk-in</div>
+                    <div className="text-[10px] opacity-80">Now</div>
+                  </button>
+                  {slots.slice(0, 5).map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setSelectedSlot(s.value)}
+                      className={cn(
+                        "rounded-md border p-2 text-xs font-medium transition-all text-center",
+                        selectedSlot === s.value
+                          ? "bg-blue-600 text-white border-blue-600 shadow"
+                          : "bg-white border-border hover:border-blue-400 active:scale-95"
+                      )}
+                    >
+                      <div className="font-bold">{s.label}</div>
+                      <div className="text-[10px] opacity-80">{s.sublabel}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
-                {loading ? "Registering..." : "Register & Get Token"}
+                {loading ? "Registering..." : selectedSlot === "now" ? "Register & Get Token" : "Book Appointment & Get Token"}
               </Button>
             </form>
           </CardContent>
@@ -198,7 +267,9 @@ function QRCodeGenerator() {
           </div>
           {registrationUrl && (
             <div className="flex flex-col items-center gap-4 p-4 bg-white rounded-xl border">
-              <QRCodeSVG value={registrationUrl} size={200} />
+              <Suspense fallback={<div className="h-[200px] w-[200px] animate-pulse rounded bg-muted" />}>
+                <QRCode value={registrationUrl} size={200} />
+              </Suspense>
               <p className="text-xs text-muted-foreground text-center break-all">{registrationUrl}</p>
             </div>
           )}
