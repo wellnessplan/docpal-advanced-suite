@@ -136,7 +136,8 @@ export default function BillingPage() {
         ? (subtotal * Number(coupon.discount_value) / 100)
         : Number(coupon.discount_value))
     : 0;
-  const discountTotal = discountAmt + (subtotal * discountPct / 100) + couponDiscount;
+  const membershipDiscount = subtotal * membershipDiscountPct / 100;
+  const discountTotal = discountAmt + (subtotal * discountPct / 100) + couponDiscount + membershipDiscount;
   const afterDiscount = Math.max(0, subtotal - discountTotal);
   const taxRate = Number(form.tax_rate) || 0;
   const taxAmount = afterDiscount * taxRate / 100;
