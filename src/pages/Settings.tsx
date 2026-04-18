@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import {
   Building2, Globe, MapPin, Phone, Mail, Link2, Facebook, Instagram, Twitter,
   Users, Plus, Trash2, Save, Package, Settings as SettingsIcon, QrCode, Plug,
-  Clock, Receipt, UserPlus, Download, Printer, Copy, ExternalLink
+  Clock, Receipt, UserPlus, Download, Printer, Copy, ExternalLink, Truck
 } from "lucide-react";
 import GoogleIntegrationTab from "@/components/settings/GoogleIntegrationTab";
 import WhatsAppTemplatesTab from "@/components/settings/WhatsAppTemplatesTab";
@@ -278,32 +278,38 @@ function InviteStaffTab({ clinicId }: { clinicId: string }) {
     if (!valid.length) { toast.error("Enter at least one valid email"); return; }
     setSending(true);
 
-    for (const inv of valid) {
-      // Create a profile entry for the invited staff
-      const newId = crypto.randomUUID();
-      await supabase.from("profiles").insert({
-        id: newId,
-        user_id: newId,
+    try {
+      const rows = valid.map(inv => ({
         clinic_id: clinicId,
+        email: inv.email.trim().toLowerCase(),
         full_name: inv.name || inv.email.split("@")[0],
-        role: inv.role as any,
-      } as any);
+        role: inv.role,
+        status: "pending",
+      }));
 
-      // Log the invitation
-      await supabase.from("audit_log").insert({
-        clinic_id: clinicId,
-        action: "staff_invited",
-        table_name: "profiles",
-        record_id: newId,
-        details: { email: inv.email, role: inv.role, name: inv.name },
-      } as any);
+      const { error } = await (supabase as any).from("staff_invitations").insert(rows);
+      if (error) throw error;
+
+      // Log
+      await supabase.from("audit_log").insert(
+        valid.map(inv => ({
+          clinic_id: clinicId,
+          action: "staff_invited",
+          table_name: "staff_invitations",
+          details: { email: inv.email, role: inv.role, name: inv.name },
+        })) as any
+      );
+
+      toast.success(`${valid.length} invitation(s) sent! Share the signup link with them.`);
+      queryClient.invalidateQueries({ queryKey: ["team"] });
+      queryClient.invalidateQueries({ queryKey: ["staff-invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["staff-profiles"] });
+      setInvites([{ email: "", role: "receptionist", name: "" }]);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to send invitations");
+    } finally {
+      setSending(false);
     }
-
-    toast.success(`${valid.length} staff member(s) invited successfully!`);
-    queryClient.invalidateQueries({ queryKey: ["team"] });
-    queryClient.invalidateQueries({ queryKey: ["staff-profiles"] });
-    setInvites([{ email: "", role: "receptionist", name: "" }]);
-    setSending(false);
   };
 
   return (
@@ -735,6 +741,7 @@ export default function SettingsPage() {
             <TabsTrigger value="clinic">Clinic Info</TabsTrigger>
              <TabsTrigger value="letterhead">Letterhead & PDF</TabsTrigger>
              <TabsTrigger value="team">Team</TabsTrigger>
+             <TabsTrigger value="vendors">Vendors</TabsTrigger>
              <TabsTrigger value="billing">Billing/GST</TabsTrigger>
              <TabsTrigger value="coupons">Coupons</TabsTrigger>
              <TabsTrigger value="subscription">Subscription</TabsTrigger>
@@ -759,6 +766,10 @@ export default function SettingsPage() {
               <TeamTab clinicId={clinicId} />
               <InviteStaffTab clinicId={clinicId} />
             </div>
+          </TabsContent>
+
+          <TabsContent value="vendors">
+            <VendorsTab clinicId={clinicId} />
           </TabsContent>
 
           <TabsContent value="billing">

@@ -15,7 +15,8 @@ import {
   ListOrdered, Package, TrendingUp, BarChart3, Stethoscope,
   ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
-  Target, Star, Gift, Crown, UserCog, Plug, ScrollText, CalendarClock, Shield
+  Target, Star, Gift, Crown, UserCog, ScrollText, CalendarClock, Shield,
+  Truck
 } from "lucide-react";
 
 interface NavGroup {
@@ -28,7 +29,7 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     label: "OPERATIONS",
-    groupIcon: Stethoscope,
+    groupIcon: LayoutDashboard,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     ],
@@ -69,35 +70,26 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "ANALYTICS",
-    groupIcon: BarChart3,
+    label: "MANAGEMENT",
+    groupIcon: Settings,
     collapsible: true,
     items: [
+      // Analytics
       { href: "/reports", label: "Reports", icon: BarChart3 },
       { href: "/revenue", label: "Revenue", icon: IndianRupee },
       { href: "/performance", label: "Performance", icon: Activity },
-    ],
-  },
-  {
-    label: "GROWTH",
-    groupIcon: Target,
-    collapsible: true,
-    items: [
+      // Growth
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
       { href: "/leads", label: "Leads", icon: Target },
       { href: "/reviews", label: "Feedback", icon: Star },
       { href: "/referrals", label: "Referrals", icon: Gift },
       { href: "/memberships", label: "Membership", icon: Crown },
-    ],
-  },
-  {
-    label: "ADMIN",
-    groupIcon: Settings,
-    collapsible: true,
-    items: [
-      { href: "/settings", label: "Settings", icon: Settings },
+      // Vendors
+      { href: "/settings?tab=vendors", label: "Vendors", icon: Truck },
+      // Admin
       { href: "/staff", label: "Staff", icon: UserCog },
       { href: "/audit-log", label: "Audit Log", icon: ScrollText },
+      { href: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
@@ -113,12 +105,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { data: isSuperAdmin } = useSuperAdmin();
 
   const allItems = navGroups.flatMap((g) => g.items);
-  const currentPageLabel = allItems.find((i) => i.href === pathname || pathname.startsWith(i.href + "/"))?.label ?? "DoctorsBuddy";
+  const currentPageLabel = allItems.find((i) => {
+    const href = i.href.split("?")[0];
+    return pathname === href || pathname.startsWith(href + "/");
+  })?.label ?? "DoctorsBuddy";
 
   const toggleGroup = (label: string) => {
     setExpandedGroups(prev => {
       const isCurrentlyOpen = prev[label];
-      // Close all groups, then toggle the clicked one
       const allClosed: Record<string, boolean> = {};
       navGroups.forEach(g => { if (g.collapsible) allClosed[g.label] = false; });
       return { ...allClosed, [label]: !isCurrentlyOpen };
@@ -126,7 +120,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const isGroupActive = (group: NavGroup) =>
-    group.items.some(i => pathname === i.href || pathname.startsWith(i.href + "/"));
+    group.items.some(i => {
+      const href = i.href.split("?")[0];
+      return pathname === href || pathname.startsWith(href + "/");
+    });
 
   const initials = (profile?.full_name || "U").charAt(0).toUpperCase();
 
@@ -136,14 +133,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="p-2 pr-0 h-screen flex">
           <aside
             className={cn(
-              "flex flex-col bg-sidebar/80 backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/[0.06]",
+              "flex flex-col bg-gradient-to-b from-[hsl(210,80%,32%)] via-[hsl(205,75%,38%)] to-[hsl(200,70%,28%)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] rounded-2xl shadow-[0_8px_32px_rgba(15,76,129,0.35)] border border-white/[0.12]",
               collapsed ? "w-[60px]" : "w-[240px]"
             )}
           >
             {/* Logo */}
             <div className="flex h-14 items-center gap-2.5 px-3 pt-1">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-lg shadow-primary/25">
-                <Stethoscope className="h-4.5 w-4.5 text-sidebar-primary-foreground" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur shadow-lg ring-1 ring-white/30">
+                <Stethoscope className="h-4.5 w-4.5 text-white" />
               </div>
               {!collapsed && (
                 <span className="font-heading text-base font-bold text-white tracking-tight">
@@ -155,13 +152,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             {/* User mini-profile */}
             {!collapsed && (
               <div className="px-3 py-3">
-                <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.06] p-2.5">
-                  <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground ring-2 ring-sidebar-primary/20">
+                <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.15] p-2.5 ring-1 ring-white/15">
+                  <div className="h-8 w-8 rounded-xl bg-white text-primary flex items-center justify-center text-xs font-bold ring-2 ring-white/40">
                     {initials}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{profile?.full_name || "Doctor"}</p>
-                    <p className="text-xs text-sidebar-foreground/70 truncate">{profile?.role || "Admin"}</p>
+                    <p className="text-xs text-white/80 truncate capitalize">{profile?.role || "Admin"}</p>
                   </div>
                 </div>
               </div>
@@ -175,7 +172,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 return (
                   <div key={group.label} className={gi > 0 ? "pt-2" : ""}>
                     {gi > 0 && !collapsed && (
-                      <div className="h-px bg-white/[0.06] mx-2 mb-2" />
+                      <div className="h-px bg-white/[0.15] mx-2 mb-2" />
                     )}
 
                     {!collapsed && group.collapsible ? (
@@ -184,17 +181,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         className="flex w-full items-center justify-between px-2.5 mb-1 group/label"
                       >
                         <div className="flex items-center gap-1.5">
-                          <group.groupIcon className="h-3.5 w-3.5 text-sidebar-foreground/50" />
-                          <span className="text-[11px] font-bold tracking-[0.08em] text-sidebar-foreground/60 uppercase group-hover/label:text-sidebar-foreground/80 transition-colors">
+                          <group.groupIcon className="h-3.5 w-3.5 text-white/80" />
+                          <span className="text-[11px] font-bold tracking-[0.08em] text-white/85 uppercase group-hover/label:text-white transition-colors">
                             {group.label}
                           </span>
                         </div>
-                        {isExpanded ? <ChevronUp className="h-3 w-3 text-sidebar-foreground/30" /> : <ChevronDown className="h-3 w-3 text-sidebar-foreground/30" />}
+                        {isExpanded ? <ChevronUp className="h-3 w-3 text-white/70" /> : <ChevronDown className="h-3 w-3 text-white/70" />}
                       </button>
                     ) : !collapsed ? (
                       <div className="flex items-center gap-1.5 px-2.5 mb-1">
-                        <group.groupIcon className="h-3.5 w-3.5 text-sidebar-foreground/50" />
-                        <p className="text-[11px] font-bold tracking-[0.08em] text-sidebar-foreground/60 uppercase">
+                        <group.groupIcon className="h-3.5 w-3.5 text-white/80" />
+                        <p className="text-[11px] font-bold tracking-[0.08em] text-white/85 uppercase">
                           {group.label}
                         </p>
                       </div>
@@ -203,7 +200,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     {(isExpanded || collapsed) && (
                       <div className="space-y-0.5">
                         {group.items.map((item) => {
-                          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                          const hrefBase = item.href.split("?")[0];
+                          const isActive = pathname === hrefBase || pathname.startsWith(hrefBase + "/");
                           return (
                             <Link
                               key={item.href}
@@ -212,13 +210,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                               className={cn(
                                 "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-semibold transition-all duration-200",
                                 isActive
-                                  ? "bg-sidebar-primary/15 text-sidebar-primary shadow-sm backdrop-blur-sm"
-                                  : "text-sidebar-foreground/90 hover:bg-white/[0.08] hover:text-white"
+                                  ? "bg-white text-primary shadow-md"
+                                  : "text-white/95 hover:bg-white/15 hover:text-white"
                               )}
                             >
                               <item.icon className={cn(
                                 "h-[18px] w-[18px] shrink-0 transition-colors",
-                                isActive && "text-sidebar-primary drop-shadow-[0_0_6px_hsl(var(--sidebar-primary)/0.4)]"
+                                isActive ? "text-primary" : "text-white"
                               )} />
                               {!collapsed && <span>{item.label}</span>}
                             </Link>
@@ -231,7 +229,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               })}
             </nav>
 
-            <div className="p-2 space-y-0.5">
+            <div className="p-2 space-y-0.5 border-t border-white/15">
               {isSuperAdmin && (
                 <Link
                   to="/super-admin"
@@ -239,8 +237,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   className={cn(
                     "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors",
                     pathname === "/super-admin"
-                      ? "bg-sidebar-primary/15 text-sidebar-primary"
-                      : "text-amber-400 hover:bg-white/[0.08]"
+                      ? "bg-white text-primary"
+                      : "text-amber-200 hover:bg-white/15"
                   )}
                 >
                   <Shield className="h-[18px] w-[18px] shrink-0" />
@@ -249,14 +247,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               )}
               <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-sidebar-foreground hover:bg-white/[0.06] transition-colors"
+                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-white/95 hover:bg-white/15 transition-colors"
               >
                 {collapsed ? <ChevronRight className="h-[18px] w-[18px]" /> : <ChevronLeft className="h-[18px] w-[18px]" />}
                 {!collapsed && <span>Collapse</span>}
               </button>
               <button
                 onClick={signOut}
-                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-white/95 hover:bg-destructive/30 hover:text-white transition-colors"
               >
                 <LogOut className="h-[18px] w-[18px] shrink-0" />
                 {!collapsed && <span>Sign Out</span>}
