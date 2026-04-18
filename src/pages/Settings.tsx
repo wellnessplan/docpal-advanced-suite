@@ -251,7 +251,7 @@ function BillingTab({ clinicId }: { clinicId: string }) {
   );
 }
 
-// ─── Invite Staff Tab (with role selection) ─────────────────────────
+// ─── Invite Staff Tab (with role selection + shareable links) ──────
 function InviteStaffTab({ clinicId }: { clinicId: string }) {
   const queryClient = useQueryClient();
   const [invites, setInvites] = useState<{ email: string; role: string; name: string }[]>([
@@ -259,18 +259,45 @@ function InviteStaffTab({ clinicId }: { clinicId: string }) {
   ]);
   const [sending, setSending] = useState(false);
 
+  // Fetch all pending invitations so links are always available
+  const { data: pending } = useQuery({
+    queryKey: ["staff-invitations", clinicId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("staff_invitations")
+        .select("id, email, full_name, role, status, invite_token, expires_at, created_at")
+        .eq("clinic_id", clinicId)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
   const addRow = () => setInvites(prev => [...prev, { email: "", role: "receptionist", name: "" }]);
   const removeRow = (i: number) => setInvites(prev => prev.filter((_, j) => j !== i));
   const updateRow = (i: number, field: string, val: string) =>
     setInvites(prev => prev.map((r, j) => j === i ? { ...r, [field]: val } : r));
 
-  const rolePermissions: Record<string, string[]> = {
-    owner: ["Full access to all modules", "Manage staff & settings", "View financials & reports"],
-    doctor: ["View & manage patients", "Create treatments & prescriptions", "Access dental chart", "View own appointments"],
-    dentist: ["View & manage patients", "Create treatments & prescriptions", "Access dental chart", "View own appointments"],
-    hygienist: ["View patients", "Record clinical notes", "Access dental chart", "View own schedule"],
-    receptionist: ["Manage appointments & queue", "Patient registration", "Basic billing", "No clinical access"],
-    assistant: ["View patient list", "Assist with queue management", "View schedule", "No billing or settings access"],
+  const buildInviteLink = (token: string) => `${window.location.origin}/accept-invite/${token}`;
+
+  const copyLink = (token: string) => {
+    const url = buildInviteLink(token);
+    navigator.clipboard.writeText(url);
+    toast.success("Invite link copied to clipboard!");
+  };
+
+  const shareWhatsApp = (token: string, name?: string | null) => {
+    const url = buildInviteLink(token);
+    const msg = encodeURIComponent(
+      `Hi${name ? " " + name : ""}! You've been invited to join our clinic on DoctorsBuddy. Click this link to accept and create your account: ${url}`
+    );
+    window.open(`https://wa.me/?text=${msg}`, "_blank");
+  };
+
+  const revokeInvite = async (id: string) => {
+    const { error } = await (supabase as any).from("staff_invitations").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Invitation revoked");
+    queryClient.invalidateQueries({ queryKey: ["staff-invitations"] });
   };
 
   const handleInvite = async () => {
@@ -290,7 +317,6 @@ function InviteStaffTab({ clinicId }: { clinicId: string }) {
       const { error } = await (supabase as any).from("staff_invitations").insert(rows);
       if (error) throw error;
 
-      // Log
       await supabase.from("audit_log").insert(
         valid.map(inv => ({
           clinic_id: clinicId,
@@ -300,24 +326,27 @@ function InviteStaffTab({ clinicId }: { clinicId: string }) {
         })) as any
       );
 
-      toast.success(`${valid.length} invitation(s) sent! Share the signup link with them.`);
+      toast.success(`${valid.length} invite(s) created. Copy the link below and share via WhatsApp/email.`);
       queryClient.invalidateQueries({ queryKey: ["team"] });
       queryClient.invalidateQueries({ queryKey: ["staff-invitations"] });
-      queryClient.invalidateQueries({ queryKey: ["staff-profiles"] });
       setInvites([{ email: "", role: "receptionist", name: "" }]);
     } catch (e: any) {
-      toast.error(e.message || "Failed to send invitations");
+      toast.error(e.message || "Failed to create invitations");
     } finally {
       setSending(false);
     }
   };
+
+  const pendingOnly = (pending ?? []).filter((p: any) => p.status === "pending");
 
   return (
     <div className="space-y-6">
       <Card className="shadow-card border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-lg"><UserPlus className="h-5 w-5 text-primary" /> Invite Staff</CardTitle>
-          <CardDescription>Add team members with role-specific access</CardDescription>
+          <CardDescription>
+            Generate a secure signup link for each team member. Share it via WhatsApp, email, or any messaging app.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {invites.map((inv, i) => (
@@ -351,31 +380,64 @@ function InviteStaffTab({ clinicId }: { clinicId: string }) {
             </div>
           ))}
 
-          <Button type="button" variant="outline" size="sm" onClick={addRow} className="gap-1.5">
-            <Plus className="h-3.5 w-3.5" /> Add Another
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={addRow} className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> Add Another
+            </Button>
+            <Button onClick={handleInvite} disabled={sending} className="gap-1.5">
+              <UserPlus className="h-4 w-4" />{sending ? "Creating..." : "Generate Invite Links"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Role permissions preview */}
-          {invites[0]?.role && (
-            <Card className="bg-muted/30 border-dashed">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs font-semibold text-muted-foreground mb-2">
-                  {invites[0].role.charAt(0).toUpperCase() + invites[0].role.slice(1)} Permissions:
-                </p>
-                <ul className="space-y-1">
-                  {(rolePermissions[invites[0].role] || []).map((p, i) => (
-                    <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <span className="h-1 w-1 rounded-full bg-primary shrink-0" /> {p}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+      {/* Pending Invitations with shareable links */}
+      <Card className="shadow-card border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-lg">
+            <Link2 className="h-5 w-5 text-primary" /> Pending Invitations
+          </CardTitle>
+          <CardDescription>
+            Copy each link and send to the staff member. The link works once and expires in 14 days.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {!pendingOnly.length ? (
+            <p className="text-sm text-muted-foreground p-6 text-center">No pending invitations. Generate one above.</p>
+          ) : (
+            <div className="divide-y divide-border">
+              {pendingOnly.map((inv: any) => {
+                const link = buildInviteLink(inv.invite_token);
+                return (
+                  <div key={inv.id} className="p-4 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-sm">{inv.full_name || inv.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {inv.email} · <span className="capitalize">{inv.role}</span>
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">Pending</Badge>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-md bg-muted p-2 text-xs font-mono text-muted-foreground break-all">
+                      {link}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={() => copyLink(inv.invite_token)} className="gap-1.5">
+                        <Copy className="h-3.5 w-3.5" /> Copy Link
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => shareWhatsApp(inv.invite_token, inv.full_name)} className="gap-1.5">
+                        <ExternalLink className="h-3.5 w-3.5" /> Share via WhatsApp
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-destructive gap-1.5" onClick={() => revokeInvite(inv.id)}>
+                        <Trash2 className="h-3.5 w-3.5" /> Revoke
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
-
-          <Button onClick={handleInvite} disabled={sending} className="w-full sm:w-auto">
-            <UserPlus className="mr-2 h-4 w-4" />{sending ? "Adding..." : "Add Staff Members"}
-          </Button>
         </CardContent>
       </Card>
     </div>
