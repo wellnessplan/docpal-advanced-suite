@@ -86,6 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
+      if (!session && DEMO_MODE) {
+        // Auto-login with shared demo account
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email: DEMO_EMAIL,
+          password: DEMO_PASSWORD,
+        });
+        if (mounted && signInData.session) {
+          setSession(signInData.session);
+          setUser(signInData.session.user);
+          await fetchProfile(signInData.session.user.id);
+        }
+        if (mounted) setLoading(false);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
