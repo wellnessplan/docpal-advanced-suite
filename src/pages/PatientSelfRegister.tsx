@@ -10,9 +10,10 @@ import { Stethoscope, CheckCircle2, UserPlus, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Lazy-load the QR library (~50KB) so the registration form opens instantly
-const QRCode = lazy(() =>
-  import("qrcode.react").then((m) => ({ default: m.QRCodeSVG as any }))
-);
+const QRCode = lazy(async () => {
+  const m = await import("qrcode.react");
+  return { default: m.QRCodeSVG as unknown as React.ComponentType<{ value: string; size?: number }> };
+});
 
 const SLOT_INTERVAL_MIN = 15;
 const SLOTS_TO_SHOW = 8;
