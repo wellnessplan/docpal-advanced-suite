@@ -45,24 +45,49 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     win.print();
   };
 
-  const handleDownloadPDF = () => {
+  const loadImageAsBase64 = async (url: string): Promise<string | null> => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch { return null; }
+  };
+
+  const handleDownloadPDF = async () => {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
     let y = 15;
     const lm = 15;
     const rm = w - 15;
 
+    // Clinic logo (if uploaded)
+    let textX = lm;
+    if (clinic?.logo_url) {
+      try {
+        const logoBase64 = await loadImageAsBase64(clinic.logo_url);
+        if (logoBase64) {
+          doc.addImage(logoBase64, "PNG", lm, y - 5, 18, 18);
+          textX = lm + 22;
+        }
+      } catch { /* skip logo */ }
+    }
+
     // Header
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text(clinic?.name || "Dental Clinic", lm, y);
+    doc.text(clinic?.name || "Dental Clinic", textX, y);
     y += 6;
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100);
-    if (clinic?.address) { doc.text(clinic.address, lm, y); y += 4; }
+    if (clinic?.address) { doc.text(clinic.address, textX, y); y += 4; }
     const contactLine = [clinic?.phone, clinic?.email].filter(Boolean).join(" · ");
-    if (contactLine) { doc.text(contactLine, lm, y); y += 4; }
+    if (contactLine) { doc.text(contactLine, textX, y); y += 4; }
 
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
