@@ -312,6 +312,9 @@ export default function ThemeBrandingTab({ clinicId }: { clinicId: string }) {
               </div>
             </div>
             <Button size="sm" onClick={handleCustomApply}>Apply Custom</Button>
+            {customColor && (
+              <Button size="sm" variant="outline" onClick={handleClearCustom}>Clear</Button>
+            )}
           </div>
         </div>
 
