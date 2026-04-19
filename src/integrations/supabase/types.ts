@@ -185,6 +185,56 @@ export type Database = {
           },
         ]
       }
+      clinic_registration_settings: {
+        Row: {
+          action_links: Json
+          banner_image_url: string | null
+          brand_color: string | null
+          clinic_id: string
+          created_at: string
+          show_logo: boolean
+          thank_you_heading: string | null
+          thank_you_message: string | null
+          updated_at: string
+          welcome_heading: string | null
+          welcome_subheading: string | null
+        }
+        Insert: {
+          action_links?: Json
+          banner_image_url?: string | null
+          brand_color?: string | null
+          clinic_id: string
+          created_at?: string
+          show_logo?: boolean
+          thank_you_heading?: string | null
+          thank_you_message?: string | null
+          updated_at?: string
+          welcome_heading?: string | null
+          welcome_subheading?: string | null
+        }
+        Update: {
+          action_links?: Json
+          banner_image_url?: string | null
+          brand_color?: string | null
+          clinic_id?: string
+          created_at?: string
+          show_logo?: boolean
+          thank_you_heading?: string | null
+          thank_you_message?: string | null
+          updated_at?: string
+          welcome_heading?: string | null
+          welcome_subheading?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_registration_settings_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_settings: {
         Row: {
           clinic_id: string
@@ -277,6 +327,56 @@ export type Database = {
             foreignKeyName: "clinic_subscriptions_clinic_id_fkey"
             columns: ["clinic_id"]
             isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_working_hours: {
+        Row: {
+          break_end: string | null
+          break_start: string | null
+          clinic_id: string
+          close_time: string
+          created_at: string
+          day_of_week: number
+          id: string
+          is_closed: boolean
+          open_time: string
+          slot_duration_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          break_end?: string | null
+          break_start?: string | null
+          clinic_id: string
+          close_time?: string
+          created_at?: string
+          day_of_week: number
+          id?: string
+          is_closed?: boolean
+          open_time?: string
+          slot_duration_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          break_end?: string | null
+          break_start?: string | null
+          clinic_id?: string
+          close_time?: string
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          is_closed?: boolean
+          open_time?: string
+          slot_duration_minutes?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_working_hours_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
             referencedRelation: "clinics"
             referencedColumns: ["id"]
           },
