@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Palette, Check, RotateCcw } from "lucide-react";
+import { Palette, Check, RotateCcw, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface ThemePreset {
   name: string;
@@ -85,8 +87,9 @@ function applyTheme(preset: ThemePreset) {
 
 export default function ThemeBrandingTab({ clinicId }: { clinicId: string }) {
   const queryClient = useQueryClient();
+  const { mode, toggleMode, customColor, setCustomColor } = useTheme();
   const [selected, setSelected] = useState<string>("Sky Blue (Default)");
-  const [customHex, setCustomHex] = useState("#5BADE6");
+  const [customHex, setCustomHex] = useState(customColor || "#5BADE6");
 
   const { data: savedTheme } = useQuery({
     queryKey: ["clinic-theme", clinicId],
@@ -207,24 +210,59 @@ export default function ThemeBrandingTab({ clinicId }: { clinicId: string }) {
     if (preset) {
       setSelected("Custom");
       applyTheme(preset);
+      setCustomColor(customHex); // persist locally too
       saveMutation.mutate(preset);
     } else {
       toast.error("Invalid hex color");
     }
   };
 
+  const handleClearCustom = () => {
+    setCustomColor(null);
+    toast.success("Custom color cleared. Reload to see preset palette.");
+  };
+
   return (
-    <Card className="shadow-card border-0">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-heading text-lg">
-          <Palette className="h-5 w-5 text-primary" /> Brand Theme
-        </CardTitle>
-        <CardDescription>Choose a color theme that matches your hospital/clinic branding</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Presets Grid */}
-        <div>
-          <Label className="text-sm font-medium mb-3 block">Preset Palettes</Label>
+    <div className="space-y-6">
+      {/* Display Mode Card */}
+      <Card className="shadow-card border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-lg">
+            {mode === "dark" ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+            Display Mode
+          </CardTitle>
+          <CardDescription>Switch between light and dark mode (saved on this device)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                {mode === "dark" ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+              </div>
+              <div>
+                <p className="font-semibold text-sm capitalize">{mode} mode</p>
+                <p className="text-xs text-muted-foreground">
+                  {mode === "dark" ? "Easy on the eyes for long sessions" : "Bright and clear for daytime use"}
+                </p>
+              </div>
+            </div>
+            <Switch checked={mode === "dark"} onCheckedChange={toggleMode} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Brand Theme Card */}
+      <Card className="shadow-card border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-lg">
+            <Palette className="h-5 w-5 text-primary" /> Brand Theme
+          </CardTitle>
+          <CardDescription>Choose a color theme that matches your hospital/clinic branding</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Presets Grid */}
+          <div>
+            <Label className="text-sm font-medium mb-3 block">Preset Palettes</Label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {presets.map((preset) => (
               <button
@@ -274,6 +312,9 @@ export default function ThemeBrandingTab({ clinicId }: { clinicId: string }) {
               </div>
             </div>
             <Button size="sm" onClick={handleCustomApply}>Apply Custom</Button>
+            {customColor && (
+              <Button size="sm" variant="outline" onClick={handleClearCustom}>Clear</Button>
+            )}
           </div>
         </div>
 
@@ -297,7 +338,8 @@ export default function ThemeBrandingTab({ clinicId }: { clinicId: string }) {
             <div className="rounded-lg border-2 border-primary px-4 py-2 text-primary text-sm font-medium">Outline</div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

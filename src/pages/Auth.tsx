@@ -25,11 +25,8 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (!authLoading && session) {
-      if (profile?.clinic_id) {
-        navigate("/dashboard", { replace: true });
-      } else {
-        navigate("/onboarding", { replace: true });
-      }
+      // Always send to dashboard — clinic auto-creates if missing.
+      navigate("/dashboard", { replace: true });
     }
   }, [session, profile, authLoading, navigate]);
 

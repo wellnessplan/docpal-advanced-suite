@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Users, IndianRupee, Wallet, Plus } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import DashboardLayout from "@/components/DashboardLayout";
+import ProfileCompletionModal from "@/components/ProfileCompletionModal";
 import { format } from "date-fns";
 
 const statusStyle: Record<string, string> = {
@@ -145,6 +146,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
+      <ProfileCompletionModal />
       <div className="space-y-5 animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
