@@ -210,24 +210,59 @@ export default function ThemeBrandingTab({ clinicId }: { clinicId: string }) {
     if (preset) {
       setSelected("Custom");
       applyTheme(preset);
+      setCustomColor(customHex); // persist locally too
       saveMutation.mutate(preset);
     } else {
       toast.error("Invalid hex color");
     }
   };
 
+  const handleClearCustom = () => {
+    setCustomColor(null);
+    toast.success("Custom color cleared. Reload to see preset palette.");
+  };
+
   return (
-    <Card className="shadow-card border-0">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-heading text-lg">
-          <Palette className="h-5 w-5 text-primary" /> Brand Theme
-        </CardTitle>
-        <CardDescription>Choose a color theme that matches your hospital/clinic branding</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Presets Grid */}
-        <div>
-          <Label className="text-sm font-medium mb-3 block">Preset Palettes</Label>
+    <div className="space-y-6">
+      {/* Display Mode Card */}
+      <Card className="shadow-card border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-lg">
+            {mode === "dark" ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+            Display Mode
+          </CardTitle>
+          <CardDescription>Switch between light and dark mode (saved on this device)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                {mode === "dark" ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+              </div>
+              <div>
+                <p className="font-semibold text-sm capitalize">{mode} mode</p>
+                <p className="text-xs text-muted-foreground">
+                  {mode === "dark" ? "Easy on the eyes for long sessions" : "Bright and clear for daytime use"}
+                </p>
+              </div>
+            </div>
+            <Switch checked={mode === "dark"} onCheckedChange={toggleMode} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Brand Theme Card */}
+      <Card className="shadow-card border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-lg">
+            <Palette className="h-5 w-5 text-primary" /> Brand Theme
+          </CardTitle>
+          <CardDescription>Choose a color theme that matches your hospital/clinic branding</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Presets Grid */}
+          <div>
+            <Label className="text-sm font-medium mb-3 block">Preset Palettes</Label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {presets.map((preset) => (
               <button
