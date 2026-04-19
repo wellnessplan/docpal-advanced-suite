@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Palette, Check, RotateCcw } from "lucide-react";
+import { Palette, Check, RotateCcw, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface ThemePreset {
   name: string;
@@ -85,8 +87,9 @@ function applyTheme(preset: ThemePreset) {
 
 export default function ThemeBrandingTab({ clinicId }: { clinicId: string }) {
   const queryClient = useQueryClient();
+  const { mode, toggleMode, customColor, setCustomColor } = useTheme();
   const [selected, setSelected] = useState<string>("Sky Blue (Default)");
-  const [customHex, setCustomHex] = useState("#5BADE6");
+  const [customHex, setCustomHex] = useState(customColor || "#5BADE6");
 
   const { data: savedTheme } = useQuery({
     queryKey: ["clinic-theme", clinicId],
