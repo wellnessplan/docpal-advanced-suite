@@ -335,7 +335,8 @@ export default function ThemeBrandingTab({ clinicId }: { clinicId: string }) {
             <div className="rounded-lg border-2 border-primary px-4 py-2 text-primary text-sm font-medium">Outline</div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
