@@ -26,6 +26,8 @@ import ThemeBrandingTab from "@/components/settings/ThemeBrandingTab";
 import DataImportTab from "@/components/settings/DataImportTab";
 import DiscountCouponsTab from "@/components/settings/DiscountCouponsTab";
 import SubscriptionPlanTab from "@/components/settings/SubscriptionPlanTab";
+import WorkingHoursPerDayTab from "@/components/settings/WorkingHoursPerDayTab";
+import RegistrationPageBuilderTab from "@/components/settings/RegistrationPageBuilderTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -815,12 +817,15 @@ export default function SettingsPage() {
           <TabsContent value="clinic">
             <div className="space-y-6">
               <ClinicInfoTab clinicId={clinicId} />
-              <WorkingHoursTab clinicId={clinicId} />
+              <WorkingHoursPerDayTab clinicId={clinicId} />
             </div>
           </TabsContent>
 
           <TabsContent value="letterhead">
-            <QRCodeTab clinicId={clinicId} clinicName={clinic?.name || "My Dental Clinic"} />
+            <div className="space-y-6">
+              <QRCodeTab clinicId={clinicId} clinicName={clinic?.name || "My Dental Clinic"} />
+              <RegistrationPageBuilderTab clinicId={clinicId} />
+            </div>
           </TabsContent>
 
           <TabsContent value="team">
