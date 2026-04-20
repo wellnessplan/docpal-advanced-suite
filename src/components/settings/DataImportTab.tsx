@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Download, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Users, CalendarDays, Stethoscope, Receipt, Package, UserCog, Loader2 } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Users, CalendarDays, Stethoscope, Receipt, Package, UserCog, Loader2, ClipboardCheck, FileDown } from "lucide-react";
 
 interface DataImportTabProps { clinicId: string; }
 
@@ -40,6 +40,11 @@ const IMPORT_MODULES = [
     columns: ["full_name*", "role*", "phone", "email", "specialization"],
     requiredCols: ["full_name", "role"],
     dbTable: "profiles",
+  },
+  { key: "treatment_plans", label: "Treatment Plans", icon: ClipboardCheck, color: "bg-success/10 text-success",
+    columns: ["patient_name*", "patient_phone*", "plan_name", "status", "total_estimated_cost", "notes"],
+    requiredCols: ["patient_name", "patient_phone"],
+    dbTable: "treatment_plans",
   },
 ];
 
