@@ -30,7 +30,7 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    label: "DASHBOARD",
+    label: "",
     groupIcon: LayoutDashboard,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -73,23 +73,26 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "MANAGEMENT",
-    groupIcon: Settings,
+    label: "GROWTH",
+    groupIcon: TrendingUp,
     collapsible: true,
     items: [
-      // Analytics
-      { href: "/reports", label: "Reports", icon: BarChart3 },
-      { href: "/revenue", label: "Revenue", icon: IndianRupee },
-      { href: "/performance", label: "Performance", icon: Activity },
-      // Growth
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
       { href: "/leads", label: "Leads", icon: Target },
       { href: "/reviews", label: "Feedback", icon: Star },
       { href: "/referrals", label: "Referrals", icon: Gift },
       { href: "/memberships", label: "Membership", icon: Crown },
-      // Vendors
+    ],
+  },
+  {
+    label: "MANAGEMENT",
+    groupIcon: Settings,
+    collapsible: true,
+    items: [
+      { href: "/reports", label: "Reports", icon: BarChart3 },
+      { href: "/revenue", label: "Revenue", icon: IndianRupee },
+      { href: "/performance", label: "Performance", icon: Activity },
       { href: "/settings?tab=vendors", label: "Vendors", icon: Truck },
-      // Admin
       { href: "/staff", label: "Staff", icon: UserCog },
       { href: "/audit-log", label: "Audit Log", icon: ScrollText },
       { href: "/settings", label: "Settings", icon: Settings },
@@ -191,7 +194,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         </div>
                         {isExpanded ? <ChevronUp className="h-3 w-3 text-white/70" /> : <ChevronDown className="h-3 w-3 text-white/70" />}
                       </button>
-                    ) : !collapsed ? (
+                    ) : !collapsed && group.label ? (
                       <div className="flex items-center gap-1.5 px-2.5 mb-1">
                         <group.groupIcon className="h-3.5 w-3.5 text-white/80" />
                         <p className="text-[11px] font-bold tracking-[0.08em] text-white/85 uppercase">

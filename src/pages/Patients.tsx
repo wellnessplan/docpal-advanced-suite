@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,11 +25,21 @@ import { PatientListSkeleton, TableSkeleton } from "@/components/ui/skeleton-loa
 
 export default function PatientsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { clinicId } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+
+  // Auto-open registration drawer/dialog when navigated with ?new=1 (e.g. from mobile FAB)
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      setOpen(true);
+      searchParams.delete("new");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [phoneError, setPhoneError] = useState("");
   const [bookAppointment, setBookAppointment] = useState(false);
 

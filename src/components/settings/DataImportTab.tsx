@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Download, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Users, CalendarDays, Stethoscope, Receipt, Package, UserCog, Loader2 } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Users, CalendarDays, Stethoscope, Receipt, Package, UserCog, Loader2, ClipboardCheck, FileDown } from "lucide-react";
 
 interface DataImportTabProps { clinicId: string; }
 
@@ -41,6 +41,11 @@ const IMPORT_MODULES = [
     requiredCols: ["full_name", "role"],
     dbTable: "profiles",
   },
+  { key: "treatment_plans", label: "Treatment Plans", icon: ClipboardCheck, color: "bg-success/10 text-success",
+    columns: ["patient_name*", "patient_phone*", "plan_name", "status", "total_estimated_cost", "notes"],
+    requiredCols: ["patient_name", "patient_phone"],
+    dbTable: "treatment_plans",
+  },
 ];
 
 function generateCSVTemplate(mod: typeof IMPORT_MODULES[0]) {
@@ -65,6 +70,8 @@ function generateCSVTemplate(mod: typeof IMPORT_MODULES[0]) {
     if (col === "name") return "Dental Mirror";
     if (col === "category") return "Instruments";
     if (col === "unit") return "pcs";
+    if (col === "plan_name") return "Comprehensive Treatment Plan";
+    if (col === "total_estimated_cost") return "15000";
     return "";
   }).join(",");
   return `${header}\n${sampleRow}`;
@@ -100,14 +107,68 @@ function parseCSV(text: string): { headers: string[]; rows: Record<string, strin
   return { headers, rows };
 }
 
+function toCSV(rows: any[]): string {
+  if (!rows.length) return "";
+  const headers = Object.keys(rows[0]);
+  const escape = (v: any) => {
+    if (v === null || v === undefined) return "";
+    const s = String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [headers.join(","), ...rows.map(r => headers.map(h => escape(r[h])).join(","))].join("\n");
+}
+
+function downloadCSV(filename: string, csv: string) {
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function DataImportTab({ clinicId }: DataImportTabProps) {
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ headers: string[]; rows: Record<string, string>[] } | null>(null);
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const mod = IMPORT_MODULES.find(m => m.key === selectedModule);
+
+  const handleExport = async (modKey: string) => {
+    const m = IMPORT_MODULES.find(x => x.key === modKey);
+    if (!m) return;
+    setExporting(modKey);
+    try {
+      let rows: any[] = [];
+      if (m.key === "treatment_plans") {
+        const { data } = await supabase
+          .from("treatment_plans")
+          .select("plan_name, status, total_estimated_cost, notes, created_at, patients(full_name, phone)")
+          .eq("clinic_id", clinicId);
+        rows = (data || []).map((r: any) => ({
+          patient_name: r.patients?.full_name || "",
+          patient_phone: r.patients?.phone || "",
+          plan_name: r.plan_name,
+          status: r.status,
+          total_estimated_cost: r.total_estimated_cost,
+          notes: r.notes || "",
+          created_at: r.created_at,
+        }));
+      } else {
+        const { data } = await (supabase as any).from(m.dbTable).select("*").eq("clinic_id", clinicId);
+        rows = data || [];
+      }
+      if (!rows.length) { toast.info(`No ${m.label} records to export`); return; }
+      downloadCSV(`${m.key}_export_${new Date().toISOString().split("T")[0]}.csv`, toCSV(rows));
+      toast.success(`Exported ${rows.length} ${m.label} records`);
+    } catch (e: any) {
+      toast.error(`Export failed: ${e.message}`);
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -237,6 +298,26 @@ export default function DataImportTab({ clinicId }: DataImportTabProps) {
             user_id: crypto.randomUUID(),
           } as any);
           if (error) { failed++; errors.push(`${row.full_name}: ${error.message}`); } else success++;
+        } else if (mod.key === "treatment_plans") {
+          if (!row.patient_name) { failed++; errors.push(`Row missing patient_name`); continue; }
+          let patientId: string | null = null;
+          if (row.patient_phone) {
+            const { data: existing } = await supabase.from("patients").select("id").eq("clinic_id", clinicId).eq("phone", row.patient_phone).maybeSingle();
+            patientId = existing?.id || null;
+          }
+          if (!patientId) {
+            const { data: created } = await supabase.from("patients").insert({ clinic_id: clinicId, full_name: row.patient_name, phone: row.patient_phone || null }).select("id").single();
+            patientId = created?.id || null;
+          }
+          if (!patientId) { failed++; errors.push(`Could not resolve patient: ${row.patient_name}`); continue; }
+          const { error } = await supabase.from("treatment_plans").insert({
+            clinic_id: clinicId, patient_id: patientId,
+            plan_name: row.plan_name || "Treatment Plan",
+            status: row.status || "draft",
+            total_estimated_cost: row.total_estimated_cost ? parseFloat(row.total_estimated_cost) : 0,
+            notes: row.notes || null,
+          });
+          if (error) { failed++; errors.push(`${row.patient_name}: ${error.message}`); } else success++;
         }
       } catch (err: any) {
         failed++;
@@ -252,6 +333,40 @@ export default function DataImportTab({ clinicId }: DataImportTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Export Existing Data */}
+      <Card className="border-0 shadow-card">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FileDown className="h-5 w-5 text-primary" /> Export Your Data
+          </CardTitle>
+          <CardDescription>Download your existing clinic data as CSV — useful for backups or migrating to another system</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
+            {IMPORT_MODULES.map(m => {
+              const Icon = m.icon;
+              const isLoading = exporting === m.key;
+              return (
+                <button
+                  key={m.key}
+                  onClick={() => handleExport(m.key)}
+                  disabled={isLoading}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-left disabled:opacity-50"
+                >
+                  <div className={`h-9 w-9 rounded-lg ${m.color} flex items-center justify-center shrink-0`}>
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">Export {m.label}</p>
+                    <p className="text-[10px] text-muted-foreground">CSV download</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Download Templates */}
       <Card className="border-0 shadow-card">
         <CardHeader>
