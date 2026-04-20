@@ -333,6 +333,40 @@ export default function DataImportTab({ clinicId }: DataImportTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Export Existing Data */}
+      <Card className="border-0 shadow-card">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FileDown className="h-5 w-5 text-primary" /> Export Your Data
+          </CardTitle>
+          <CardDescription>Download your existing clinic data as CSV — useful for backups or migrating to another system</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
+            {IMPORT_MODULES.map(m => {
+              const Icon = m.icon;
+              const isLoading = exporting === m.key;
+              return (
+                <button
+                  key={m.key}
+                  onClick={() => handleExport(m.key)}
+                  disabled={isLoading}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-left disabled:opacity-50"
+                >
+                  <div className={`h-9 w-9 rounded-lg ${m.color} flex items-center justify-center shrink-0`}>
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">Export {m.label}</p>
+                    <p className="text-[10px] text-muted-foreground">CSV download</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Download Templates */}
       <Card className="border-0 shadow-card">
         <CardHeader>
