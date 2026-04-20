@@ -129,11 +129,46 @@ function downloadCSV(filename: string, csv: string) {
 export default function DataImportTab({ clinicId }: DataImportTabProps) {
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ headers: string[]; rows: Record<string, string>[] } | null>(null);
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const mod = IMPORT_MODULES.find(m => m.key === selectedModule);
+
+  const handleExport = async (modKey: string) => {
+    const m = IMPORT_MODULES.find(x => x.key === modKey);
+    if (!m) return;
+    setExporting(modKey);
+    try {
+      let rows: any[] = [];
+      if (m.key === "treatment_plans") {
+        const { data } = await supabase
+          .from("treatment_plans")
+          .select("plan_name, status, total_estimated_cost, notes, created_at, patients(full_name, phone)")
+          .eq("clinic_id", clinicId);
+        rows = (data || []).map((r: any) => ({
+          patient_name: r.patients?.full_name || "",
+          patient_phone: r.patients?.phone || "",
+          plan_name: r.plan_name,
+          status: r.status,
+          total_estimated_cost: r.total_estimated_cost,
+          notes: r.notes || "",
+          created_at: r.created_at,
+        }));
+      } else {
+        const { data } = await (supabase as any).from(m.dbTable).select("*").eq("clinic_id", clinicId);
+        rows = data || [];
+      }
+      if (!rows.length) { toast.info(`No ${m.label} records to export`); return; }
+      downloadCSV(`${m.key}_export_${new Date().toISOString().split("T")[0]}.csv`, toCSV(rows));
+      toast.success(`Exported ${rows.length} ${m.label} records`);
+    } catch (e: any) {
+      toast.error(`Export failed: ${e.message}`);
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
