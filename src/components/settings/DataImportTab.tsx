@@ -70,6 +70,8 @@ function generateCSVTemplate(mod: typeof IMPORT_MODULES[0]) {
     if (col === "name") return "Dental Mirror";
     if (col === "category") return "Instruments";
     if (col === "unit") return "pcs";
+    if (col === "plan_name") return "Comprehensive Treatment Plan";
+    if (col === "total_estimated_cost") return "15000";
     return "";
   }).join(",");
   return `${header}\n${sampleRow}`;
@@ -242,6 +244,26 @@ export default function DataImportTab({ clinicId }: DataImportTabProps) {
             user_id: crypto.randomUUID(),
           } as any);
           if (error) { failed++; errors.push(`${row.full_name}: ${error.message}`); } else success++;
+        } else if (mod.key === "treatment_plans") {
+          if (!row.patient_name) { failed++; errors.push(`Row missing patient_name`); continue; }
+          let patientId: string | null = null;
+          if (row.patient_phone) {
+            const { data: existing } = await supabase.from("patients").select("id").eq("clinic_id", clinicId).eq("phone", row.patient_phone).maybeSingle();
+            patientId = existing?.id || null;
+          }
+          if (!patientId) {
+            const { data: created } = await supabase.from("patients").insert({ clinic_id: clinicId, full_name: row.patient_name, phone: row.patient_phone || null }).select("id").single();
+            patientId = created?.id || null;
+          }
+          if (!patientId) { failed++; errors.push(`Could not resolve patient: ${row.patient_name}`); continue; }
+          const { error } = await supabase.from("treatment_plans").insert({
+            clinic_id: clinicId, patient_id: patientId,
+            plan_name: row.plan_name || "Treatment Plan",
+            status: row.status || "draft",
+            total_estimated_cost: row.total_estimated_cost ? parseFloat(row.total_estimated_cost) : 0,
+            notes: row.notes || null,
+          });
+          if (error) { failed++; errors.push(`${row.patient_name}: ${error.message}`); } else success++;
         }
       } catch (err: any) {
         failed++;
