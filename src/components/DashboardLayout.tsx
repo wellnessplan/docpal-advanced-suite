@@ -194,7 +194,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         </div>
                         {isExpanded ? <ChevronUp className="h-3 w-3 text-white/70" /> : <ChevronDown className="h-3 w-3 text-white/70" />}
                       </button>
-                    ) : !collapsed ? (
+                    ) : !collapsed && group.label ? (
                       <div className="flex items-center gap-1.5 px-2.5 mb-1">
                         <group.groupIcon className="h-3.5 w-3.5 text-white/80" />
                         <p className="text-[11px] font-bold tracking-[0.08em] text-white/85 uppercase">
