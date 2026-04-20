@@ -30,7 +30,7 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    label: "DASHBOARD",
+    label: "",
     groupIcon: LayoutDashboard,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -73,23 +73,26 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "MANAGEMENT",
-    groupIcon: Settings,
+    label: "GROWTH",
+    groupIcon: TrendingUp,
     collapsible: true,
     items: [
-      // Analytics
-      { href: "/reports", label: "Reports", icon: BarChart3 },
-      { href: "/revenue", label: "Revenue", icon: IndianRupee },
-      { href: "/performance", label: "Performance", icon: Activity },
-      // Growth
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
       { href: "/leads", label: "Leads", icon: Target },
       { href: "/reviews", label: "Feedback", icon: Star },
       { href: "/referrals", label: "Referrals", icon: Gift },
       { href: "/memberships", label: "Membership", icon: Crown },
-      // Vendors
+    ],
+  },
+  {
+    label: "MANAGEMENT",
+    groupIcon: Settings,
+    collapsible: true,
+    items: [
+      { href: "/reports", label: "Reports", icon: BarChart3 },
+      { href: "/revenue", label: "Revenue", icon: IndianRupee },
+      { href: "/performance", label: "Performance", icon: Activity },
       { href: "/settings?tab=vendors", label: "Vendors", icon: Truck },
-      // Admin
       { href: "/staff", label: "Staff", icon: UserCog },
       { href: "/audit-log", label: "Audit Log", icon: ScrollText },
       { href: "/settings", label: "Settings", icon: Settings },
