@@ -78,6 +78,7 @@ const navGroups: NavGroup[] = [
     collapsible: true,
     items: [
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+      { href: "/social-calendar", label: "Social Calendar", icon: CalendarDays },
       { href: "/leads", label: "Leads", icon: Target },
       { href: "/reviews", label: "Feedback", icon: Star },
       { href: "/referrals", label: "Referrals", icon: Gift },
