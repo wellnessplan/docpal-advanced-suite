@@ -215,6 +215,7 @@ export default function SocialCalendar() {
             <TabsTrigger value="month"><Grid3x3 className="w-4 h-4 mr-1" /> Month</TabsTrigger>
             <TabsTrigger value="week"><CalendarDays className="w-4 h-4 mr-1" /> Week</TabsTrigger>
             <TabsTrigger value="list"><List className="w-4 h-4 mr-1" /> List</TabsTrigger>
+            <TabsTrigger value="analytics"><BarChart3 className="w-4 h-4 mr-1" /> Analytics</TabsTrigger>
           </TabsList>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={() => navigate(-1)}><ChevronLeft className="w-4 h-4" /></Button>
