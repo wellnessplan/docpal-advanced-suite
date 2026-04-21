@@ -53,6 +53,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
+const SocialCalendar = lazy(() => import("./pages/SocialCalendar"));
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,7 @@ const App = () => (
                 <Route path="/partners" element={<ProtectedRoute><Partners /></ProtectedRoute>} />
                 <Route path="/ortho" element={<ProtectedRoute><Orthodontics /></ProtectedRoute>} />
                 <Route path="/ortho/:caseId" element={<ProtectedRoute><OrthoCase /></ProtectedRoute>} />
+                <Route path="/social-calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/super-admin" element={<SuperAdmin />} />
                 <Route path="*" element={<NotFound />} />
