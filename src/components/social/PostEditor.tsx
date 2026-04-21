@@ -9,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { PostPreview } from "./PostPreview";
+import { MediaUploader } from "./MediaUploader";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Trash2, Send, Save, CheckCircle2 } from "lucide-react";
+import { Trash2, Send, Save, CheckCircle2, ShieldCheck, ShieldX, AlertCircle } from "lucide-react";
 
 const PLATFORMS = ["Facebook", "Instagram", "Twitter", "LinkedIn"];
 
