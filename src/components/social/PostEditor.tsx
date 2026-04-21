@@ -9,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { PostPreview } from "./PostPreview";
+import { MediaUploader } from "./MediaUploader";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Trash2, Send, Save, CheckCircle2 } from "lucide-react";
+import { Trash2, Send, Save, CheckCircle2, ShieldCheck, ShieldX, AlertCircle } from "lucide-react";
 
 const PLATFORMS = ["Facebook", "Instagram", "Twitter", "LinkedIn"];
 
@@ -28,6 +30,8 @@ interface PostEditorProps {
 }
 
 export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinicLogo, defaultDate, onSaved }: PostEditorProps) {
+  const { profile } = useAuth();
+  const isManager = profile?.role === "admin" || profile?.role === "owner" || profile?.role === "manager";
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     platforms: [] as string[],
@@ -35,12 +39,15 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     caption: "",
     hashtags: "",
     image_url: "",
+    media_url: "",
+    media_type: "",
     campaign_name: "",
     cta_link: "",
     target_audience: "",
     boost_budget: 0,
     notes: "",
     approval_status: "pending",
+    rejection_reason: "",
     status: "draft",
   });
   const [previewPlatform, setPreviewPlatform] = useState("Instagram");
@@ -57,12 +64,15 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
             caption: data.caption || "",
             hashtags: data.hashtags || "",
             image_url: data.image_url || "",
+            media_url: (data as any).media_url || "",
+            media_type: (data as any).media_type || "",
             campaign_name: data.campaign_name || "",
             cta_link: data.cta_link || "",
             target_audience: data.target_audience || "",
             boost_budget: data.boost_budget || 0,
             notes: data.notes || "",
             approval_status: data.approval_status || "pending",
+            rejection_reason: (data as any).rejection_reason || "",
             status: data.status || "draft",
           });
           if (data.platforms?.[0]) setPreviewPlatform(data.platforms[0]);
@@ -72,8 +82,9 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
       setForm({
         platforms: [],
         scheduled_at: defaultDate ? format(defaultDate, "yyyy-MM-dd'T'HH:mm") : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-        caption: "", hashtags: "", image_url: "", campaign_name: "", cta_link: "",
-        target_audience: "", boost_budget: 0, notes: "", approval_status: "pending", status: "draft",
+        caption: "", hashtags: "", image_url: "", media_url: "", media_type: "",
+        campaign_name: "", cta_link: "", target_audience: "", boost_budget: 0,
+        notes: "", approval_status: "pending", rejection_reason: "", status: "draft",
       });
     }
   }, [open, postId, defaultDate]);
@@ -89,14 +100,20 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
   const handleSave = async (publish = false) => {
     if (!form.platforms.length) { toast.error("Select at least one platform"); return; }
     if (!form.caption.trim()) { toast.error("Caption is required"); return; }
+    if (publish && form.approval_status !== "approved") {
+      toast.error("Post must be approved by a manager before scheduling");
+      return;
+    }
     setLoading(true);
     try {
-      const payload = {
-        ...form,
+      const { rejection_reason, ...rest } = form;
+      const payload: any = {
+        ...rest,
         clinic_id: clinicId,
         scheduled_at: new Date(form.scheduled_at).toISOString(),
         boost_budget: Number(form.boost_budget) || 0,
         status: publish ? "scheduled" : form.status,
+        rejection_reason: form.approval_status === "rejected" ? rejection_reason : null,
       };
       let savedId = postId;
       if (postId) {
@@ -126,6 +143,38 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     }
   };
 
+  const handleApprove = async () => {
+    if (!postId) return;
+    if (!isManager) { toast.error("Only managers can approve"); return; }
+    setLoading(true);
+    const { error } = await supabase.from("social_posts").update({
+      approval_status: "approved",
+      approved_by: profile?.user_id,
+      approved_at: new Date().toISOString(),
+      rejection_reason: null,
+    }).eq("id", postId);
+    if (error) toast.error(error.message);
+    else { toast.success("Post approved"); setForm(f => ({ ...f, approval_status: "approved" })); onSaved(); }
+    setLoading(false);
+  };
+
+  const handleReject = async () => {
+    if (!postId) return;
+    if (!isManager) { toast.error("Only managers can reject"); return; }
+    const reason = prompt("Reason for rejection?", form.rejection_reason || "");
+    if (reason === null) return;
+    setLoading(true);
+    const { error } = await supabase.from("social_posts").update({
+      approval_status: "rejected",
+      rejection_reason: reason,
+      approved_by: profile?.user_id,
+      approved_at: new Date().toISOString(),
+    }).eq("id", postId);
+    if (error) toast.error(error.message);
+    else { toast.success("Post rejected"); setForm(f => ({ ...f, approval_status: "rejected", rejection_reason: reason })); onSaved(); }
+    setLoading(false);
+  };
+
   const handleMarkPosted = async () => {
     if (!postId) return;
     setLoading(true);
@@ -150,6 +199,36 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
         <DialogHeader>
           <DialogTitle>{postId ? "Edit Post" : "New Post"}</DialogTitle>
         </DialogHeader>
+
+        {/* Approval banner */}
+        <div className={`rounded-lg p-3 flex items-center gap-2 text-sm ${
+          form.approval_status === "approved" ? "bg-green-500/10 text-green-700 dark:text-green-300" :
+          form.approval_status === "rejected" ? "bg-destructive/10 text-destructive" :
+          "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+        }`}>
+          {form.approval_status === "approved" ? <ShieldCheck className="w-4 h-4" /> :
+           form.approval_status === "rejected" ? <ShieldX className="w-4 h-4" /> :
+           <AlertCircle className="w-4 h-4" />}
+          <div className="flex-1">
+            <span className="font-medium capitalize">{form.approval_status}</span>
+            {form.approval_status === "rejected" && form.rejection_reason && (
+              <span className="ml-2 text-xs">— {form.rejection_reason}</span>
+            )}
+            {form.approval_status === "pending" && (
+              <span className="ml-2 text-xs">Manager approval required before scheduling.</span>
+            )}
+          </div>
+          {postId && isManager && form.approval_status !== "approved" && (
+            <Button size="sm" variant="outline" onClick={handleApprove} disabled={loading}>
+              <ShieldCheck className="w-4 h-4 mr-1" /> Approve
+            </Button>
+          )}
+          {postId && isManager && form.approval_status !== "rejected" && (
+            <Button size="sm" variant="outline" onClick={handleReject} disabled={loading}>
+              <ShieldX className="w-4 h-4 mr-1" /> Reject
+            </Button>
+          )}
+        </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Form side */}
@@ -197,7 +276,17 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
             </div>
 
             <div>
-              <Label>Image URL</Label>
+              <Label>Media (image or video)</Label>
+              <MediaUploader
+                clinicId={clinicId}
+                mediaUrl={form.media_url}
+                mediaType={form.media_type}
+                onChange={(url, type) => setForm(f => ({ ...f, media_url: url || "", media_type: type || "" }))}
+              />
+            </div>
+
+            <div>
+              <Label>Or paste image URL</Label>
               <Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." />
             </div>
 
@@ -254,7 +343,7 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
                     platform={p}
                     caption={form.caption}
                     hashtags={form.hashtags}
-                    image_url={form.image_url}
+                    image_url={form.media_url || form.image_url}
                     cta_link={form.cta_link}
                     clinic_name={clinicName}
                     clinic_logo={clinicLogo}

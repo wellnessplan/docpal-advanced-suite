@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Plus, ChevronLeft, ChevronRight, Upload, Download, FileSpreadsheet,
-  Facebook, Instagram, Twitter, Linkedin, CalendarDays, List, Grid3x3,
+  Facebook, Instagram, Twitter, Linkedin, CalendarDays, List, Grid3x3, BarChart3,
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, addMonths, subMonths, isSameDay, addWeeks, subWeeks, isSameMonth, isToday, addDays } from "date-fns";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { PostEditor } from "@/components/social/PostEditor";
 import { SocialWebhooksPanel } from "@/components/social/SocialWebhooksPanel";
+import { SocialAnalyticsDashboard } from "@/components/social/SocialAnalyticsDashboard";
 
 const PLATFORM_ICONS: Record<string, any> = {
   Facebook, Instagram, Twitter, LinkedIn: Linkedin,
@@ -32,7 +33,7 @@ export default function SocialCalendar() {
   const { profile } = useAuth();
   const qc = useQueryClient();
   const clinicId = profile?.clinic_id;
-  const [view, setView] = useState<"month" | "week" | "list">("month");
+  const [view, setView] = useState<"month" | "week" | "list" | "analytics">("month");
   const [cursor, setCursor] = useState(new Date());
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -214,6 +215,7 @@ export default function SocialCalendar() {
             <TabsTrigger value="month"><Grid3x3 className="w-4 h-4 mr-1" /> Month</TabsTrigger>
             <TabsTrigger value="week"><CalendarDays className="w-4 h-4 mr-1" /> Week</TabsTrigger>
             <TabsTrigger value="list"><List className="w-4 h-4 mr-1" /> List</TabsTrigger>
+            <TabsTrigger value="analytics"><BarChart3 className="w-4 h-4 mr-1" /> Analytics</TabsTrigger>
           </TabsList>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={() => navigate(-1)}><ChevronLeft className="w-4 h-4" /></Button>
@@ -334,6 +336,10 @@ export default function SocialCalendar() {
               ))}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-4">
+          {clinicId && <SocialAnalyticsDashboard clinicId={clinicId} />}
         </TabsContent>
       </Tabs>
 

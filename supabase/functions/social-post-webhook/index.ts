@@ -35,6 +35,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Block if not approved
+    if (post.approval_status !== "approved") {
+      return new Response(JSON.stringify({
+        error: "Post is not approved. Manager approval required before firing webhooks.",
+        approval_status: post.approval_status,
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: hooks } = await supabase
       .from("social_webhooks")
       .select("*")
@@ -44,6 +55,7 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
     for (const hook of hooks ?? []) {
+      const firedAt = new Date().toISOString();
       try {
         const payload = {
           event: "post.publish",
@@ -52,6 +64,8 @@ Deno.serve(async (req) => {
           caption: post.caption,
           hashtags: post.hashtags,
           image_url: post.image_url,
+          media_url: post.media_url,
+          media_type: post.media_type,
           campaign_name: post.campaign_name,
           cta_link: post.cta_link,
           target_audience: post.target_audience,
@@ -72,6 +86,15 @@ Deno.serve(async (req) => {
           action: r.ok ? "webhook_fired" : "webhook_failed",
           details: { status: r.status },
         });
+        // Upsert analytics row
+        await supabase.from("social_post_analytics").upsert({
+          post_id: post.id,
+          clinic_id: post.clinic_id,
+          platform: hook.platform,
+          webhook_status: r.ok ? "success" : "failed",
+          webhook_status_code: r.status,
+          webhook_fired_at: firedAt,
+        }, { onConflict: "post_id,platform" });
       } catch (e) {
         results.push({ platform: hook.platform, ok: false, error: String(e) });
         await supabase.from("social_post_history").insert({
@@ -81,6 +104,14 @@ Deno.serve(async (req) => {
           action: "webhook_failed",
           details: { error: String(e) },
         });
+        await supabase.from("social_post_analytics").upsert({
+          post_id: post.id,
+          clinic_id: post.clinic_id,
+          platform: hook.platform,
+          webhook_status: "error",
+          webhook_status_code: 0,
+          webhook_fired_at: firedAt,
+        }, { onConflict: "post_id,platform" });
       }
     }
 

@@ -2826,6 +2826,69 @@ export type Database = {
           },
         ]
       }
+      social_post_analytics: {
+        Row: {
+          clicks: number
+          clinic_id: string
+          created_at: string
+          engagement: number
+          id: string
+          impressions: number
+          last_synced_at: string | null
+          platform: string
+          post_id: string
+          updated_at: string
+          webhook_fired_at: string | null
+          webhook_status: string | null
+          webhook_status_code: number | null
+        }
+        Insert: {
+          clicks?: number
+          clinic_id: string
+          created_at?: string
+          engagement?: number
+          id?: string
+          impressions?: number
+          last_synced_at?: string | null
+          platform: string
+          post_id: string
+          updated_at?: string
+          webhook_fired_at?: string | null
+          webhook_status?: string | null
+          webhook_status_code?: number | null
+        }
+        Update: {
+          clicks?: number
+          clinic_id?: string
+          created_at?: string
+          engagement?: number
+          id?: string
+          impressions?: number
+          last_synced_at?: string | null
+          platform?: string
+          post_id?: string
+          updated_at?: string
+          webhook_fired_at?: string | null
+          webhook_status?: string | null
+          webhook_status_code?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_analytics_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_post_analytics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_post_history: {
         Row: {
           action: string
@@ -2874,20 +2937,28 @@ export type Database = {
       social_posts: {
         Row: {
           approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           boost_budget: number | null
           campaign_name: string | null
           caption: string
+          clicks: number
           clinic_id: string
           created_at: string
           created_by: string | null
           cta_link: string | null
+          engagement: number
           failure_reason: string | null
           hashtags: string | null
           id: string
           image_url: string | null
+          impressions: number
+          media_type: string | null
+          media_url: string | null
           notes: string | null
           platforms: string[]
           posted_at: string | null
+          rejection_reason: string | null
           scheduled_at: string
           status: string
           target_audience: string | null
@@ -2895,20 +2966,28 @@ export type Database = {
         }
         Insert: {
           approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           boost_budget?: number | null
           campaign_name?: string | null
           caption?: string
+          clicks?: number
           clinic_id: string
           created_at?: string
           created_by?: string | null
           cta_link?: string | null
+          engagement?: number
           failure_reason?: string | null
           hashtags?: string | null
           id?: string
           image_url?: string | null
+          impressions?: number
+          media_type?: string | null
+          media_url?: string | null
           notes?: string | null
           platforms?: string[]
           posted_at?: string | null
+          rejection_reason?: string | null
           scheduled_at: string
           status?: string
           target_audience?: string | null
@@ -2916,20 +2995,28 @@ export type Database = {
         }
         Update: {
           approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           boost_budget?: number | null
           campaign_name?: string | null
           caption?: string
+          clicks?: number
           clinic_id?: string
           created_at?: string
           created_by?: string | null
           cta_link?: string | null
+          engagement?: number
           failure_reason?: string | null
           hashtags?: string | null
           id?: string
           image_url?: string | null
+          impressions?: number
+          media_type?: string | null
+          media_url?: string | null
           notes?: string | null
           platforms?: string[]
           posted_at?: string | null
+          rejection_reason?: string | null
           scheduled_at?: string
           status?: string
           target_audience?: string | null
