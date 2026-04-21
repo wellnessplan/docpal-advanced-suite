@@ -343,7 +343,7 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
                     platform={p}
                     caption={form.caption}
                     hashtags={form.hashtags}
-                    image_url={form.image_url}
+                    image_url={form.media_url || form.image_url}
                     cta_link={form.cta_link}
                     clinic_name={clinicName}
                     clinic_logo={clinicLogo}
