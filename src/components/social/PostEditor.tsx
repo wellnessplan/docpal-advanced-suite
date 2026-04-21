@@ -276,7 +276,17 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
             </div>
 
             <div>
-              <Label>Image URL</Label>
+              <Label>Media (image or video)</Label>
+              <MediaUploader
+                clinicId={clinicId}
+                mediaUrl={form.media_url}
+                mediaType={form.media_type}
+                onChange={(url, type) => setForm(f => ({ ...f, media_url: url || "", media_type: type || "" }))}
+              />
+            </div>
+
+            <div>
+              <Label>Or paste image URL</Label>
               <Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." />
             </div>
 
