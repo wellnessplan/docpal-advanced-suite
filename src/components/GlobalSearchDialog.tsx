@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -113,10 +112,10 @@ export default function GlobalSearchDialog() {
       </button>
 
       <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
-        <VisuallyHidden>
+        <span className="sr-only">
           <DialogTitle>Global Search</DialogTitle>
           <DialogDescription>Search patients and pages across the app</DialogDescription>
-        </VisuallyHidden>
+        </span>
         <CommandInput
           placeholder="Search patients, pages…"
           value={query}
