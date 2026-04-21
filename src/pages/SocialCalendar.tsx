@@ -337,6 +337,10 @@ export default function SocialCalendar() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="analytics" className="mt-4">
+          {clinicId && <SocialAnalyticsDashboard clinicId={clinicId} />}
+        </TabsContent>
       </Tabs>
 
       {clinicId && (
