@@ -200,6 +200,36 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
           <DialogTitle>{postId ? "Edit Post" : "New Post"}</DialogTitle>
         </DialogHeader>
 
+        {/* Approval banner */}
+        <div className={`rounded-lg p-3 flex items-center gap-2 text-sm ${
+          form.approval_status === "approved" ? "bg-green-500/10 text-green-700 dark:text-green-300" :
+          form.approval_status === "rejected" ? "bg-destructive/10 text-destructive" :
+          "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+        }`}>
+          {form.approval_status === "approved" ? <ShieldCheck className="w-4 h-4" /> :
+           form.approval_status === "rejected" ? <ShieldX className="w-4 h-4" /> :
+           <AlertCircle className="w-4 h-4" />}
+          <div className="flex-1">
+            <span className="font-medium capitalize">{form.approval_status}</span>
+            {form.approval_status === "rejected" && form.rejection_reason && (
+              <span className="ml-2 text-xs">— {form.rejection_reason}</span>
+            )}
+            {form.approval_status === "pending" && (
+              <span className="ml-2 text-xs">Manager approval required before scheduling.</span>
+            )}
+          </div>
+          {postId && isManager && form.approval_status !== "approved" && (
+            <Button size="sm" variant="outline" onClick={handleApprove} disabled={loading}>
+              <ShieldCheck className="w-4 h-4 mr-1" /> Approve
+            </Button>
+          )}
+          {postId && isManager && form.approval_status !== "rejected" && (
+            <Button size="sm" variant="outline" onClick={handleReject} disabled={loading}>
+              <ShieldX className="w-4 h-4 mr-1" /> Reject
+            </Button>
+          )}
+        </div>
+
         <div className="grid md:grid-cols-2 gap-6">
           {/* Form side */}
           <div className="space-y-4">
