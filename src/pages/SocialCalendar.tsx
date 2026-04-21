@@ -33,7 +33,7 @@ export default function SocialCalendar() {
   const { profile } = useAuth();
   const qc = useQueryClient();
   const clinicId = profile?.clinic_id;
-  const [view, setView] = useState<"month" | "week" | "list">("month");
+  const [view, setView] = useState<"month" | "week" | "list" | "analytics">("month");
   const [cursor, setCursor] = useState(new Date());
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
