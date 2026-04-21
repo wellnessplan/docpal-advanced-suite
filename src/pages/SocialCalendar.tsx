@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Plus, ChevronLeft, ChevronRight, Upload, Download, FileSpreadsheet,
-  Facebook, Instagram, Twitter, Linkedin, CalendarDays, List, Grid3x3,
+  Facebook, Instagram, Twitter, Linkedin, CalendarDays, List, Grid3x3, BarChart3,
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, addMonths, subMonths, isSameDay, addWeeks, subWeeks, isSameMonth, isToday, addDays } from "date-fns";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { PostEditor } from "@/components/social/PostEditor";
 import { SocialWebhooksPanel } from "@/components/social/SocialWebhooksPanel";
+import { SocialAnalyticsDashboard } from "@/components/social/SocialAnalyticsDashboard";
 
 const PLATFORM_ICONS: Record<string, any> = {
   Facebook, Instagram, Twitter, LinkedIn: Linkedin,
