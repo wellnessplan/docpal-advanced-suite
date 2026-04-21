@@ -2826,6 +2826,163 @@ export type Database = {
           },
         ]
       }
+      social_post_history: {
+        Row: {
+          action: string
+          clinic_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          platform: string
+          post_id: string
+        }
+        Insert: {
+          action: string
+          clinic_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          platform: string
+          post_id: string
+        }
+        Update: {
+          action?: string
+          clinic_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          platform?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_history_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_post_history_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          approval_status: string
+          boost_budget: number | null
+          campaign_name: string | null
+          caption: string
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          cta_link: string | null
+          failure_reason: string | null
+          hashtags: string | null
+          id: string
+          image_url: string | null
+          notes: string | null
+          platforms: string[]
+          posted_at: string | null
+          scheduled_at: string
+          status: string
+          target_audience: string | null
+          updated_at: string
+        }
+        Insert: {
+          approval_status?: string
+          boost_budget?: number | null
+          campaign_name?: string | null
+          caption?: string
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          cta_link?: string | null
+          failure_reason?: string | null
+          hashtags?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          platforms?: string[]
+          posted_at?: string | null
+          scheduled_at: string
+          status?: string
+          target_audience?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: string
+          boost_budget?: number | null
+          campaign_name?: string | null
+          caption?: string
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          cta_link?: string | null
+          failure_reason?: string | null
+          hashtags?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          platforms?: string[]
+          posted_at?: string | null
+          scheduled_at?: string
+          status?: string
+          target_audience?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_webhooks: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          enabled: boolean
+          id: string
+          platform: string
+          updated_at: string
+          webhook_url: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          platform: string
+          updated_at?: string
+          webhook_url: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          platform?: string
+          updated_at?: string
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_webhooks_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_attendance: {
         Row: {
           attendance_date: string
