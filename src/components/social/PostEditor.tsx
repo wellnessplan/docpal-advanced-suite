@@ -30,6 +30,8 @@ interface PostEditorProps {
 }
 
 export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinicLogo, defaultDate, onSaved }: PostEditorProps) {
+  const { profile } = useAuth();
+  const isManager = profile?.role === "admin" || profile?.role === "owner" || profile?.role === "manager";
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     platforms: [] as string[],
@@ -37,12 +39,15 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     caption: "",
     hashtags: "",
     image_url: "",
+    media_url: "",
+    media_type: "",
     campaign_name: "",
     cta_link: "",
     target_audience: "",
     boost_budget: 0,
     notes: "",
     approval_status: "pending",
+    rejection_reason: "",
     status: "draft",
   });
   const [previewPlatform, setPreviewPlatform] = useState("Instagram");
