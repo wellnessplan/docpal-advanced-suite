@@ -64,12 +64,15 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
             caption: data.caption || "",
             hashtags: data.hashtags || "",
             image_url: data.image_url || "",
+            media_url: (data as any).media_url || "",
+            media_type: (data as any).media_type || "",
             campaign_name: data.campaign_name || "",
             cta_link: data.cta_link || "",
             target_audience: data.target_audience || "",
             boost_budget: data.boost_budget || 0,
             notes: data.notes || "",
             approval_status: data.approval_status || "pending",
+            rejection_reason: (data as any).rejection_reason || "",
             status: data.status || "draft",
           });
           if (data.platforms?.[0]) setPreviewPlatform(data.platforms[0]);
@@ -79,8 +82,9 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
       setForm({
         platforms: [],
         scheduled_at: defaultDate ? format(defaultDate, "yyyy-MM-dd'T'HH:mm") : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-        caption: "", hashtags: "", image_url: "", campaign_name: "", cta_link: "",
-        target_audience: "", boost_budget: 0, notes: "", approval_status: "pending", status: "draft",
+        caption: "", hashtags: "", image_url: "", media_url: "", media_type: "",
+        campaign_name: "", cta_link: "", target_audience: "", boost_budget: 0,
+        notes: "", approval_status: "pending", rejection_reason: "", status: "draft",
       });
     }
   }, [open, postId, defaultDate]);
