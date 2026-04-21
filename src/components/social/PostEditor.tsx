@@ -100,14 +100,20 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
   const handleSave = async (publish = false) => {
     if (!form.platforms.length) { toast.error("Select at least one platform"); return; }
     if (!form.caption.trim()) { toast.error("Caption is required"); return; }
+    if (publish && form.approval_status !== "approved") {
+      toast.error("Post must be approved by a manager before scheduling");
+      return;
+    }
     setLoading(true);
     try {
-      const payload = {
-        ...form,
+      const { rejection_reason, ...rest } = form;
+      const payload: any = {
+        ...rest,
         clinic_id: clinicId,
         scheduled_at: new Date(form.scheduled_at).toISOString(),
         boost_budget: Number(form.boost_budget) || 0,
         status: publish ? "scheduled" : form.status,
+        rejection_reason: form.approval_status === "rejected" ? rejection_reason : null,
       };
       let savedId = postId;
       if (postId) {
@@ -135,6 +141,38 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApprove = async () => {
+    if (!postId) return;
+    if (!isManager) { toast.error("Only managers can approve"); return; }
+    setLoading(true);
+    const { error } = await supabase.from("social_posts").update({
+      approval_status: "approved",
+      approved_by: profile?.user_id,
+      approved_at: new Date().toISOString(),
+      rejection_reason: null,
+    }).eq("id", postId);
+    if (error) toast.error(error.message);
+    else { toast.success("Post approved"); setForm(f => ({ ...f, approval_status: "approved" })); onSaved(); }
+    setLoading(false);
+  };
+
+  const handleReject = async () => {
+    if (!postId) return;
+    if (!isManager) { toast.error("Only managers can reject"); return; }
+    const reason = prompt("Reason for rejection?", form.rejection_reason || "");
+    if (reason === null) return;
+    setLoading(true);
+    const { error } = await supabase.from("social_posts").update({
+      approval_status: "rejected",
+      rejection_reason: reason,
+      approved_by: profile?.user_id,
+      approved_at: new Date().toISOString(),
+    }).eq("id", postId);
+    if (error) toast.error(error.message);
+    else { toast.success("Post rejected"); setForm(f => ({ ...f, approval_status: "rejected", rejection_reason: reason })); onSaved(); }
+    setLoading(false);
   };
 
   const handleMarkPosted = async () => {
