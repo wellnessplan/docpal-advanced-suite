@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Plus, ChevronLeft, ChevronRight, Upload, Download, FileSpreadsheet,
   Facebook, Instagram, Twitter, Linkedin, CalendarDays, List, Grid3x3, BarChart3,
+  ArrowLeft, Home, Info, ChevronDown, Image as ImageIcon, Video,
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, addMonths, subMonths, isSameDay, addWeeks, subWeeks, isSameMonth, isToday, addDays } from "date-fns";
 import * as XLSX from "xlsx";
