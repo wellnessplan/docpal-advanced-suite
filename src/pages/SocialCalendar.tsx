@@ -190,6 +190,19 @@ export default function SocialCalendar() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
+      {/* Back / Home navigation */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="h-8 px-2">
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back
+        </Button>
+        <span className="opacity-50">/</span>
+        <Button variant="ghost" size="sm" asChild className="h-8 px-2">
+          <Link to="/dashboard"><Home className="w-4 h-4 mr-1" /> Dashboard</Link>
+        </Button>
+        <span className="opacity-50">/</span>
+        <span className="text-foreground">Social Calendar</span>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-heading font-semibold">Social Content Calendar</h1>
@@ -211,6 +224,30 @@ export default function SocialCalendar() {
           <Button size="sm" onClick={() => openNew()}><Plus className="w-4 h-4 mr-1" /> New Post</Button>
         </div>
       </div>
+
+      {/* How webhooks work — collapsible explainer */}
+      <Collapsible>
+        <Card className="border-primary/20 bg-primary/5">
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between p-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Info className="w-4 h-4 text-primary" />
+                How webhooks post your content
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 text-sm text-muted-foreground space-y-2">
+              <p><strong className="text-foreground">1. Create or import</strong> — Build a post in the editor or bulk-import from Excel. Attach an image/video and pick the platforms (Facebook, Instagram, Twitter/X, LinkedIn).</p>
+              <p><strong className="text-foreground">2. Approve</strong> — A manager opens the post and clicks <em>Approve</em>. Posts that aren't approved are blocked from firing.</p>
+              <p><strong className="text-foreground">3. Configure webhooks</strong> — In the <em>Webhooks</em> panel below, add one URL per platform (Zapier, Make, n8n, or your own endpoint). Each platform fires only to its matching webhook.</p>
+              <p><strong className="text-foreground">4. Schedule & fire</strong> — Click <em>Schedule & Fire</em> on an approved post; our edge function sends a JSON payload (caption, hashtags, media URL, CTA, campaign, scheduled time) to your webhook(s). Your automation tool then publishes to the actual social account.</p>
+              <p><strong className="text-foreground">5. Track</strong> — Delivery status (success/failed, HTTP code) appears in the <em>Analytics</em> tab along with clicks, impressions and engagement once your automation reports them back.</p>
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       <Tabs value={view} onValueChange={(v: any) => setView(v)}>
         <div className="flex flex-wrap items-center justify-between gap-2">
