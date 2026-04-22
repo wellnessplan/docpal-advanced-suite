@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Zap, Check, RotateCcw, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fireInstantPostTreatment } from "@/lib/automation-triggers";
 
 interface ChairSideQuickModeProps {
   patientId: string;
@@ -83,14 +84,23 @@ export default function ChairSideQuickMode({
 
       // Add treatment
       const cost = customCost ? Number(customCost) : (pricingMap?.[selectedTreatment] || 0);
-      const { error: txErr } = await supabase.from("tooth_treatments").insert({
-        tooth_record_id: toothRecordId,
-        treatment_name: selectedTreatment,
-        status: "completed" as any,
-        cost,
-        performed_at: new Date().toISOString(),
-      });
+      const { data: insertedTx, error: txErr } = await supabase
+        .from("tooth_treatments")
+        .insert({
+          tooth_record_id: toothRecordId,
+          treatment_name: selectedTreatment,
+          status: "completed" as any,
+          cost,
+          performed_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
       if (txErr) throw txErr;
+
+      // Fire instant post-treatment WhatsApp automation
+      if (insertedTx?.id) {
+        fireInstantPostTreatment({ clinicId, treatmentId: insertedTx.id });
+      }
 
       // Also add to prescription items if we have a prescription
       if (prescriptionId) {
