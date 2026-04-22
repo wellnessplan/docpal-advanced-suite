@@ -343,22 +343,35 @@ export default function SocialCalendar() {
                         {format(d, "EEE d")}
                       </div>
                       <div className="space-y-1.5">
-                        {dayPosts.map(p => (
-                          <div
-                            key={p.id}
-                            onClick={() => openEdit(p.id)}
-                            className={`text-xs p-2 rounded cursor-pointer ${STATUS_COLORS[p.status]}`}
-                          >
-                            <div className="font-medium">{format(new Date(p.scheduled_at), "HH:mm")}</div>
-                            <div className="flex gap-1 mt-1">
-                              {(p.platforms || []).map((pl: string) => {
-                                const Icon = PLATFORM_ICONS[pl];
-                                return Icon ? <Icon key={pl} className="w-3 h-3" /> : null;
-                              })}
+                        {dayPosts.map(p => {
+                          const thumb = p.media_url || p.image_url;
+                          const isVideo = p.media_type === 'video';
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={() => openEdit(p.id)}
+                              className={`text-xs rounded cursor-pointer overflow-hidden ${STATUS_COLORS[p.status]}`}
+                            >
+                              {thumb && !isVideo ? (
+                                <img src={thumb} alt="" loading="lazy" className="w-full h-20 object-cover" />
+                              ) : isVideo ? (
+                                <div className="w-full h-20 bg-foreground/80 flex items-center justify-center">
+                                  <Video className="w-5 h-5 text-background" />
+                                </div>
+                              ) : null}
+                              <div className="p-2">
+                                <div className="font-medium">{format(new Date(p.scheduled_at), 'HH:mm')}</div>
+                                <div className="flex gap-1 mt-1">
+                                  {(p.platforms || []).map((pl: string) => {
+                                    const Icon = PLATFORM_ICONS[pl];
+                                    return Icon ? <Icon key={pl} className="w-3 h-3" /> : null;
+                                  })}
+                                </div>
+                                <div className="truncate mt-1">{p.caption}</div>
+                              </div>
                             </div>
-                            <div className="truncate mt-1">{p.caption}</div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         <Button variant="ghost" size="sm" className="w-full text-xs h-7" onClick={() => openNew(d)}>
                           <Plus className="w-3 h-3 mr-1" /> Add
                         </Button>
