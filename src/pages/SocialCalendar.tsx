@@ -288,19 +288,38 @@ export default function SocialCalendar() {
                         {format(d, "d")}
                       </div>
                       <div className="space-y-1">
-                        {dayPosts.slice(0, 3).map(p => (
-                          <div
-                            key={p.id}
-                            onClick={(e) => { e.stopPropagation(); openEdit(p.id); }}
-                            className={`text-[10px] px-1.5 py-1 rounded truncate flex items-center gap-1 ${STATUS_COLORS[p.status] || ""}`}
-                          >
-                            {(p.platforms || []).slice(0, 2).map((pl: string) => {
-                              const Icon = PLATFORM_ICONS[pl];
-                              return Icon ? <Icon key={pl} className="w-2.5 h-2.5 shrink-0" /> : null;
-                            })}
-                            <span className="truncate">{p.caption || "Untitled"}</span>
-                          </div>
-                        ))}
+                        {dayPosts.slice(0, 3).map(p => {
+                          const thumb = p.media_url || p.image_url;
+                          const isVideo = p.media_type === 'video';
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={(e) => { e.stopPropagation(); openEdit(p.id); }}
+                              className={`text-[10px] px-1 py-0.5 rounded flex items-center gap-1 ${STATUS_COLORS[p.status] || ''}`}
+                            >
+                              {thumb && !isVideo ? (
+                                <img src={thumb} alt="" loading="lazy" className="w-7 h-7 rounded object-cover shrink-0 bg-muted" />
+                              ) : isVideo ? (
+                                <div className="w-7 h-7 rounded shrink-0 bg-foreground/80 flex items-center justify-center">
+                                  <Video className="w-3 h-3 text-background" />
+                                </div>
+                              ) : (
+                                <div className="w-7 h-7 rounded shrink-0 bg-muted flex items-center justify-center">
+                                  <ImageIcon className="w-3 h-3 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-0.5">
+                                  {(p.platforms || []).slice(0, 3).map((pl: string) => {
+                                    const Icon = PLATFORM_ICONS[pl];
+                                    return Icon ? <Icon key={pl} className="w-2.5 h-2.5" /> : null;
+                                  })}
+                                </div>
+                                <div className="truncate">{p.caption || 'Untitled'}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
                         {dayPosts.length > 3 && <div className="text-[10px] text-muted-foreground">+{dayPosts.length - 3} more</div>}
                       </div>
                     </div>
