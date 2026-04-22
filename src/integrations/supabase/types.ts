@@ -138,6 +138,97 @@ export type Database = {
           },
         ]
       }
+      automation_rules: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          cta_link: string | null
+          days_offset: number
+          default_duration_days: number
+          enabled: boolean
+          id: string
+          message_body: string
+          rule_key: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          cta_link?: string | null
+          days_offset?: number
+          default_duration_days?: number
+          enabled?: boolean
+          id?: string
+          message_body?: string
+          rule_key: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          cta_link?: string | null
+          days_offset?: number
+          default_duration_days?: number
+          enabled?: boolean
+          id?: string
+          message_body?: string
+          rule_key?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_rules_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_trigger_log: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          fired_on: string
+          id: string
+          patient_id: string | null
+          reference_id: string | null
+          reference_type: string | null
+          rule_key: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          fired_on?: string
+          id?: string
+          patient_id?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          rule_key: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          fired_on?: string
+          id?: string
+          patient_id?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          rule_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_trigger_log_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           clinic_id: string

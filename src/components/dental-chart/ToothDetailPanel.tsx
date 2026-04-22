@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Stethoscope, Pill, FileText } from "lucide-react";
+import { fireInstantPostTreatment } from "@/lib/automation-triggers";
 
 interface ToothDetailPanelProps {
   patientId: string;
@@ -164,6 +165,8 @@ export default function ToothDetailPanel({
       if (error) throw error;
       if (newStatus === "completed") {
         await deductMaterials(treatmentName, id);
+        // Fire instant post-treatment WhatsApp automation (Rx + post-op video)
+        fireInstantPostTreatment({ clinicId, treatmentId: id });
       }
     },
     onSuccess: () => {

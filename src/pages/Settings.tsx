@@ -28,6 +28,7 @@ import DiscountCouponsTab from "@/components/settings/DiscountCouponsTab";
 import SubscriptionPlanTab from "@/components/settings/SubscriptionPlanTab";
 import WorkingHoursPerDayTab from "@/components/settings/WorkingHoursPerDayTab";
 import RegistrationPageBuilderTab from "@/components/settings/RegistrationPageBuilderTab";
+import AutomationRulesTab from "@/components/settings/AutomationRulesTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -811,6 +812,7 @@ export default function SettingsPage() {
              <TabsTrigger value="subscription">Subscription</TabsTrigger>
              <TabsTrigger value="branding">Branding</TabsTrigger>
              <TabsTrigger value="integrations">Integrations</TabsTrigger>
+             <TabsTrigger value="automations">Automations</TabsTrigger>
              <TabsTrigger value="import">Data Import</TabsTrigger>
           </TabsList>
 
@@ -857,6 +859,10 @@ export default function SettingsPage() {
 
            <TabsContent value="integrations">
              <IntegrationsTab clinicId={clinicId} />
+           </TabsContent>
+
+           <TabsContent value="automations">
+             <AutomationRulesTab clinicId={clinicId} />
            </TabsContent>
 
            <TabsContent value="import">
