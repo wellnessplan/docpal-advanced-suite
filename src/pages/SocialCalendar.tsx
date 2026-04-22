@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Plus, ChevronLeft, ChevronRight, Upload, Download, FileSpreadsheet,
   Facebook, Instagram, Twitter, Linkedin, CalendarDays, List, Grid3x3, BarChart3,
+  ArrowLeft, Home, Info, ChevronDown, Image as ImageIcon, Video,
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, addMonths, subMonths, isSameDay, addWeeks, subWeeks, isSameMonth, isToday, addDays } from "date-fns";
 import * as XLSX from "xlsx";
@@ -187,6 +190,19 @@ export default function SocialCalendar() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
+      {/* Back / Home navigation */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="h-8 px-2">
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back
+        </Button>
+        <span className="opacity-50">/</span>
+        <Button variant="ghost" size="sm" asChild className="h-8 px-2">
+          <Link to="/dashboard"><Home className="w-4 h-4 mr-1" /> Dashboard</Link>
+        </Button>
+        <span className="opacity-50">/</span>
+        <span className="text-foreground">Social Calendar</span>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-heading font-semibold">Social Content Calendar</h1>
@@ -208,6 +224,30 @@ export default function SocialCalendar() {
           <Button size="sm" onClick={() => openNew()}><Plus className="w-4 h-4 mr-1" /> New Post</Button>
         </div>
       </div>
+
+      {/* How webhooks work — collapsible explainer */}
+      <Collapsible>
+        <Card className="border-primary/20 bg-primary/5">
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between p-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Info className="w-4 h-4 text-primary" />
+                How webhooks post your content
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 text-sm text-muted-foreground space-y-2">
+              <p><strong className="text-foreground">1. Create or import</strong> — Build a post in the editor or bulk-import from Excel. Attach an image/video and pick the platforms (Facebook, Instagram, Twitter/X, LinkedIn).</p>
+              <p><strong className="text-foreground">2. Approve</strong> — A manager opens the post and clicks <em>Approve</em>. Posts that aren't approved are blocked from firing.</p>
+              <p><strong className="text-foreground">3. Configure webhooks</strong> — In the <em>Webhooks</em> panel below, add one URL per platform (Zapier, Make, n8n, or your own endpoint). Each platform fires only to its matching webhook.</p>
+              <p><strong className="text-foreground">4. Schedule & fire</strong> — Click <em>Schedule & Fire</em> on an approved post; our edge function sends a JSON payload (caption, hashtags, media URL, CTA, campaign, scheduled time) to your webhook(s). Your automation tool then publishes to the actual social account.</p>
+              <p><strong className="text-foreground">5. Track</strong> — Delivery status (success/failed, HTTP code) appears in the <em>Analytics</em> tab along with clicks, impressions and engagement once your automation reports them back.</p>
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       <Tabs value={view} onValueChange={(v: any) => setView(v)}>
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -248,19 +288,38 @@ export default function SocialCalendar() {
                         {format(d, "d")}
                       </div>
                       <div className="space-y-1">
-                        {dayPosts.slice(0, 3).map(p => (
-                          <div
-                            key={p.id}
-                            onClick={(e) => { e.stopPropagation(); openEdit(p.id); }}
-                            className={`text-[10px] px-1.5 py-1 rounded truncate flex items-center gap-1 ${STATUS_COLORS[p.status] || ""}`}
-                          >
-                            {(p.platforms || []).slice(0, 2).map((pl: string) => {
-                              const Icon = PLATFORM_ICONS[pl];
-                              return Icon ? <Icon key={pl} className="w-2.5 h-2.5 shrink-0" /> : null;
-                            })}
-                            <span className="truncate">{p.caption || "Untitled"}</span>
-                          </div>
-                        ))}
+                        {dayPosts.slice(0, 3).map(p => {
+                          const thumb = p.media_url || p.image_url;
+                          const isVideo = p.media_type === 'video';
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={(e) => { e.stopPropagation(); openEdit(p.id); }}
+                              className={`text-[10px] px-1 py-0.5 rounded flex items-center gap-1 ${STATUS_COLORS[p.status] || ''}`}
+                            >
+                              {thumb && !isVideo ? (
+                                <img src={thumb} alt="" loading="lazy" className="w-7 h-7 rounded object-cover shrink-0 bg-muted" />
+                              ) : isVideo ? (
+                                <div className="w-7 h-7 rounded shrink-0 bg-foreground/80 flex items-center justify-center">
+                                  <Video className="w-3 h-3 text-background" />
+                                </div>
+                              ) : (
+                                <div className="w-7 h-7 rounded shrink-0 bg-muted flex items-center justify-center">
+                                  <ImageIcon className="w-3 h-3 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-0.5">
+                                  {(p.platforms || []).slice(0, 3).map((pl: string) => {
+                                    const Icon = PLATFORM_ICONS[pl];
+                                    return Icon ? <Icon key={pl} className="w-2.5 h-2.5" /> : null;
+                                  })}
+                                </div>
+                                <div className="truncate">{p.caption || 'Untitled'}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
                         {dayPosts.length > 3 && <div className="text-[10px] text-muted-foreground">+{dayPosts.length - 3} more</div>}
                       </div>
                     </div>
@@ -284,22 +343,35 @@ export default function SocialCalendar() {
                         {format(d, "EEE d")}
                       </div>
                       <div className="space-y-1.5">
-                        {dayPosts.map(p => (
-                          <div
-                            key={p.id}
-                            onClick={() => openEdit(p.id)}
-                            className={`text-xs p-2 rounded cursor-pointer ${STATUS_COLORS[p.status]}`}
-                          >
-                            <div className="font-medium">{format(new Date(p.scheduled_at), "HH:mm")}</div>
-                            <div className="flex gap-1 mt-1">
-                              {(p.platforms || []).map((pl: string) => {
-                                const Icon = PLATFORM_ICONS[pl];
-                                return Icon ? <Icon key={pl} className="w-3 h-3" /> : null;
-                              })}
+                        {dayPosts.map(p => {
+                          const thumb = p.media_url || p.image_url;
+                          const isVideo = p.media_type === 'video';
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={() => openEdit(p.id)}
+                              className={`text-xs rounded cursor-pointer overflow-hidden ${STATUS_COLORS[p.status]}`}
+                            >
+                              {thumb && !isVideo ? (
+                                <img src={thumb} alt="" loading="lazy" className="w-full h-20 object-cover" />
+                              ) : isVideo ? (
+                                <div className="w-full h-20 bg-foreground/80 flex items-center justify-center">
+                                  <Video className="w-5 h-5 text-background" />
+                                </div>
+                              ) : null}
+                              <div className="p-2">
+                                <div className="font-medium">{format(new Date(p.scheduled_at), 'HH:mm')}</div>
+                                <div className="flex gap-1 mt-1">
+                                  {(p.platforms || []).map((pl: string) => {
+                                    const Icon = PLATFORM_ICONS[pl];
+                                    return Icon ? <Icon key={pl} className="w-3 h-3" /> : null;
+                                  })}
+                                </div>
+                                <div className="truncate mt-1">{p.caption}</div>
+                              </div>
                             </div>
-                            <div className="truncate mt-1">{p.caption}</div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         <Button variant="ghost" size="sm" className="w-full text-xs h-7" onClick={() => openNew(d)}>
                           <Plus className="w-3 h-3 mr-1" /> Add
                         </Button>
@@ -318,22 +390,37 @@ export default function SocialCalendar() {
               {posts.length === 0 && (
                 <div className="p-8 text-center text-sm text-muted-foreground">No posts in this range. Click New Post to create one.</div>
               )}
-              {posts.map(p => (
-                <div key={p.id} className="p-3 flex items-center gap-3 hover:bg-accent/30 cursor-pointer" onClick={() => openEdit(p.id)}>
-                  <div className="text-xs text-muted-foreground w-32">{format(new Date(p.scheduled_at), "MMM d, HH:mm")}</div>
-                  <div className="flex gap-1">
-                    {(p.platforms || []).map((pl: string) => {
-                      const Icon = PLATFORM_ICONS[pl];
-                      return Icon ? <Icon key={pl} className="w-4 h-4" /> : null;
-                    })}
+              {posts.map(p => {
+                const thumb = p.media_url || p.image_url;
+                const isVideo = p.media_type === 'video';
+                return (
+                  <div key={p.id} className="p-3 flex items-center gap-3 hover:bg-accent/30 cursor-pointer" onClick={() => openEdit(p.id)}>
+                    <div className="text-xs text-muted-foreground w-32 shrink-0">{format(new Date(p.scheduled_at), 'MMM d, HH:mm')}</div>
+                    {thumb && !isVideo ? (
+                      <img src={thumb} alt="" loading="lazy" className="w-12 h-12 rounded object-cover shrink-0 bg-muted" />
+                    ) : isVideo ? (
+                      <div className="w-12 h-12 rounded shrink-0 bg-foreground/80 flex items-center justify-center">
+                        <Video className="w-5 h-5 text-background" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded shrink-0 bg-muted flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex gap-1">
+                      {(p.platforms || []).map((pl: string) => {
+                        const Icon = PLATFORM_ICONS[pl];
+                        return Icon ? <Icon key={pl} className="w-4 h-4" /> : null;
+                      })}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm truncate">{p.caption || 'Untitled'}</div>
+                      {p.campaign_name && <div className="text-xs text-muted-foreground">{p.campaign_name}</div>}
+                    </div>
+                    <Badge className={STATUS_COLORS[p.status]}>{p.status}</Badge>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm truncate">{p.caption || "Untitled"}</div>
-                    {p.campaign_name && <div className="text-xs text-muted-foreground">{p.campaign_name}</div>}
-                  </div>
-                  <Badge className={STATUS_COLORS[p.status]}>{p.status}</Badge>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </TabsContent>
