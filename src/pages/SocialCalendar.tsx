@@ -128,33 +128,88 @@ export default function SocialCalendar() {
     XLSX.writeFile(wb, "social-content-template.xlsx");
   };
 
+  // Robust date parser — handles Excel serial numbers, "YYYY-MM-DD HH:mm",
+  // ISO strings, and Date objects.
+  const parseExcelDate = (val: any): Date | null => {
+    if (val == null || val === "") return null;
+    if (val instanceof Date && !isNaN(val.getTime())) return val;
+    // Excel serial number (days since 1899-12-30)
+    if (typeof val === "number" && isFinite(val)) {
+      const ms = Math.round((val - 25569) * 86400 * 1000);
+      const d = new Date(ms);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    let s = String(val).trim();
+    // "YYYY-MM-DD HH:mm" -> "YYYY-MM-DDTHH:mm" so Safari/Firefox parse it
+    if (/^\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}/.test(s)) s = s.replace(" ", "T");
+    // "YYYY-MM-DD" alone — append midday so timezone shifts don't move the day
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(s)) s = s + "T12:00";
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   // Import
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !clinicId) return;
     try {
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf);
+      const wb = XLSX.read(buf, { cellDates: true });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows: any[] = XLSX.utils.sheet_to_json(sheet);
-      const payload = rows.map(r => ({
-        clinic_id: clinicId,
-        scheduled_at: new Date(r.scheduled_at).toISOString(),
-        platforms: String(r.platforms || "").split(",").map((s: string) => s.trim()).filter(Boolean),
-        caption: r.caption || "",
-        hashtags: r.hashtags || null,
-        image_url: r.image_url || null,
-        campaign_name: r.campaign_name || null,
-        cta_link: r.cta_link || null,
-        target_audience: r.target_audience || null,
-        boost_budget: Number(r.boost_budget) || 0,
-        notes: r.notes || null,
-        approval_status: r.approval_status || "pending",
-        status: "draft",
-      }));
+      const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      const skipped: string[] = [];
+      const payload: any[] = [];
+      let earliest: Date | null = null;
+
+      rows.forEach((r, idx) => {
+        const dt = parseExcelDate(r.scheduled_at);
+        if (!dt) {
+          skipped.push(`Row ${idx + 2}: invalid scheduled_at "${r.scheduled_at}"`);
+          return;
+        }
+        const platforms = String(r.platforms || "")
+          .split(",").map((s: string) => s.trim()).filter(Boolean);
+        if (platforms.length === 0) {
+          skipped.push(`Row ${idx + 2}: no platforms`);
+          return;
+        }
+        if (!earliest || dt < earliest) earliest = dt;
+        payload.push({
+          clinic_id: clinicId,
+          scheduled_at: dt.toISOString(),
+          platforms,
+          caption: r.caption || "",
+          hashtags: r.hashtags || null,
+          image_url: r.image_url || null,
+          campaign_name: r.campaign_name || null,
+          cta_link: r.cta_link || null,
+          target_audience: r.target_audience || null,
+          boost_budget: Number(r.boost_budget) || 0,
+          notes: r.notes || null,
+          approval_status: r.approval_status || "pending",
+          status: "draft",
+        });
+      });
+
+      if (payload.length === 0) {
+        toast.error("Nothing to import. " + (skipped[0] ?? "Check your file."));
+        return;
+      }
+
       const { error } = await supabase.from("social_posts").insert(payload);
       if (error) throw error;
-      toast.success(`Imported ${payload.length} posts`);
+
+      // Jump the calendar to the earliest imported post so the user sees it immediately
+      if (earliest) setCursor(earliest);
+
+      const msg = skipped.length
+        ? `Imported ${payload.length} posts • Skipped ${skipped.length}`
+        : `Imported ${payload.length} posts`;
+      toast.success(msg);
+      if (skipped.length) console.warn("Skipped rows:", skipped);
+
+      qc.invalidateQueries({ queryKey: ["social-posts"] });
       refetch();
     } catch (err: any) {
       toast.error("Import failed: " + err.message);
