@@ -390,22 +390,37 @@ export default function SocialCalendar() {
               {posts.length === 0 && (
                 <div className="p-8 text-center text-sm text-muted-foreground">No posts in this range. Click New Post to create one.</div>
               )}
-              {posts.map(p => (
-                <div key={p.id} className="p-3 flex items-center gap-3 hover:bg-accent/30 cursor-pointer" onClick={() => openEdit(p.id)}>
-                  <div className="text-xs text-muted-foreground w-32">{format(new Date(p.scheduled_at), "MMM d, HH:mm")}</div>
-                  <div className="flex gap-1">
-                    {(p.platforms || []).map((pl: string) => {
-                      const Icon = PLATFORM_ICONS[pl];
-                      return Icon ? <Icon key={pl} className="w-4 h-4" /> : null;
-                    })}
+              {posts.map(p => {
+                const thumb = p.media_url || p.image_url;
+                const isVideo = p.media_type === 'video';
+                return (
+                  <div key={p.id} className="p-3 flex items-center gap-3 hover:bg-accent/30 cursor-pointer" onClick={() => openEdit(p.id)}>
+                    <div className="text-xs text-muted-foreground w-32 shrink-0">{format(new Date(p.scheduled_at), 'MMM d, HH:mm')}</div>
+                    {thumb && !isVideo ? (
+                      <img src={thumb} alt="" loading="lazy" className="w-12 h-12 rounded object-cover shrink-0 bg-muted" />
+                    ) : isVideo ? (
+                      <div className="w-12 h-12 rounded shrink-0 bg-foreground/80 flex items-center justify-center">
+                        <Video className="w-5 h-5 text-background" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded shrink-0 bg-muted flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex gap-1">
+                      {(p.platforms || []).map((pl: string) => {
+                        const Icon = PLATFORM_ICONS[pl];
+                        return Icon ? <Icon key={pl} className="w-4 h-4" /> : null;
+                      })}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm truncate">{p.caption || 'Untitled'}</div>
+                      {p.campaign_name && <div className="text-xs text-muted-foreground">{p.campaign_name}</div>}
+                    </div>
+                    <Badge className={STATUS_COLORS[p.status]}>{p.status}</Badge>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm truncate">{p.caption || "Untitled"}</div>
-                    {p.campaign_name && <div className="text-xs text-muted-foreground">{p.campaign_name}</div>}
-                  </div>
-                  <Badge className={STATUS_COLORS[p.status]}>{p.status}</Badge>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </TabsContent>
