@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer, FileDown, Palette } from "lucide-react";
+import { Printer, FileDown, Palette, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import {
   PDF_TEMPLATES, TEMPLATE_LIST, getInvoiceTemplate, setInvoiceTemplate,
   drawTemplateHeader, drawSectionTitle, drawTableHeader, type TemplateId,
 } from "@/lib/pdf-templates";
+import PdfPreviewDialog from "@/components/PdfPreviewDialog";
 
 interface InvoiceReceiptProps {
   invoice: any;

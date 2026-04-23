@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Printer, Share2, Palette } from "lucide-react";
+import { Download, Printer, Share2, Palette, Eye } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
@@ -12,6 +12,7 @@ import {
   PDF_TEMPLATES, TEMPLATE_LIST, getRxTemplate, setRxTemplate,
   drawTemplateHeader, drawSectionTitle, drawTableHeader, type TemplateId,
 } from "@/lib/pdf-templates";
+import PdfPreviewDialog from "@/components/PdfPreviewDialog";
 
 interface PrescriptionDownloadProps {
   patient: any;
