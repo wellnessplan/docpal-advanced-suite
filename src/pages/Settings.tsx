@@ -29,6 +29,7 @@ import SubscriptionPlanTab from "@/components/settings/SubscriptionPlanTab";
 import WorkingHoursPerDayTab from "@/components/settings/WorkingHoursPerDayTab";
 import RegistrationPageBuilderTab from "@/components/settings/RegistrationPageBuilderTab";
 import AutomationRulesTab from "@/components/settings/AutomationRulesTab";
+import PdfTemplateDefaultsTab from "@/components/settings/PdfTemplateDefaultsTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -825,6 +826,7 @@ export default function SettingsPage() {
 
           <TabsContent value="letterhead">
             <div className="space-y-6">
+              <PdfTemplateDefaultsTab clinicId={clinicId} />
               <QRCodeTab clinicId={clinicId} clinicName={clinic?.name || "My Dental Clinic"} />
               <RegistrationPageBuilderTab clinicId={clinicId} />
             </div>

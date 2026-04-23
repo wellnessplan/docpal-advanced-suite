@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer, FileDown, Palette } from "lucide-react";
+import { Printer, FileDown, Palette, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import {
   PDF_TEMPLATES, TEMPLATE_LIST, getInvoiceTemplate, setInvoiceTemplate,
   drawTemplateHeader, drawSectionTitle, drawTableHeader, type TemplateId,
 } from "@/lib/pdf-templates";
+import PdfPreviewDialog from "@/components/PdfPreviewDialog";
 
 interface InvoiceReceiptProps {
   invoice: any;
@@ -21,6 +22,7 @@ interface InvoiceReceiptProps {
 export default function InvoiceReceipt({ invoice, clinic, patient, items = [], payments = [] }: InvoiceReceiptProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [templateId, setTemplateId] = useState<TemplateId>(getInvoiceTemplate());
+  const [previewOpen, setPreviewOpen] = useState(false);
   const onTemplateChange = (id: TemplateId) => { setTemplateId(id); setInvoiceTemplate(id); };
 
   const subtotal = Number(invoice.subtotal || invoice.amount);
@@ -66,7 +68,7 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     } catch { return null; }
   };
 
-  const handleDownloadPDF = async () => {
+  const buildPDF = useCallback(async () => {
     const tpl = PDF_TEMPLATES[templateId];
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
@@ -247,6 +249,11 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     doc.setTextColor(80);
     doc.text("Authorized Signature", rm - 25, y + 4, { align: "center" });
 
+    return doc;
+  }, [templateId, invoice, clinic, patient, items, payments, subtotal, discountTotal, discountPct, taxRate, taxAmount, totalAmount, paidAmount, balance, receiptNo, isPaid]);
+
+  const handleDownloadPDF = async () => {
+    const doc = await buildPDF();
     doc.save(`Receipt_${patient?.full_name?.replace(/\s/g, "_") || "Patient"}_${receiptNo}.pdf`);
     toast.success("PDF receipt downloaded!");
   };
@@ -273,6 +280,9 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
             </SelectContent>
           </Select>
         </div>
+        <Button size="sm" variant="secondary" onClick={() => setPreviewOpen(true)} className="gap-1">
+          <Eye className="h-3.5 w-3.5" /> Preview
+        </Button>
         <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1">
           <Printer className="h-3.5 w-3.5" /> Print
         </Button>
@@ -280,6 +290,15 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
           <FileDown className="h-3.5 w-3.5" /> Download PDF
         </Button>
       </div>
+
+      <PdfPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        buildPdf={buildPDF}
+        title={`Receipt Preview — ${PDF_TEMPLATES[templateId].name}`}
+        onDownload={handleDownloadPDF}
+        onPrint={handlePrint}
+      />
 
       <div ref={printRef} style={{ position: "relative" }}>
         {isPaid && (

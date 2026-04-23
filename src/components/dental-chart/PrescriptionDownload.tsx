@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Printer, Share2, Palette } from "lucide-react";
+import { Download, Printer, Share2, Palette, Eye } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
@@ -12,6 +12,7 @@ import {
   PDF_TEMPLATES, TEMPLATE_LIST, getRxTemplate, setRxTemplate,
   drawTemplateHeader, drawSectionTitle, drawTableHeader, type TemplateId,
 } from "@/lib/pdf-templates";
+import PdfPreviewDialog from "@/components/PdfPreviewDialog";
 
 interface PrescriptionDownloadProps {
   patient: any;
@@ -42,6 +43,7 @@ export default function PrescriptionDownload({
   const [paperSize, setPaperSize] = useState<PaperSize>("a5");
   const [postInstructions, setPostInstructions] = useState("");
   const [templateId, setTemplateId] = useState<TemplateId>(getRxTemplate());
+  const [previewOpen, setPreviewOpen] = useState(false);
   const onTemplateChange = (id: TemplateId) => { setTemplateId(id); setRxTemplate(id); };
 
   const loadImageAsBase64 = async (url: string): Promise<string | null> => {
@@ -59,7 +61,7 @@ export default function PrescriptionDownload({
     }
   };
 
-  const buildPDF = async () => {
+  const buildPDF = useCallback(async () => {
     const ps = PAPER_SIZES[paperSize];
     const tpl = PDF_TEMPLATES[templateId];
     const doc = new jsPDF({ format: [ps.w, ps.h], unit: "mm" });
@@ -272,7 +274,7 @@ export default function PrescriptionDownload({
     }
 
     return doc;
-  };
+  }, [paperSize, templateId, clinic, patient, doctorName, doctorRegistration, doctorDegree, doctorSpecialization, chiefComplaint, diagnosisNotes, treatments, medications, postInstructions, patientId]);
 
   const handleDownload = async () => {
     const doc = await buildPDF();
@@ -349,7 +351,10 @@ export default function PrescriptionDownload({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex gap-1.5 pt-3">
+        <div className="flex gap-1.5 pt-3 flex-wrap">
+          <Button size="sm" variant="secondary" onClick={() => setPreviewOpen(true)} className="gap-1">
+            <Eye className="h-3.5 w-3.5" />Preview
+          </Button>
           <Button size="sm" variant="default" onClick={handleDownload} className="gap-1">
             <Download className="h-3.5 w-3.5" />PDF
           </Button>
@@ -361,6 +366,15 @@ export default function PrescriptionDownload({
           </Button>
         </div>
       </div>
+
+      <PdfPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        buildPdf={buildPDF}
+        title={`Prescription Preview — ${PDF_TEMPLATES[templateId].name}`}
+        onDownload={handleDownload}
+        onPrint={handlePrint}
+      />
     </div>
   );
 }

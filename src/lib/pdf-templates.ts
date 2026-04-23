@@ -84,10 +84,21 @@ export const TEMPLATE_LIST = Object.values(PDF_TEMPLATES);
 const RX_KEY = "doctorsbuddy.template.prescription";
 const INV_KEY = "doctorsbuddy.template.invoice";
 
+// Clinic-wide defaults (set by admin in Settings) — cached in memory after first load.
+// Falls back to local user preference, then to "classic".
+let _clinicRxDefault: TemplateId | null = null;
+let _clinicInvDefault: TemplateId | null = null;
+
+export function setClinicDefaults(rx?: TemplateId | null, inv?: TemplateId | null) {
+  if (rx && PDF_TEMPLATES[rx]) _clinicRxDefault = rx;
+  if (inv && PDF_TEMPLATES[inv]) _clinicInvDefault = inv;
+}
+
 export function getRxTemplate(): TemplateId {
   if (typeof window === "undefined") return "classic";
   const v = localStorage.getItem(RX_KEY) as TemplateId | null;
-  return v && PDF_TEMPLATES[v] ? v : "classic";
+  if (v && PDF_TEMPLATES[v]) return v;
+  return _clinicRxDefault ?? "classic";
 }
 export function setRxTemplate(id: TemplateId) {
   localStorage.setItem(RX_KEY, id);
@@ -95,7 +106,8 @@ export function setRxTemplate(id: TemplateId) {
 export function getInvoiceTemplate(): TemplateId {
   if (typeof window === "undefined") return "classic";
   const v = localStorage.getItem(INV_KEY) as TemplateId | null;
-  return v && PDF_TEMPLATES[v] ? v : "classic";
+  if (v && PDF_TEMPLATES[v]) return v;
+  return _clinicInvDefault ?? "classic";
 }
 export function setInvoiceTemplate(id: TemplateId) {
   localStorage.setItem(INV_KEY, id);
