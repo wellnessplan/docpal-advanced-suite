@@ -318,6 +318,25 @@ export default function PrescriptionDownload({
       {/* Controls */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex-1 min-w-[120px]">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Template</Label>
+          <Select value={templateId} onValueChange={(v) => onTemplateChange(v as TemplateId)}>
+            <SelectTrigger className="h-8 text-xs">
+              <Palette className="h-3 w-3 mr-1 opacity-60" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TEMPLATE_LIST.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-sm border" style={{ background: `rgb(${t.primary.join(",")})` }} />
+                    <span className="font-medium">{t.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex-1 min-w-[120px]">
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Paper Size</Label>
           <Select value={paperSize} onValueChange={(v) => setPaperSize(v as PaperSize)}>
             <SelectTrigger className="h-8 text-xs">
