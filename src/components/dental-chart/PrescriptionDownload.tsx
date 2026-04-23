@@ -129,15 +129,13 @@ export default function PrescriptionDownload({
 
     y += (compact ? 6 : 8);
 
+    const [pr, pg, pb] = tpl.primary;
+
     // ─── Chief Complaint ───
     if (chiefComplaint) {
       checkPage(12);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(20, 60, 110);
-      doc.text("Chief Complaint", lm, y);
-      y += 4;
-      doc.setFont("helvetica", "normal");
+      y = drawSectionTitle(doc, tpl, "Chief Complaint", y, { lm, rm, compact });
+      doc.setFont(tpl.font, "normal");
       doc.setTextColor(60);
       doc.setFontSize(7);
       const lines = doc.splitTextToSize(chiefComplaint, pw);
@@ -148,13 +146,8 @@ export default function PrescriptionDownload({
     // ─── Treatment Summary ───
     if (treatments.length > 0) {
       checkPage(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(20, 60, 110);
-      doc.setFontSize(8);
-      doc.text("Treatment Summary", lm, y);
-      y += 5;
-
-      doc.setFont("helvetica", "normal");
+      y = drawSectionTitle(doc, tpl, "Treatment Summary", y, { lm, rm, compact });
+      doc.setFont(tpl.font, "normal");
       doc.setFontSize(7);
       doc.setTextColor(40);
       treatments.forEach((t) => {
@@ -170,12 +163,8 @@ export default function PrescriptionDownload({
     // ─── Notes ───
     if (diagnosisNotes) {
       checkPage(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(20, 60, 110);
-      doc.setFontSize(8);
-      doc.text("Clinical Notes", lm, y);
-      y += 4;
-      doc.setFont("helvetica", "normal");
+      y = drawSectionTitle(doc, tpl, "Clinical Notes", y, { lm, rm, compact });
+      doc.setFont(tpl.font, "normal");
       doc.setTextColor(60);
       doc.setFontSize(7);
       const lines = doc.splitTextToSize(diagnosisNotes, pw);
@@ -187,9 +176,9 @@ export default function PrescriptionDownload({
     if (medications.length > 0) {
       checkPage(20);
       y += 1;
-      doc.setFont("helvetica", "bolditalic");
+      doc.setFont(tpl.font, "bolditalic");
       doc.setFontSize(14);
-      doc.setTextColor(20, 60, 110);
+      doc.setTextColor(pr, pg, pb);
       doc.text("Rx", lm, y);
       y += 6;
 
@@ -198,22 +187,15 @@ export default function PrescriptionDownload({
       for (let i = 1; i < colWidths.length; i++) colX.push(colX[i - 1] + colWidths[i - 1]);
       const headers = ["Medicine", "Dosage", "Duration", "Measure", "Instruction"];
 
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(255);
-      doc.setFillColor(20, 60, 110);
-      doc.roundedRect(lm, y - 3.5, pw, 6, 1, 1, "F");
-      headers.forEach((h, i) => doc.text(h, colX[i] + 1.5, y));
-      y += 5;
+      y = drawTableHeader(doc, tpl, headers, colX, y, { lm, rm, rowH: 6, compact });
 
-      doc.setFont("helvetica", "normal");
+      doc.setFont(tpl.font, "normal");
       doc.setTextColor(40);
       doc.setFontSize(7);
       medications.forEach((med, idx) => {
         checkPage(8);
-        // Alternate row bg
         if (idx % 2 === 0) {
-          doc.setFillColor(248, 250, 255);
+          doc.setFillColor(ar, ag, ab);
           doc.rect(lm, y - 3, pw, 6, "F");
         }
         const row = [med.name, med.dosage, med.duration, "", med.frequency];
