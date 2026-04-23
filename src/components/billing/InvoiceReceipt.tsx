@@ -67,52 +67,35 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
   };
 
   const handleDownloadPDF = async () => {
+    const tpl = PDF_TEMPLATES[templateId];
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
-    let y = 15;
     const lm = 15;
     const rm = w - 15;
+    let y = 15;
 
-    // Clinic logo (if uploaded)
-    let textX = lm;
+    let logoBase64: string | null = null;
     if (clinic?.logo_url) {
-      try {
-        const logoBase64 = await loadImageAsBase64(clinic.logo_url);
-        if (logoBase64) {
-          doc.addImage(logoBase64, "PNG", lm, y - 5, 18, 18);
-          textX = lm + 22;
-        }
-      } catch { /* skip logo */ }
+      try { logoBase64 = await loadImageAsBase64(clinic.logo_url); } catch { /* skip */ }
     }
 
-    // Header
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text(clinic?.name || "Dental Clinic", textX, y);
-    y += 6;
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100);
-    if (clinic?.address) { doc.text(clinic.address, textX, y); y += 4; }
-    const contactLine = [clinic?.phone, clinic?.email].filter(Boolean).join(" · ");
-    if (contactLine) { doc.text(contactLine, textX, y); y += 4; }
+    y = drawTemplateHeader(doc, tpl, {
+      pageWidth: w, leftMargin: lm, rightMargin: rm,
+      title: "RECEIPT",
+      clinicName: clinic?.name || "Dental Clinic",
+      clinicAddress: clinic?.address,
+      clinicPhone: clinic?.phone,
+      clinicEmail: clinic?.email,
+      logoBase64,
+      documentMeta: [
+        { label: "Receipt #", value: receiptNo },
+        { label: "Date", value: new Date(invoice.created_at).toLocaleDateString("en-IN") },
+      ],
+    });
+    y += 4;
 
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(50);
-    doc.text("RECEIPT", rm, 15, { align: "right" });
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Receipt #: ${receiptNo}`, rm, 22, { align: "right" });
-    doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString("en-IN")}`, rm, 27, { align: "right" });
-
-    y = Math.max(y, 35);
-    doc.setDrawColor(50);
-    doc.setLineWidth(0.5);
-    doc.line(lm, y, rm, y);
-    y += 8;
-
-    // Patient box
+    const [pr, pg, pb] = tpl.primary;
+    const [ar, ag, ab] = tpl.accent;
     const patientAge = patient?.date_of_birth
       ? Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
       : null;
@@ -122,19 +105,18 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
       patient?.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : null,
     ].filter(Boolean).join(" · ");
 
-    doc.setFillColor(245, 245, 245);
+    doc.setFillColor(ar, ag, ab);
     doc.roundedRect(lm, y - 2, rm - lm, patientMeta ? 24 : 18, 2, 2, "F");
     doc.setFontSize(10);
     doc.setTextColor(30);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(tpl.font, "bold");
     doc.text("Patient:", lm + 4, y + 4);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(tpl.font, "normal");
     doc.text(patient?.full_name || "—", lm + 24, y + 4);
     if (patient?.phone) doc.text(`Phone: ${patient.phone}`, lm + 4, y + 10);
     if (patientMeta) { doc.setFontSize(9); doc.setTextColor(100); doc.text(patientMeta, lm + 4, y + 16); doc.setTextColor(30); }
     y += patientMeta ? 28 : 22;
 
-    // PAID watermark
     if (isPaid) {
       doc.setFontSize(48);
       doc.setTextColor(34, 197, 94);
@@ -145,38 +127,33 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
       doc.restoreGraphicsState();
     }
 
-    // Items table
     doc.setTextColor(30);
     if (items.length > 0) {
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.text("Treatment Details", lm, y);
-      y += 6;
+      y = drawSectionTitle(doc, tpl, "Treatment Details", y, { lm, rm });
+      y += 2;
 
       const cols = [lm, lm + 90, lm + 110, lm + 140];
-      doc.setFillColor(240, 240, 240);
-      doc.rect(lm, y - 1, rm - lm, 7, "F");
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.text("Description", cols[0] + 2, y + 4);
-      doc.text("Qty", cols[1] + 2, y + 4);
-      doc.text("Unit Price", cols[2] + 2, y + 4);
-      doc.text("Amount", cols[3] + 2, y + 4);
-      y += 8;
+      const headers = ["Description", "Qty", "Unit Price", "Amount"];
+      y = drawTableHeader(doc, tpl, headers, cols, y + 4, { lm, rm, rowH: 7 });
 
-      doc.setFont("helvetica", "normal");
-      items.forEach((item: any) => {
+      doc.setFont(tpl.font, "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(40);
+      items.forEach((item: any, idx: number) => {
         const lineTotal = (item.quantity || 1) * Number(item.unit_price);
-        doc.text(String(item.description).substring(0, 50), cols[0] + 2, y + 4);
-        doc.text(String(item.quantity || 1), cols[1] + 2, y + 4);
-        doc.text(`Rs ${Number(item.unit_price).toLocaleString()}`, cols[2] + 2, y + 4);
-        doc.text(`Rs ${lineTotal.toLocaleString()}`, cols[3] + 2, y + 4);
-        doc.setDrawColor(220);
-        doc.line(lm, y + 6, rm, y + 6);
-        y += 8;
+        if (idx % 2 === 0) {
+          doc.setFillColor(ar, ag, ab);
+          doc.rect(lm, y - 3, rm - lm, 7, "F");
+        }
+        doc.text(String(item.description).substring(0, 50), cols[0] + 2, y + 1);
+        doc.text(String(item.quantity || 1), cols[1] + 2, y + 1);
+        doc.text(`Rs ${Number(item.unit_price).toLocaleString()}`, cols[2] + 2, y + 1);
+        doc.text(`Rs ${lineTotal.toLocaleString()}`, cols[3] + 2, y + 1);
+        y += 7;
       });
       y += 4;
     }
+
 
     // Summary
     const summaryX = w / 2 + 5;
