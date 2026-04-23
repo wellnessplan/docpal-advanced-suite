@@ -61,7 +61,7 @@ export default function PrescriptionDownload({
     }
   };
 
-  const buildPDF = async () => {
+  const buildPDF = useCallback(async () => {
     const ps = PAPER_SIZES[paperSize];
     const tpl = PDF_TEMPLATES[templateId];
     const doc = new jsPDF({ format: [ps.w, ps.h], unit: "mm" });
