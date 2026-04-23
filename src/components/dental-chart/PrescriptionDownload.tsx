@@ -351,7 +351,10 @@ export default function PrescriptionDownload({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex gap-1.5 pt-3">
+        <div className="flex gap-1.5 pt-3 flex-wrap">
+          <Button size="sm" variant="secondary" onClick={() => setPreviewOpen(true)} className="gap-1">
+            <Eye className="h-3.5 w-3.5" />Preview
+          </Button>
           <Button size="sm" variant="default" onClick={handleDownload} className="gap-1">
             <Download className="h-3.5 w-3.5" />PDF
           </Button>
@@ -363,6 +366,15 @@ export default function PrescriptionDownload({
           </Button>
         </div>
       </div>
+
+      <PdfPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        buildPdf={buildPDF}
+        title={`Prescription Preview — ${PDF_TEMPLATES[templateId].name}`}
+        onDownload={handleDownload}
+        onPrint={handlePrint}
+      />
     </div>
   );
 }
