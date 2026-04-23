@@ -109,6 +109,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
   useKeyboardShortcuts();
   useThemeLoader();
+  useClinicPdfDefaults(profile?.clinic_id);
   const { data: isSuperAdmin } = useSuperAdmin();
 
   const allItems = navGroups.flatMap((g) => g.items);
