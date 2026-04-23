@@ -22,6 +22,7 @@ interface InvoiceReceiptProps {
 export default function InvoiceReceipt({ invoice, clinic, patient, items = [], payments = [] }: InvoiceReceiptProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [templateId, setTemplateId] = useState<TemplateId>(getInvoiceTemplate());
+  const [previewOpen, setPreviewOpen] = useState(false);
   const onTemplateChange = (id: TemplateId) => { setTemplateId(id); setInvoiceTemplate(id); };
 
   const subtotal = Number(invoice.subtotal || invoice.amount);
