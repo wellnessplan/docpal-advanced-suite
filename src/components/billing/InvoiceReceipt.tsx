@@ -68,7 +68,7 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     } catch { return null; }
   };
 
-  const handleDownloadPDF = async () => {
+  const buildPDF = useCallback(async () => {
     const tpl = PDF_TEMPLATES[templateId];
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
@@ -249,6 +249,11 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     doc.setTextColor(80);
     doc.text("Authorized Signature", rm - 25, y + 4, { align: "center" });
 
+    return doc;
+  }, [templateId, invoice, clinic, patient, items, payments, subtotal, discountTotal, discountPct, taxRate, taxAmount, totalAmount, paidAmount, balance, receiptNo, isPaid]);
+
+  const handleDownloadPDF = async () => {
+    const doc = await buildPDF();
     doc.save(`Receipt_${patient?.full_name?.replace(/\s/g, "_") || "Patient"}_${receiptNo}.pdf`);
     toast.success("PDF receipt downloaded!");
   };
