@@ -280,6 +280,9 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
             </SelectContent>
           </Select>
         </div>
+        <Button size="sm" variant="secondary" onClick={() => setPreviewOpen(true)} className="gap-1">
+          <Eye className="h-3.5 w-3.5" /> Preview
+        </Button>
         <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1">
           <Printer className="h-3.5 w-3.5" /> Print
         </Button>
@@ -287,6 +290,15 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
           <FileDown className="h-3.5 w-3.5" /> Download PDF
         </Button>
       </div>
+
+      <PdfPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        buildPdf={buildPDF}
+        title={`Receipt Preview — ${PDF_TEMPLATES[templateId].name}`}
+        onDownload={handleDownloadPDF}
+        onPrint={handlePrint}
+      />
 
       <div ref={printRef} style={{ position: "relative" }}>
         {isPaid && (
