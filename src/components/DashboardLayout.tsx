@@ -6,6 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useThemeLoader } from "@/hooks/useThemeLoader";
 import { useSuperAdmin } from "@/hooks/useSubscription";
+import { useClinicPdfDefaults } from "@/hooks/useClinicPdfDefaults";
 import MobileBottomNav from "./MobileBottomNav";
 import MobileQuickFab from "./MobileQuickFab";
 import InstallPromptBanner from "./InstallPromptBanner";
