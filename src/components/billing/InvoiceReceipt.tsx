@@ -181,19 +181,21 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
       y += 6;
     }
 
-    doc.setDrawColor(50);
+    doc.setDrawColor(pr, pg, pb);
     doc.setLineWidth(0.5);
     doc.line(w / 2, y, rm, y);
     y += 6;
     doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(tpl.font, "bold");
+    doc.setTextColor(pr, pg, pb);
     doc.text("Total", summaryX, y);
     doc.text(`Rs ${totalAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+    doc.setTextColor(30);
     y += 8;
 
     // Paid & Balance
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(tpl.font, "normal");
     doc.setTextColor(22, 163, 74);
     doc.text("Paid", summaryX, y);
     doc.text(`Rs ${paidAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
@@ -201,7 +203,7 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
 
     if (balance > 0) {
       doc.setTextColor(220, 38, 38);
-      doc.setFont("helvetica", "bold");
+      doc.setFont(tpl.font, "bold");
       doc.text("Balance Due", summaryX, y);
       doc.text(`Rs ${balance.toLocaleString("en-IN")}`, valX, y, { align: "right" });
       y += 6;
@@ -211,12 +213,10 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     // Payment history
     if (payments.length > 0) {
       y += 4;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text("Payment History", lm, y);
-      y += 5;
+      y = drawSectionTitle(doc, tpl, "Payment History", y, { lm, rm });
       doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
+      doc.setFont(tpl.font, "normal");
+      doc.setTextColor(60);
       payments.forEach((p: any) => {
         doc.text(
           `${new Date(p.payment_date).toLocaleDateString("en-IN")} — Rs ${Number(p.amount).toLocaleString()} (${(p.payment_method || "cash").toUpperCase()})`,
