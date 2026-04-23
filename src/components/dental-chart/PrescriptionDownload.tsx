@@ -41,6 +41,8 @@ export default function PrescriptionDownload({
 }: PrescriptionDownloadProps) {
   const [paperSize, setPaperSize] = useState<PaperSize>("a5");
   const [postInstructions, setPostInstructions] = useState("");
+  const [templateId, setTemplateId] = useState<TemplateId>(getRxTemplate());
+  const onTemplateChange = (id: TemplateId) => { setTemplateId(id); setRxTemplate(id); };
 
   const loadImageAsBase64 = async (url: string): Promise<string | null> => {
     try {
