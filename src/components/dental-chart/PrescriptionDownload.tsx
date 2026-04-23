@@ -274,7 +274,7 @@ export default function PrescriptionDownload({
     }
 
     return doc;
-  };
+  }, [paperSize, templateId, clinic, patient, doctorName, doctorRegistration, doctorDegree, doctorSpecialization, chiefComplaint, diagnosisNotes, treatments, medications, postInstructions, patientId]);
 
   const handleDownload = async () => {
     const doc = await buildPDF();
