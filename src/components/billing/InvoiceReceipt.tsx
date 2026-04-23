@@ -1,8 +1,14 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer, FileDown } from "lucide-react";
+import { Printer, FileDown, Palette } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
+import {
+  PDF_TEMPLATES, TEMPLATE_LIST, getInvoiceTemplate, setInvoiceTemplate,
+  drawTemplateHeader, drawSectionTitle, drawTableHeader, type TemplateId,
+} from "@/lib/pdf-templates";
 
 interface InvoiceReceiptProps {
   invoice: any;
@@ -14,6 +20,8 @@ interface InvoiceReceiptProps {
 
 export default function InvoiceReceipt({ invoice, clinic, patient, items = [], payments = [] }: InvoiceReceiptProps) {
   const printRef = useRef<HTMLDivElement>(null);
+  const [templateId, setTemplateId] = useState<TemplateId>(getInvoiceTemplate());
+  const onTemplateChange = (id: TemplateId) => { setTemplateId(id); setInvoiceTemplate(id); };
 
   const subtotal = Number(invoice.subtotal || invoice.amount);
   const discountAmt = Number(invoice.discount || invoice.discount_amount || 0);
@@ -59,52 +67,35 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
   };
 
   const handleDownloadPDF = async () => {
+    const tpl = PDF_TEMPLATES[templateId];
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
-    let y = 15;
     const lm = 15;
     const rm = w - 15;
+    let y = 15;
 
-    // Clinic logo (if uploaded)
-    let textX = lm;
+    let logoBase64: string | null = null;
     if (clinic?.logo_url) {
-      try {
-        const logoBase64 = await loadImageAsBase64(clinic.logo_url);
-        if (logoBase64) {
-          doc.addImage(logoBase64, "PNG", lm, y - 5, 18, 18);
-          textX = lm + 22;
-        }
-      } catch { /* skip logo */ }
+      try { logoBase64 = await loadImageAsBase64(clinic.logo_url); } catch { /* skip */ }
     }
 
-    // Header
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text(clinic?.name || "Dental Clinic", textX, y);
-    y += 6;
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100);
-    if (clinic?.address) { doc.text(clinic.address, textX, y); y += 4; }
-    const contactLine = [clinic?.phone, clinic?.email].filter(Boolean).join(" · ");
-    if (contactLine) { doc.text(contactLine, textX, y); y += 4; }
+    y = drawTemplateHeader(doc, tpl, {
+      pageWidth: w, leftMargin: lm, rightMargin: rm,
+      title: "RECEIPT",
+      clinicName: clinic?.name || "Dental Clinic",
+      clinicAddress: clinic?.address,
+      clinicPhone: clinic?.phone,
+      clinicEmail: clinic?.email,
+      logoBase64,
+      documentMeta: [
+        { label: "Receipt #", value: receiptNo },
+        { label: "Date", value: new Date(invoice.created_at).toLocaleDateString("en-IN") },
+      ],
+    });
+    y += 4;
 
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(50);
-    doc.text("RECEIPT", rm, 15, { align: "right" });
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Receipt #: ${receiptNo}`, rm, 22, { align: "right" });
-    doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString("en-IN")}`, rm, 27, { align: "right" });
-
-    y = Math.max(y, 35);
-    doc.setDrawColor(50);
-    doc.setLineWidth(0.5);
-    doc.line(lm, y, rm, y);
-    y += 8;
-
-    // Patient box
+    const [pr, pg, pb] = tpl.primary;
+    const [ar, ag, ab] = tpl.accent;
     const patientAge = patient?.date_of_birth
       ? Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
       : null;
@@ -114,19 +105,18 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
       patient?.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : null,
     ].filter(Boolean).join(" · ");
 
-    doc.setFillColor(245, 245, 245);
+    doc.setFillColor(ar, ag, ab);
     doc.roundedRect(lm, y - 2, rm - lm, patientMeta ? 24 : 18, 2, 2, "F");
     doc.setFontSize(10);
     doc.setTextColor(30);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(tpl.font, "bold");
     doc.text("Patient:", lm + 4, y + 4);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(tpl.font, "normal");
     doc.text(patient?.full_name || "—", lm + 24, y + 4);
     if (patient?.phone) doc.text(`Phone: ${patient.phone}`, lm + 4, y + 10);
     if (patientMeta) { doc.setFontSize(9); doc.setTextColor(100); doc.text(patientMeta, lm + 4, y + 16); doc.setTextColor(30); }
     y += patientMeta ? 28 : 22;
 
-    // PAID watermark
     if (isPaid) {
       doc.setFontSize(48);
       doc.setTextColor(34, 197, 94);
@@ -137,38 +127,33 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
       doc.restoreGraphicsState();
     }
 
-    // Items table
     doc.setTextColor(30);
     if (items.length > 0) {
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.text("Treatment Details", lm, y);
-      y += 6;
+      y = drawSectionTitle(doc, tpl, "Treatment Details", y, { lm, rm });
+      y += 2;
 
       const cols = [lm, lm + 90, lm + 110, lm + 140];
-      doc.setFillColor(240, 240, 240);
-      doc.rect(lm, y - 1, rm - lm, 7, "F");
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.text("Description", cols[0] + 2, y + 4);
-      doc.text("Qty", cols[1] + 2, y + 4);
-      doc.text("Unit Price", cols[2] + 2, y + 4);
-      doc.text("Amount", cols[3] + 2, y + 4);
-      y += 8;
+      const headers = ["Description", "Qty", "Unit Price", "Amount"];
+      y = drawTableHeader(doc, tpl, headers, cols, y + 4, { lm, rm, rowH: 7 });
 
-      doc.setFont("helvetica", "normal");
-      items.forEach((item: any) => {
+      doc.setFont(tpl.font, "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(40);
+      items.forEach((item: any, idx: number) => {
         const lineTotal = (item.quantity || 1) * Number(item.unit_price);
-        doc.text(String(item.description).substring(0, 50), cols[0] + 2, y + 4);
-        doc.text(String(item.quantity || 1), cols[1] + 2, y + 4);
-        doc.text(`Rs ${Number(item.unit_price).toLocaleString()}`, cols[2] + 2, y + 4);
-        doc.text(`Rs ${lineTotal.toLocaleString()}`, cols[3] + 2, y + 4);
-        doc.setDrawColor(220);
-        doc.line(lm, y + 6, rm, y + 6);
-        y += 8;
+        if (idx % 2 === 0) {
+          doc.setFillColor(ar, ag, ab);
+          doc.rect(lm, y - 3, rm - lm, 7, "F");
+        }
+        doc.text(String(item.description).substring(0, 50), cols[0] + 2, y + 1);
+        doc.text(String(item.quantity || 1), cols[1] + 2, y + 1);
+        doc.text(`Rs ${Number(item.unit_price).toLocaleString()}`, cols[2] + 2, y + 1);
+        doc.text(`Rs ${lineTotal.toLocaleString()}`, cols[3] + 2, y + 1);
+        y += 7;
       });
       y += 4;
     }
+
 
     // Summary
     const summaryX = w / 2 + 5;
@@ -196,19 +181,21 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
       y += 6;
     }
 
-    doc.setDrawColor(50);
+    doc.setDrawColor(pr, pg, pb);
     doc.setLineWidth(0.5);
     doc.line(w / 2, y, rm, y);
     y += 6;
     doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(tpl.font, "bold");
+    doc.setTextColor(pr, pg, pb);
     doc.text("Total", summaryX, y);
     doc.text(`Rs ${totalAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
+    doc.setTextColor(30);
     y += 8;
 
     // Paid & Balance
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(tpl.font, "normal");
     doc.setTextColor(22, 163, 74);
     doc.text("Paid", summaryX, y);
     doc.text(`Rs ${paidAmount.toLocaleString("en-IN")}`, valX, y, { align: "right" });
@@ -216,7 +203,7 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
 
     if (balance > 0) {
       doc.setTextColor(220, 38, 38);
-      doc.setFont("helvetica", "bold");
+      doc.setFont(tpl.font, "bold");
       doc.text("Balance Due", summaryX, y);
       doc.text(`Rs ${balance.toLocaleString("en-IN")}`, valX, y, { align: "right" });
       y += 6;
@@ -226,12 +213,10 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     // Payment history
     if (payments.length > 0) {
       y += 4;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text("Payment History", lm, y);
-      y += 5;
+      y = drawSectionTitle(doc, tpl, "Payment History", y, { lm, rm });
       doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
+      doc.setFont(tpl.font, "normal");
+      doc.setTextColor(60);
       payments.forEach((p: any) => {
         doc.text(
           `${new Date(p.payment_date).toLocaleDateString("en-IN")} — Rs ${Number(p.amount).toLocaleString()} (${(p.payment_method || "cash").toUpperCase()})`,
@@ -268,7 +253,26 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2 justify-end">
+      <div className="flex flex-wrap gap-2 items-end justify-end">
+        <div className="flex-1 min-w-[160px] max-w-[240px]">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Receipt Template</Label>
+          <Select value={templateId} onValueChange={(v) => onTemplateChange(v as TemplateId)}>
+            <SelectTrigger className="h-8 text-xs">
+              <Palette className="h-3 w-3 mr-1 opacity-60" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TEMPLATE_LIST.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-sm border" style={{ background: `rgb(${t.primary.join(",")})` }} />
+                    <span className="font-medium">{t.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1">
           <Printer className="h-3.5 w-3.5" /> Print
         </Button>

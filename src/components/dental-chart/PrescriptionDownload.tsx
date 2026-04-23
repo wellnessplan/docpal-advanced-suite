@@ -3,11 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Printer, Share2 } from "lucide-react";
+import { Download, Printer, Share2, Palette } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import type { Medication } from "./MedicationPanel";
+import {
+  PDF_TEMPLATES, TEMPLATE_LIST, getRxTemplate, setRxTemplate,
+  drawTemplateHeader, drawSectionTitle, drawTableHeader, type TemplateId,
+} from "@/lib/pdf-templates";
 
 interface PrescriptionDownloadProps {
   patient: any;
@@ -37,6 +41,8 @@ export default function PrescriptionDownload({
 }: PrescriptionDownloadProps) {
   const [paperSize, setPaperSize] = useState<PaperSize>("a5");
   const [postInstructions, setPostInstructions] = useState("");
+  const [templateId, setTemplateId] = useState<TemplateId>(getRxTemplate());
+  const onTemplateChange = (id: TemplateId) => { setTemplateId(id); setRxTemplate(id); };
 
   const loadImageAsBase64 = async (url: string): Promise<string | null> => {
     try {
@@ -55,110 +61,63 @@ export default function PrescriptionDownload({
 
   const buildPDF = async () => {
     const ps = PAPER_SIZES[paperSize];
+    const tpl = PDF_TEMPLATES[templateId];
     const doc = new jsPDF({ format: [ps.w, ps.h], unit: "mm" });
     const lm = 10;
     const rm = ps.w - 10;
     const pw = rm - lm;
+    const compact = paperSize === "a6";
     let y = 8;
 
     const checkPage = (needed: number) => {
       if (y + needed > ps.h - 15) { doc.addPage([ps.w, ps.h]); y = 12; }
     };
 
-    // ─── HEADER BAR ───
-    doc.setFillColor(20, 60, 110);
-    doc.rect(0, 0, ps.w, paperSize === "a6" ? 28 : 34, "F");
-
-    // Clinic logo
-    let logoWidth = 0;
+    // Logo
+    let logoBase64: string | null = null;
     if (clinic?.logo_url) {
-      try {
-        const logoBase64 = await loadImageAsBase64(clinic.logo_url);
-        if (logoBase64) {
-          const logoSize = paperSize === "a6" ? 12 : 16;
-          doc.addImage(logoBase64, "PNG", lm, 4, logoSize, logoSize);
-          logoWidth = logoSize + 3;
-        }
-      } catch { /* skip logo */ }
+      try { logoBase64 = await loadImageAsBase64(clinic.logo_url); } catch { /* skip */ }
     }
 
-    // Clinic name
-    const headerTextX = lm + logoWidth;
-    doc.setFontSize(paperSize === "a6" ? 11 : 14);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text(clinic?.name || "Dental Clinic", headerTextX, paperSize === "a6" ? 12 : 14);
-
-    // Clinic contact info
-    doc.setFontSize(6);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 220, 255);
-    const contactLines: string[] = [];
-    if (clinic?.address) contactLines.push(clinic.address);
-    const contactParts: string[] = [];
-    if (clinic?.phone) contactParts.push(`📞 ${clinic.phone}`);
-    if (clinic?.email) contactParts.push(`✉ ${clinic.email}`);
-    if (clinic?.website) contactParts.push(`🌐 ${clinic.website}`);
-    if (contactParts.length > 0) contactLines.push(contactParts.join("  |  "));
-
-    let contactY = paperSize === "a6" ? 16 : 19;
-    contactLines.forEach(line => {
-      const wrapped = doc.splitTextToSize(line, pw - logoWidth - 4);
-      wrapped.forEach((l: string) => {
-        doc.text(l, headerTextX, contactY);
-        contactY += 3;
-      });
+    // ─── Templated header ───
+    y = drawTemplateHeader(doc, tpl, {
+      pageWidth: ps.w, leftMargin: lm, rightMargin: rm,
+      title: "PRESCRIPTION",
+      clinicName: clinic?.name || "Dental Clinic",
+      clinicAddress: clinic?.address,
+      clinicPhone: clinic?.phone,
+      clinicEmail: clinic?.email,
+      logoBase64,
+      documentMeta: [{
+        label: "Date",
+        value: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+      }],
+      compact,
     });
 
-    y = (paperSize === "a6" ? 28 : 34) + 4;
-
-    // ─── PRESCRIPTION TITLE ───
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(20, 60, 110);
-    doc.text("PRESCRIPTION", ps.w / 2, y, { align: "center" });
-    y += 2;
-    doc.setDrawColor(20, 60, 110);
-    doc.setLineWidth(0.5);
-    const titleW = 32;
-    doc.line(ps.w / 2 - titleW / 2, y, ps.w / 2 + titleW / 2, y);
-    y += 5;
-
-    // ─── DATE ───
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100);
-    doc.text(`Date: ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`, rm, y, { align: "right" });
-    y += 4;
-
     // ─── PATIENT (left) + DOCTOR (right) ───
-    doc.setFillColor(245, 248, 255);
-    doc.roundedRect(lm, y - 3, pw, paperSize === "a6" ? 16 : 20, 2, 2, "F");
+    const [ar, ag, ab] = tpl.accent;
+    doc.setFillColor(ar, ag, ab);
+    doc.roundedRect(lm, y - 3, pw, compact ? 16 : 20, 2, 2, "F");
 
     const infoY = y;
     doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(tpl.font, "bold");
     doc.setTextColor(30);
     doc.text(patient?.full_name || "Patient", lm + 3, infoY);
-    
-    // Doctor details on right
-    if (doctorName) {
-      doc.text(doctorName, rm - 3, infoY, { align: "right" });
-    }
+    if (doctorName) doc.text(doctorName, rm - 3, infoY, { align: "right" });
 
     y = infoY + 4;
     doc.setFontSize(6.5);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(tpl.font, "normal");
     doc.setTextColor(80);
 
-    // Patient info
     const patientDetails: string[] = [];
     if (patient?.phone) patientDetails.push(patient.phone);
     if (patient?.date_of_birth) patientDetails.push(`DOB: ${patient.date_of_birth}`);
     if (patient?.gender) patientDetails.push(patient.gender);
     if (patientDetails.length > 0) doc.text(patientDetails.join(" | "), lm + 3, y);
 
-    // Doctor qualifications
     const drDetails: string[] = [];
     if (doctorDegree) drDetails.push(doctorDegree);
     if (doctorSpecialization) drDetails.push(doctorSpecialization);
@@ -168,17 +127,15 @@ export default function PrescriptionDownload({
     if (patient?.email) doc.text(patient.email, lm + 3, y);
     if (doctorRegistration) doc.text(`Reg No: ${doctorRegistration}`, rm - 3, y, { align: "right" });
 
-    y += (paperSize === "a6" ? 6 : 8);
+    y += (compact ? 6 : 8);
+
+    const [pr, pg, pb] = tpl.primary;
 
     // ─── Chief Complaint ───
     if (chiefComplaint) {
       checkPage(12);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(20, 60, 110);
-      doc.text("Chief Complaint", lm, y);
-      y += 4;
-      doc.setFont("helvetica", "normal");
+      y = drawSectionTitle(doc, tpl, "Chief Complaint", y, { lm, rm, compact });
+      doc.setFont(tpl.font, "normal");
       doc.setTextColor(60);
       doc.setFontSize(7);
       const lines = doc.splitTextToSize(chiefComplaint, pw);
@@ -189,13 +146,8 @@ export default function PrescriptionDownload({
     // ─── Treatment Summary ───
     if (treatments.length > 0) {
       checkPage(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(20, 60, 110);
-      doc.setFontSize(8);
-      doc.text("Treatment Summary", lm, y);
-      y += 5;
-
-      doc.setFont("helvetica", "normal");
+      y = drawSectionTitle(doc, tpl, "Treatment Summary", y, { lm, rm, compact });
+      doc.setFont(tpl.font, "normal");
       doc.setFontSize(7);
       doc.setTextColor(40);
       treatments.forEach((t) => {
@@ -211,12 +163,8 @@ export default function PrescriptionDownload({
     // ─── Notes ───
     if (diagnosisNotes) {
       checkPage(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(20, 60, 110);
-      doc.setFontSize(8);
-      doc.text("Clinical Notes", lm, y);
-      y += 4;
-      doc.setFont("helvetica", "normal");
+      y = drawSectionTitle(doc, tpl, "Clinical Notes", y, { lm, rm, compact });
+      doc.setFont(tpl.font, "normal");
       doc.setTextColor(60);
       doc.setFontSize(7);
       const lines = doc.splitTextToSize(diagnosisNotes, pw);
@@ -228,9 +176,9 @@ export default function PrescriptionDownload({
     if (medications.length > 0) {
       checkPage(20);
       y += 1;
-      doc.setFont("helvetica", "bolditalic");
+      doc.setFont(tpl.font, "bolditalic");
       doc.setFontSize(14);
-      doc.setTextColor(20, 60, 110);
+      doc.setTextColor(pr, pg, pb);
       doc.text("Rx", lm, y);
       y += 6;
 
@@ -239,22 +187,15 @@ export default function PrescriptionDownload({
       for (let i = 1; i < colWidths.length; i++) colX.push(colX[i - 1] + colWidths[i - 1]);
       const headers = ["Medicine", "Dosage", "Duration", "Measure", "Instruction"];
 
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(255);
-      doc.setFillColor(20, 60, 110);
-      doc.roundedRect(lm, y - 3.5, pw, 6, 1, 1, "F");
-      headers.forEach((h, i) => doc.text(h, colX[i] + 1.5, y));
-      y += 5;
+      y = drawTableHeader(doc, tpl, headers, colX, y, { lm, rm, rowH: 6, compact });
 
-      doc.setFont("helvetica", "normal");
+      doc.setFont(tpl.font, "normal");
       doc.setTextColor(40);
       doc.setFontSize(7);
       medications.forEach((med, idx) => {
         checkPage(8);
-        // Alternate row bg
         if (idx % 2 === 0) {
-          doc.setFillColor(248, 250, 255);
+          doc.setFillColor(ar, ag, ab);
           doc.rect(lm, y - 3, pw, 6, "F");
         }
         const row = [med.name, med.dosage, med.duration, "", med.frequency];
@@ -376,6 +317,25 @@ export default function PrescriptionDownload({
 
       {/* Controls */}
       <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-[120px]">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Template</Label>
+          <Select value={templateId} onValueChange={(v) => onTemplateChange(v as TemplateId)}>
+            <SelectTrigger className="h-8 text-xs">
+              <Palette className="h-3 w-3 mr-1 opacity-60" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TEMPLATE_LIST.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-sm border" style={{ background: `rgb(${t.primary.join(",")})` }} />
+                    <span className="font-medium">{t.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex-1 min-w-[120px]">
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Paper Size</Label>
           <Select value={paperSize} onValueChange={(v) => setPaperSize(v as PaperSize)}>
