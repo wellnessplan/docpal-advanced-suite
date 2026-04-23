@@ -253,7 +253,26 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2 justify-end">
+      <div className="flex flex-wrap gap-2 items-end justify-end">
+        <div className="flex-1 min-w-[160px] max-w-[240px]">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Receipt Template</Label>
+          <Select value={templateId} onValueChange={(v) => onTemplateChange(v as TemplateId)}>
+            <SelectTrigger className="h-8 text-xs">
+              <Palette className="h-3 w-3 mr-1 opacity-60" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TEMPLATE_LIST.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-sm border" style={{ background: `rgb(${t.primary.join(",")})` }} />
+                    <span className="font-medium">{t.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1">
           <Printer className="h-3.5 w-3.5" /> Print
         </Button>
