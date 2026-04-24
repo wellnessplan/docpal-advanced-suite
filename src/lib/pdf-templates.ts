@@ -77,6 +77,17 @@ export const PDF_TEMPLATES: Record<TemplateId, PdfTemplate> = {
     tableHeader: "filled",
     font: "helvetica",
   },
+  plain: {
+    id: "plain",
+    name: "Plain B&W",
+    description: "No header or body color — pure black & white text only",
+    primary: [0, 0, 0],
+    accent: [255, 255, 255],
+    headerStyle: "thinLine",
+    sectionStyle: "plain",
+    tableHeader: "minimal",
+    font: "helvetica",
+  },
 };
 
 export const TEMPLATE_LIST = Object.values(PDF_TEMPLATES);
