@@ -224,14 +224,16 @@ export function drawTemplateHeader(
   if (contact) doc.text(contact, textX, ly);
 
   // ─── Document title (right aligned) ───
-  if (onDark) doc.setTextColor(255, 255, 255);
+  if (isPlain) doc.setTextColor(0, 0, 0);
+  else if (onDark) doc.setTextColor(255, 255, 255);
   else doc.setTextColor(pr, pg, pb);
   doc.setFontSize(compact ? 11 : 14);
   doc.setFont(tpl.font, "bold");
   doc.text(title, rm, compact ? 11 : 13, { align: "right" });
 
   // Document meta
-  if (onDark) doc.setTextColor(220, 230, 245);
+  if (isPlain) doc.setTextColor(60, 60, 60);
+  else if (onDark) doc.setTextColor(220, 230, 245);
   else doc.setTextColor(100, 100, 100);
   doc.setFontSize(compact ? 6.5 : 8);
   doc.setFont(tpl.font, "normal");
