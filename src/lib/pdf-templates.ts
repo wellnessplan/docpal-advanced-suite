@@ -1,7 +1,7 @@
 // Centralized PDF template registry for Prescription & Invoice PDFs.
 // Each template defines a visual identity (colors, header style, accents).
 
-export type TemplateId = "classic" | "modern" | "minimal" | "elegant" | "vibrant";
+export type TemplateId = "classic" | "modern" | "minimal" | "elegant" | "vibrant" | "plain";
 
 export interface PdfTemplate {
   id: TemplateId;
@@ -77,6 +77,17 @@ export const PDF_TEMPLATES: Record<TemplateId, PdfTemplate> = {
     tableHeader: "filled",
     font: "helvetica",
   },
+  plain: {
+    id: "plain",
+    name: "Plain B&W",
+    description: "No header or body color — pure black & white text only",
+    primary: [0, 0, 0],
+    accent: [255, 255, 255],
+    headerStyle: "thinLine",
+    sectionStyle: "plain",
+    tableHeader: "minimal",
+    font: "helvetica",
+  },
 };
 
 export const TEMPLATE_LIST = Object.values(PDF_TEMPLATES);
@@ -146,7 +157,13 @@ export function drawTemplateHeader(
   doc.setFont(tpl.font, "normal");
 
   // ─── Background per style ───
-  if (tpl.headerStyle === "solidBar") {
+  const isPlain = tpl.id === "plain";
+  if (isPlain) {
+    // No fills, no colored line — just a thin black separator beneath header
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.line(lm, headerH - 2, rm, headerH - 2);
+  } else if (tpl.headerStyle === "solidBar") {
     doc.setFillColor(pr, pg, pb);
     doc.rect(0, 0, pw, headerH, "F");
   } else if (tpl.headerStyle === "doubleBar") {
@@ -183,8 +200,9 @@ export function drawTemplateHeader(
   }
 
   // ─── Clinic name ───
-  const onDark = tpl.headerStyle === "solidBar" || tpl.headerStyle === "doubleBar";
-  if (onDark) doc.setTextColor(255, 255, 255);
+  const onDark = !isPlain && (tpl.headerStyle === "solidBar" || tpl.headerStyle === "doubleBar");
+  if (isPlain) doc.setTextColor(0, 0, 0);
+  else if (onDark) doc.setTextColor(255, 255, 255);
   else doc.setTextColor(pr, pg, pb);
 
   doc.setFontSize(compact ? 12 : 16);
@@ -206,14 +224,16 @@ export function drawTemplateHeader(
   if (contact) doc.text(contact, textX, ly);
 
   // ─── Document title (right aligned) ───
-  if (onDark) doc.setTextColor(255, 255, 255);
+  if (isPlain) doc.setTextColor(0, 0, 0);
+  else if (onDark) doc.setTextColor(255, 255, 255);
   else doc.setTextColor(pr, pg, pb);
   doc.setFontSize(compact ? 11 : 14);
   doc.setFont(tpl.font, "bold");
   doc.text(title, rm, compact ? 11 : 13, { align: "right" });
 
   // Document meta
-  if (onDark) doc.setTextColor(220, 230, 245);
+  if (isPlain) doc.setTextColor(60, 60, 60);
+  else if (onDark) doc.setTextColor(220, 230, 245);
   else doc.setTextColor(100, 100, 100);
   doc.setFontSize(compact ? 6.5 : 8);
   doc.setFont(tpl.font, "normal");
