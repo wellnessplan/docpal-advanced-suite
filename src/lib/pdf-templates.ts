@@ -1,7 +1,7 @@
 // Centralized PDF template registry for Prescription & Invoice PDFs.
 // Each template defines a visual identity (colors, header style, accents).
 
-export type TemplateId = "classic" | "modern" | "minimal" | "elegant" | "vibrant";
+export type TemplateId = "classic" | "modern" | "minimal" | "elegant" | "vibrant" | "plain";
 
 export interface PdfTemplate {
   id: TemplateId;
