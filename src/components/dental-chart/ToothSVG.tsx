@@ -15,12 +15,18 @@ interface ToothSVGProps {
   status: string;
   isSelected: boolean;
   onClick: () => void;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
 }
 
 export default function ToothSVG({ toothNumber, status, isSelected, onClick, size = "md" }: ToothSVGProps) {
   const colors = STATUS_COLORS[status] || STATUS_COLORS.healthy;
-  const dim = size === "sm" ? "w-8 h-8" : "w-10 h-10";
+  // Responsive: shrinks on mobile/tablet, full size on desktop
+  const dim =
+    size === "xs"
+      ? "w-5 h-5 sm:w-6 sm:h-6"
+      : size === "sm"
+      ? "w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
+      : "w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10";
 
   // Odontogram-style: 5-surface tooth view (buccal, lingual, mesial, distal, occlusal)
   return (
