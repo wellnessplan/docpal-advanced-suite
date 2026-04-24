@@ -200,7 +200,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     ) : !collapsed && group.label ? (
                       <div className="flex items-center gap-1.5 px-2.5 mb-1">
                         <group.groupIcon className="h-3.5 w-3.5 text-white/80" />
-                        <p className="font-bold tracking-[0.08em] text-white/85 uppercase font-sans border-2 rounded-sm text-xs">
+                        <p className="font-bold tracking-[0.08em] text-white/85 uppercase font-sans rounded-sm text-xs border-0">
                           {group.label}
                         </p>
                       </div>
