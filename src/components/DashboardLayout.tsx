@@ -191,7 +191,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       >
                         <div className="flex items-center gap-1.5">
                           <group.groupIcon className="h-3.5 w-3.5 text-white/80" />
-                          <span className="font-bold tracking-[0.08em] text-white/85 uppercase group-hover/label:text-white transition-colors font-sans border-2 rounded-sm text-xs">
+                          <span className="font-bold tracking-[0.08em] text-white/85 uppercase group-hover/label:text-white transition-colors font-sans rounded-sm text-xs border-0">
                             {group.label}
                           </span>
                         </div>
