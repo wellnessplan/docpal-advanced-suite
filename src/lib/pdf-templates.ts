@@ -157,7 +157,13 @@ export function drawTemplateHeader(
   doc.setFont(tpl.font, "normal");
 
   // ─── Background per style ───
-  if (tpl.headerStyle === "solidBar") {
+  const isPlain = tpl.id === "plain";
+  if (isPlain) {
+    // No fills, no colored line — just a thin black separator beneath header
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.line(lm, headerH - 2, rm, headerH - 2);
+  } else if (tpl.headerStyle === "solidBar") {
     doc.setFillColor(pr, pg, pb);
     doc.rect(0, 0, pw, headerH, "F");
   } else if (tpl.headerStyle === "doubleBar") {
@@ -194,8 +200,9 @@ export function drawTemplateHeader(
   }
 
   // ─── Clinic name ───
-  const onDark = tpl.headerStyle === "solidBar" || tpl.headerStyle === "doubleBar";
-  if (onDark) doc.setTextColor(255, 255, 255);
+  const onDark = !isPlain && (tpl.headerStyle === "solidBar" || tpl.headerStyle === "doubleBar");
+  if (isPlain) doc.setTextColor(0, 0, 0);
+  else if (onDark) doc.setTextColor(255, 255, 255);
   else doc.setTextColor(pr, pg, pb);
 
   doc.setFontSize(compact ? 12 : 16);
