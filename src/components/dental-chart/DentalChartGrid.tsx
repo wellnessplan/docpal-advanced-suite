@@ -42,8 +42,8 @@ export default function DentalChartGrid({ toothRecords, selectedTooth, onSelectT
   const lowerRight = isKids ? KIDS_LOWER_RIGHT : ADULT_LOWER_RIGHT;
 
   const renderRow = (teeth: number[], label: string) => (
-    <div className="flex items-center gap-0.5">
-      <span className="text-[10px] font-semibold text-muted-foreground w-6 shrink-0 text-center">{label}</span>
+    <div className="flex items-center gap-px sm:gap-0.5">
+      <span className="text-[8px] sm:text-[10px] font-semibold text-muted-foreground w-4 sm:w-6 shrink-0 text-center">{label}</span>
       {teeth.map(num => (
         <ToothSVG
           key={num}
@@ -51,14 +51,14 @@ export default function DentalChartGrid({ toothRecords, selectedTooth, onSelectT
           status={getStatus(toothRecords, num)}
           isSelected={selectedTooth === num}
           onClick={() => onSelectTooth(num)}
-          size={isKids ? "md" : "md"}
+          size="md"
         />
       ))}
     </div>
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3 w-full overflow-x-auto">
       {/* Chart type toggle */}
       <div className="flex justify-between items-center">
         <Tabs value={chartType} onValueChange={v => onChartTypeChange(v as "adult" | "kids")}>
@@ -71,14 +71,14 @@ export default function DentalChartGrid({ toothRecords, selectedTooth, onSelectT
 
       {/* Upper jaw */}
       <div className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Upper Jaw</div>
-      <div className="flex justify-center gap-2">
+      <div className="flex justify-center gap-1 sm:gap-2 min-w-fit">
         {renderRow(upperRight, "R")}
         <div className="w-px bg-border self-stretch" />
         {renderRow(upperLeft, "L")}
       </div>
 
       {/* Divider with labels */}
-      <div className="flex items-center gap-2 px-4">
+      <div className="flex items-center gap-2 px-2 sm:px-4">
         <span className="text-[9px] text-muted-foreground font-medium">RIGHT</span>
         <div className="flex-1 border-t border-dashed border-border" />
         <span className="text-[9px] text-muted-foreground font-bold">LINGUAL</span>
@@ -87,7 +87,7 @@ export default function DentalChartGrid({ toothRecords, selectedTooth, onSelectT
       </div>
 
       {/* Lower jaw */}
-      <div className="flex justify-center gap-2">
+      <div className="flex justify-center gap-1 sm:gap-2 min-w-fit">
         {renderRow(lowerLeft, "R")}
         <div className="w-px bg-border self-stretch" />
         {renderRow(lowerRight, "L")}
