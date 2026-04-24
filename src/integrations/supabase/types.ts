@@ -276,6 +276,53 @@ export type Database = {
           },
         ]
       }
+      clinic_onboarding: {
+        Row: {
+          checklist_dismissed: boolean
+          clinic_id: string
+          created_at: string
+          demo_data_loaded: boolean
+          first_appointment_booked: boolean
+          first_invoice_created: boolean
+          first_patient_added: boolean
+          profile_completed: boolean
+          tour_completed: boolean
+          updated_at: string
+        }
+        Insert: {
+          checklist_dismissed?: boolean
+          clinic_id: string
+          created_at?: string
+          demo_data_loaded?: boolean
+          first_appointment_booked?: boolean
+          first_invoice_created?: boolean
+          first_patient_added?: boolean
+          profile_completed?: boolean
+          tour_completed?: boolean
+          updated_at?: string
+        }
+        Update: {
+          checklist_dismissed?: boolean
+          clinic_id?: string
+          created_at?: string
+          demo_data_loaded?: boolean
+          first_appointment_booked?: boolean
+          first_invoice_created?: boolean
+          first_patient_added?: boolean
+          profile_completed?: boolean
+          tour_completed?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_onboarding_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_registration_settings: {
         Row: {
           action_links: Json
@@ -833,6 +880,65 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      error_logs: {
+        Row: {
+          clinic_id: string | null
+          context: Json | null
+          created_at: string
+          id: string
+          level: string
+          message: string
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          source: string
+          stack: string | null
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          clinic_id?: string | null
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          clinic_id?: string | null
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "error_logs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
             referencedColumns: ["id"]
           },
         ]
@@ -2127,6 +2233,62 @@ export type Database = {
           },
         ]
       }
+      outgoing_emails: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          clinic_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          template_data: Json | null
+          template_key: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          clinic_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template_data?: Json | null
+          template_key: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          clinic_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template_data?: Json | null
+          template_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outgoing_emails_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_communications: {
         Row: {
           clinic_id: string
@@ -2346,11 +2508,15 @@ export type Database = {
           blood_group: string | null
           clinic_id: string
           created_at: string
+          data_consent_at: string | null
+          data_deletion_requested_at: string | null
+          data_export_requested_at: string | null
           date_of_birth: string | null
           email: string | null
           full_name: string
           gender: string | null
           id: string
+          marketing_consent_at: string | null
           medical_history: string | null
           notes: string | null
           op_number: string | null
@@ -2364,11 +2530,15 @@ export type Database = {
           blood_group?: string | null
           clinic_id: string
           created_at?: string
+          data_consent_at?: string | null
+          data_deletion_requested_at?: string | null
+          data_export_requested_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           full_name: string
           gender?: string | null
           id?: string
+          marketing_consent_at?: string | null
           medical_history?: string | null
           notes?: string | null
           op_number?: string | null
@@ -2382,11 +2552,15 @@ export type Database = {
           blood_group?: string | null
           clinic_id?: string
           created_at?: string
+          data_consent_at?: string | null
+          data_deletion_requested_at?: string | null
+          data_export_requested_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           full_name?: string
           gender?: string | null
           id?: string
+          marketing_consent_at?: string | null
           medical_history?: string | null
           notes?: string | null
           op_number?: string | null
@@ -3838,6 +4012,7 @@ export type Database = {
     }
     Functions: {
       accept_staff_invitation: { Args: { p_token: string }; Returns: Json }
+      clear_demo_data: { Args: never; Returns: Json }
       create_clinic_for_user: {
         Args: {
           p_address?: string
@@ -3849,6 +4024,10 @@ export type Database = {
       }
       deduct_inventory: {
         Args: { p_item_id: string; p_quantity: number }
+        Returns: undefined
+      }
+      gdpr_delete_patient: {
+        Args: { p_patient_id: string }
         Returns: undefined
       }
       get_clinic_subscription_status: {
@@ -3868,6 +4047,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: never; Returns: boolean }
+      load_demo_data: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
