@@ -62,7 +62,7 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "BILLING & FINANCE",
+    label: "BILLING",
     groupIcon: Receipt,
     collapsible: true,
     items: [
@@ -187,11 +187,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     {!collapsed && group.collapsible ? (
                       <button
                         onClick={() => toggleGroup(group.label)}
-                        className="flex w-full items-center justify-between px-2.5 mb-1 group/label"
+                        className="flex w-full items-center justify-between px-2.5 mb-1 group/label text-base font-sans font-normal"
                       >
                         <div className="flex items-center gap-1.5">
                           <group.groupIcon className="h-3.5 w-3.5 text-white/80" />
-                          <span className="text-[11px] font-bold tracking-[0.08em] text-white/85 uppercase group-hover/label:text-white transition-colors">
+                          <span className="font-bold tracking-[0.08em] text-white/85 uppercase group-hover/label:text-white transition-colors font-sans border-2 rounded-sm text-xs">
                             {group.label}
                           </span>
                         </div>
@@ -200,7 +200,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     ) : !collapsed && group.label ? (
                       <div className="flex items-center gap-1.5 px-2.5 mb-1">
                         <group.groupIcon className="h-3.5 w-3.5 text-white/80" />
-                        <p className="text-[11px] font-bold tracking-[0.08em] text-white/85 uppercase">
+                        <p className="font-bold tracking-[0.08em] text-white/85 uppercase font-sans border-2 rounded-sm text-xs">
                           {group.label}
                         </p>
                       </div>
@@ -217,7 +217,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                               to={item.href}
                               title={collapsed ? item.label : undefined}
                               className={cn(
-                                "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-semibold transition-all duration-200",
+                                "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-semibold transition-all duration-200 text-base",
                                 isActive
                                   ? "bg-white text-primary shadow-md"
                                   : "text-white/95 hover:bg-white/15 hover:text-white"
@@ -227,7 +227,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                 "h-[18px] w-[18px] shrink-0 transition-colors",
                                 isActive ? "text-primary" : "text-white"
                               )} />
-                              {!collapsed && <span>{item.label}</span>}
+                              {!collapsed && <span className="text-sm">{item.label}</span>}
                             </Link>
                           );
                         })}
