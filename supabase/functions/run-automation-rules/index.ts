@@ -96,10 +96,14 @@ async function alreadyFired(clinicId: string, ruleKey: string, patientId: string
 }
 
 async function logFire(clinicId: string, ruleKey: string, patientId: string | null, refId: string | null, refType: string) {
-  await supabase.from("automation_trigger_log").insert({
-    clinic_id: clinicId, rule_key: ruleKey, patient_id: patientId,
-    reference_id: refId, reference_type: refType,
-  }).then(() => {}).catch(() => {});
+  try {
+    await supabase.from("automation_trigger_log").insert({
+      clinic_id: clinicId, rule_key: ruleKey, patient_id: patientId,
+      reference_id: refId, reference_type: refType,
+    });
+  } catch {
+    // ignore
+  }
 }
 
 // Compute total medicine duration days from medications jsonb
