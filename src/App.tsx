@@ -55,6 +55,8 @@ const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
 const SocialCalendar = lazy(() => import("./pages/SocialCalendar"));
 const Incidents = lazy(() => import("./pages/Incidents"));
+const FocusToday = lazy(() => import("./pages/focus/FocusToday"));
+const FocusPatient = lazy(() => import("./pages/focus/FocusPatient"));
 
 const queryClient = new QueryClient();
 
@@ -120,6 +122,8 @@ const App = () => (
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/super-admin" element={<SuperAdmin />} />
                 <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
+                <Route path="/focus" element={<ProtectedRoute><FocusToday /></ProtectedRoute>} />
+                <Route path="/focus/patient/:id" element={<ProtectedRoute><FocusPatient /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
