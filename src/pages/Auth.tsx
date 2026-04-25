@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/contexts/AuthContext";
+import { queueSystemEmail } from "@/lib/system-emails";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,6 +58,13 @@ export default function AuthPage() {
     if (error) {
       toast.error(error.message);
     } else {
+      // Queue branded welcome email (delivered once a sender domain is configured)
+      queueSystemEmail({
+        templateKey: "welcome",
+        recipientEmail: email,
+        recipientName: name,
+        templateData: { recipient_name: name, full_name: name },
+      }).catch(() => { /* non-blocking */ });
       toast.success("Account created! Check your email for verification.");
     }
     setLoading(false);

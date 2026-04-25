@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Plus, FileText, IndianRupee } from "lucide-react";
 import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
+import { queueSystemEmail } from "@/lib/system-emails";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -205,7 +206,7 @@ export default function BillingPage() {
         due_date: form.due_date || null,
         notes: form.notes || null,
         status: "draft",
-      }).select("id").single();
+      }).select("id, invoice_number, total, due_date").single();
       if (error) throw error;
 
       if (selectedTreatments.length && inv) {
@@ -227,6 +228,29 @@ export default function BillingPage() {
           .from("discount_coupons")
           .update({ used_count: (coupon.used_count || 0) + 1 })
           .eq("id", coupon.id);
+      }
+
+      // Queue branded "invoice created" email if patient has email on record
+      if (inv && selectedPatient) {
+        const { data: pInfo } = await supabase
+          .from("patients")
+          .select("email, full_name")
+          .eq("id", form.patient_id)
+          .maybeSingle();
+        if ((pInfo as any)?.email) {
+          queueSystemEmail({
+            templateKey: "invoice_created",
+            recipientEmail: (pInfo as any).email,
+            recipientName: (pInfo as any).full_name,
+            clinicId,
+            templateData: {
+              recipient_name: (pInfo as any).full_name,
+              invoice_number: (inv as any).invoice_number,
+              total: (inv as any).total,
+              due_date: (inv as any).due_date,
+            },
+          }).catch(() => { /* non-blocking */ });
+        }
       }
     },
     onSuccess: () => {

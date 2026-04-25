@@ -30,6 +30,8 @@ import WorkingHoursPerDayTab from "@/components/settings/WorkingHoursPerDayTab";
 import RegistrationPageBuilderTab from "@/components/settings/RegistrationPageBuilderTab";
 import AutomationRulesTab from "@/components/settings/AutomationRulesTab";
 import PdfTemplateDefaultsTab from "@/components/settings/PdfTemplateDefaultsTab";
+import CompliancePrivacyTab from "@/components/settings/CompliancePrivacyTab";
+import SystemEmailsTab from "@/components/settings/SystemEmailsTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -815,6 +817,8 @@ export default function SettingsPage() {
              <TabsTrigger value="integrations">Integrations</TabsTrigger>
              <TabsTrigger value="automations">Automations</TabsTrigger>
              <TabsTrigger value="import">Data Import</TabsTrigger>
+             <TabsTrigger value="emails">System Emails</TabsTrigger>
+             <TabsTrigger value="compliance">Compliance</TabsTrigger>
           </TabsList>
 
           <TabsContent value="clinic">
@@ -869,6 +873,14 @@ export default function SettingsPage() {
 
            <TabsContent value="import">
              <DataImportTab clinicId={clinicId} />
+           </TabsContent>
+
+           <TabsContent value="emails">
+             <SystemEmailsTab />
+           </TabsContent>
+
+           <TabsContent value="compliance">
+             <CompliancePrivacyTab />
            </TabsContent>
         </Tabs>
       </div>
