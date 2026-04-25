@@ -51,9 +51,10 @@ export default function FocusPatient() {
     queryFn: async () => {
       const { data } = await supabase
         .from("tooth_treatments")
-        .select("*")
-        .eq("patient_id", id!)
-        .order("created_at", { ascending: false });
+        .select("*, tooth_records!inner(tooth_number, patient_id)")
+        .eq("tooth_records.patient_id", id!)
+        .order("created_at", { ascending: false })
+        .limit(50);
       return data ?? [];
     },
     enabled: !!id,
@@ -151,10 +152,13 @@ export default function FocusPatient() {
                   )}
                 </div>
 
-                {patient.medical_conditions && (
+                {(patient.medical_history || patient.allergies) && (
                   <div className="mt-2 flex items-start gap-1.5 text-xs bg-warning/10 text-warning border border-warning/20 rounded-lg px-2 py-1.5">
                     <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                    <span><strong>Medical:</strong> {patient.medical_conditions}</span>
+                    <span>
+                      {patient.allergies && <><strong>Allergies:</strong> {patient.allergies}{patient.medical_history ? " · " : ""}</>}
+                      {patient.medical_history && <><strong>Medical:</strong> {patient.medical_history}</>}
+                    </span>
                   </div>
                 )}
               </div>
@@ -266,7 +270,7 @@ export default function FocusPatient() {
                 <Card key={t.id} className="hover:shadow-sm transition-shadow">
                   <CardContent className="flex items-center gap-3 p-3">
                     <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center text-xs font-bold shrink-0">
-                      {t.tooth_number || "—"}
+                      {t.tooth_records?.tooth_number || "—"}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{t.treatment_name}</p>
