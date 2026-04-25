@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { captureError } from "@/lib/error-tracking";
 
 interface Props { children: ReactNode; }
 interface State { hasError: boolean; error?: Error; }
@@ -17,6 +18,10 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("ErrorBoundary caught:", error, errorInfo);
+    captureError(error, {
+      level: "error",
+      context: { componentStack: errorInfo.componentStack, source: "ErrorBoundary" },
+    });
   }
 
   render() {

@@ -9,6 +9,8 @@ import { CalendarDays, Users, IndianRupee, Wallet, Plus } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProfileCompletionModal from "@/components/ProfileCompletionModal";
+import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+import ProductTour from "@/components/onboarding/ProductTour";
 import { format } from "date-fns";
 
 const statusStyle: Record<string, string> = {
@@ -147,7 +149,9 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <ProfileCompletionModal />
+      <ProductTour />
       <div className="space-y-5 animate-fade-in">
+        <OnboardingChecklist />
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>

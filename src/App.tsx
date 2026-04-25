@@ -54,6 +54,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
 const SocialCalendar = lazy(() => import("./pages/SocialCalendar"));
+const Incidents = lazy(() => import("./pages/Incidents"));
 
 const queryClient = new QueryClient();
 
@@ -118,6 +119,7 @@ const App = () => (
                 <Route path="/social-calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/super-admin" element={<SuperAdmin />} />
+                <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

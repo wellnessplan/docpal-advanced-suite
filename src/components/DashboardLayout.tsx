@@ -240,19 +240,34 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
             <div className="p-2 space-y-0.5 border-t border-white/15">
               {isSuperAdmin && (
-                <Link
-                  to="/super-admin"
-                  title={collapsed ? "Super Admin" : undefined}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors",
-                    pathname === "/super-admin"
-                      ? "bg-white text-primary"
-                      : "text-amber-200 hover:bg-white/15"
-                  )}
-                >
-                  <Shield className="h-[18px] w-[18px] shrink-0" />
-                  {!collapsed && <span>Super Admin</span>}
-                </Link>
+                <>
+                  <Link
+                    to="/super-admin"
+                    title={collapsed ? "Super Admin" : undefined}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors",
+                      pathname === "/super-admin"
+                        ? "bg-white text-primary"
+                        : "text-amber-200 hover:bg-white/15"
+                    )}
+                  >
+                    <Shield className="h-[18px] w-[18px] shrink-0" />
+                    {!collapsed && <span>Super Admin</span>}
+                  </Link>
+                  <Link
+                    to="/incidents"
+                    title={collapsed ? "Incidents" : undefined}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors",
+                      pathname === "/incidents"
+                        ? "bg-white text-primary"
+                        : "text-amber-200 hover:bg-white/15"
+                    )}
+                  >
+                    <Activity className="h-[18px] w-[18px] shrink-0" />
+                    {!collapsed && <span>Incidents</span>}
+                  </Link>
+                </>
               )}
               <button
                 onClick={() => setCollapsed(!collapsed)}
