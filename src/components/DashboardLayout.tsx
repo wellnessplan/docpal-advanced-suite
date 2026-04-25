@@ -19,8 +19,9 @@ import {
   ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
   Target, Star, Gift, Crown, UserCog, ScrollText, CalendarClock, Shield,
-  Truck, ListChecks
+  Truck, ListChecks, Focus
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface NavGroup {
   label: string;
@@ -294,6 +295,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-base md:text-lg font-semibold text-foreground">{currentPageLabel}</h2>
             <div className="flex items-center gap-2 md:gap-3">
+              <Button
+                size="sm"
+                variant="default"
+                className="gap-1.5 h-8 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg transition-all"
+                onClick={() => window.location.assign("/focus")}
+                title="Switch to simplified 2-screen doctor flow"
+              >
+                <Focus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline text-xs font-bold">Focus Mode</span>
+              </Button>
               <GlobalSearchDialog />
               <UserMenuDropdown />
             </div>
