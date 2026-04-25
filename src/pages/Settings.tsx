@@ -876,11 +876,11 @@ export default function SettingsPage() {
            </TabsContent>
 
            <TabsContent value="emails">
-             <SystemEmailsTab clinicId={clinicId} />
+             <SystemEmailsTab />
            </TabsContent>
 
            <TabsContent value="compliance">
-             <CompliancePrivacyTab clinicId={clinicId} />
+             <CompliancePrivacyTab />
            </TabsContent>
         </Tabs>
       </div>
