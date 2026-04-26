@@ -1,0 +1,528 @@
+import { useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSuperAdmin } from "@/hooks/useSubscription";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import {
+  Activity, Building2, Users, DollarSign, TrendingUp, Plus, Trash2, Shield,
+  CheckCircle, PauseCircle, PlayCircle, UserPlus, Search, RefreshCw,
+} from "lucide-react";
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from "recharts";
+import { format, subDays, startOfDay } from "date-fns";
+
+const STATUS_COLORS: Record<string, string> = {
+  trial: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+  active: "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30",
+  trial_expired: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  expired: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  suspended: "bg-destructive/15 text-destructive border-destructive/30",
+  no_subscription: "bg-muted text-muted-foreground border-border",
+};
+
+export default function PlatformConsole() {
+  const { session } = useAuth();
+  const { data: isSuperAdmin, isLoading: checkingAdmin } = useSuperAdmin();
+  const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // ---------- Queries ----------
+  const { data: clinics = [], isLoading: clinicsLoading } = useQuery({
+    queryKey: ["platform-clinics"],
+    queryFn: async () => {
+      const [c, s, p, st, i] = await Promise.all([
+        supabase.from("clinics").select("id, name, email, phone, created_at").order("created_at", { ascending: false }),
+        supabase.from("clinic_subscriptions" as any).select("*"),
+        supabase.from("patients").select("clinic_id, created_at"),
+        supabase.from("profiles").select("clinic_id"),
+        supabase.from("invoices").select("clinic_id, total, paid_amount, created_at"),
+      ]);
+      const subMap = new Map((s.data || []).map((x: any) => [x.clinic_id, x]));
+      const pCount = new Map<string, number>();
+      const sCount = new Map<string, number>();
+      const rev = new Map<string, number>();
+      (p.data || []).forEach((r: any) => pCount.set(r.clinic_id, (pCount.get(r.clinic_id) || 0) + 1));
+      (st.data || []).forEach((r: any) => r.clinic_id && sCount.set(r.clinic_id, (sCount.get(r.clinic_id) || 0) + 1));
+      (i.data || []).forEach((r: any) => rev.set(r.clinic_id, (rev.get(r.clinic_id) || 0) + Number(r.paid_amount || 0)));
+      return (c.data || []).map((cl: any) => ({
+        ...cl,
+        subscription: subMap.get(cl.id),
+        patient_count: pCount.get(cl.id) || 0,
+        staff_count: sCount.get(cl.id) || 0,
+        revenue: rev.get(cl.id) || 0,
+      }));
+    },
+    enabled: !!isSuperAdmin,
+  });
+
+  const { data: activity = { signupsByDay: [], revenueByDay: [], totals: { dau: 0, wau: 0, mau: 0, totalRevenue: 0 } } } = useQuery({
+    queryKey: ["platform-activity"],
+    queryFn: async () => {
+      const since = subDays(new Date(), 30).toISOString();
+      const [appts, invoices, clinicsRes] = await Promise.all([
+        supabase.from("appointments").select("clinic_id, created_at").gte("created_at", since),
+        supabase.from("invoices").select("paid_amount, created_at, clinic_id").gte("created_at", since),
+        supabase.from("clinics").select("created_at").gte("created_at", since),
+      ]);
+
+      // Group signups by day
+      const signupsMap = new Map<string, number>();
+      const revenueMap = new Map<string, number>();
+      for (let i = 29; i >= 0; i--) {
+        const day = format(subDays(new Date(), i), "MMM d");
+        signupsMap.set(day, 0);
+        revenueMap.set(day, 0);
+      }
+      (clinicsRes.data || []).forEach((r: any) => {
+        const k = format(new Date(r.created_at), "MMM d");
+        signupsMap.set(k, (signupsMap.get(k) || 0) + 1);
+      });
+      (invoices.data || []).forEach((r: any) => {
+        const k = format(new Date(r.created_at), "MMM d");
+        revenueMap.set(k, (revenueMap.get(k) || 0) + Number(r.paid_amount || 0));
+      });
+
+      // Active clinics by appt activity
+      const dayAgo = subDays(new Date(), 1);
+      const weekAgo = subDays(new Date(), 7);
+      const monthAgo = subDays(new Date(), 30);
+      const dau = new Set<string>(), wau = new Set<string>(), mau = new Set<string>();
+      (appts.data || []).forEach((r: any) => {
+        const t = new Date(r.created_at);
+        if (t >= dayAgo) dau.add(r.clinic_id);
+        if (t >= weekAgo) wau.add(r.clinic_id);
+        if (t >= monthAgo) mau.add(r.clinic_id);
+      });
+
+      const totalRevenue = (invoices.data || []).reduce((a: number, r: any) => a + Number(r.paid_amount || 0), 0);
+
+      return {
+        signupsByDay: Array.from(signupsMap.entries()).map(([day, signups]) => ({ day, signups })),
+        revenueByDay: Array.from(revenueMap.entries()).map(([day, revenue]) => ({ day, revenue })),
+        totals: { dau: dau.size, wau: wau.size, mau: mau.size, totalRevenue },
+      };
+    },
+    enabled: !!isSuperAdmin,
+  });
+
+  const { data: admins = [] } = useQuery({
+    queryKey: ["platform-admins"],
+    queryFn: async () => {
+      const { data: rows } = await supabase.from("super_admins" as any).select("id, user_id, created_at");
+      if (!rows?.length) return [];
+      const ids = rows.map((r: any) => r.user_id);
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name, phone").in("user_id", ids);
+      const profMap = new Map((profs || []).map((p: any) => [p.user_id, p]));
+      return rows.map((r: any) => ({ ...r, profile: profMap.get(r.user_id) }));
+    },
+    enabled: !!isSuperAdmin,
+  });
+
+  // ---------- Mutations ----------
+  const updateStatus = useMutation({
+    mutationFn: async ({ clinicId, status }: { clinicId: string; status: string }) => {
+      const update: any = { status };
+      if (status === "active") update.approved_at = new Date().toISOString();
+      const { error } = await supabase.from("clinic_subscriptions" as any).update(update).eq("clinic_id", clinicId);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["platform-clinics"] }); toast.success("Status updated"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const createClinic = useMutation({
+    mutationFn: async (input: { name: string; email: string; phone: string }) => {
+      const { data: clinic, error } = await supabase.from("clinics").insert({
+        name: input.name, email: input.email || null, phone: input.phone || null,
+      }).select().single();
+      if (error) throw error;
+      const trialEnd = new Date(); trialEnd.setDate(trialEnd.getDate() + 14);
+      await supabase.from("clinic_subscriptions" as any).insert({
+        clinic_id: clinic.id, status: "trial", trial_ends_at: trialEnd.toISOString(), plan_name: "basic",
+      });
+      return clinic;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["platform-clinics"] }); toast.success("Clinic created"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const addAdmin = useMutation({
+    mutationFn: async (query: string) => {
+      const { data: profs, error: pe } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, phone")
+        .or(`full_name.ilike.%${query}%,phone.ilike.%${query}%`)
+        .limit(2);
+      if (pe) throw pe;
+      if (!profs || profs.length === 0) throw new Error("No user found matching that name/phone.");
+      if (profs.length > 1) throw new Error("Multiple users matched — be more specific.");
+      const { error } = await supabase.from("super_admins" as any).insert({ user_id: profs[0].user_id });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["platform-admins"] }); toast.success("Super admin added"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const removeAdmin = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("super_admins" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["platform-admins"] }); toast.success("Super admin removed"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // ---------- Derived ----------
+  const getStatus = (sub: any) => {
+    if (!sub) return "no_subscription";
+    if (sub.status === "trial" && sub.trial_ends_at && new Date(sub.trial_ends_at) <= new Date()) return "trial_expired";
+    return sub.status;
+  };
+
+  const filtered = useMemo(() => clinics.filter((c: any) => {
+    const s = !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase());
+    const status = getStatus(c.subscription);
+    const ms = statusFilter === "all" || status === statusFilter;
+    return s && ms;
+  }), [clinics, search, statusFilter]);
+
+  const stats = useMemo(() => ({
+    total: clinics.length,
+    active: clinics.filter((c: any) => getStatus(c.subscription) === "active").length,
+    trial: clinics.filter((c: any) => getStatus(c.subscription) === "trial").length,
+    suspended: clinics.filter((c: any) => getStatus(c.subscription) === "suspended").length,
+    totalPatients: clinics.reduce((a: number, c: any) => a + c.patient_count, 0),
+    totalRevenue: clinics.reduce((a: number, c: any) => a + c.revenue, 0),
+  }), [clinics]);
+
+  // ---------- Guards ----------
+  if (checkingAdmin) {
+    return <div className="flex min-h-screen items-center justify-center text-muted-foreground animate-pulse">Verifying access…</div>;
+  }
+  if (!session) return <Navigate to="/auth" replace />;
+  if (!isSuperAdmin) return <Navigate to="/dashboard" replace />;
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 grid place-items-center">
+              <Activity className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Platform Console</h1>
+              <p className="text-sm text-muted-foreground">Monitor usage, manage clinics & super-admins across the platform</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => qc.invalidateQueries()}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+          </Button>
+        </div>
+
+        {/* KPI strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <Kpi icon={Building2} label="Clinics" value={stats.total} accent="text-primary" />
+          <Kpi icon={CheckCircle} label="Active" value={stats.active} accent="text-green-600" />
+          <Kpi icon={PlayCircle} label="On Trial" value={stats.trial} accent="text-blue-600" />
+          <Kpi icon={PauseCircle} label="Suspended" value={stats.suspended} accent="text-destructive" />
+          <Kpi icon={Users} label="Patients" value={stats.totalPatients} accent="text-foreground" />
+          <Kpi icon={DollarSign} label="Revenue" value={`₹${stats.totalRevenue.toLocaleString()}`} accent="text-foreground" />
+        </div>
+
+        <Tabs defaultValue="usage" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="usage">Usage</TabsTrigger>
+            <TabsTrigger value="clinics">Clinics</TabsTrigger>
+            <TabsTrigger value="admins">Super Admins</TabsTrigger>
+          </TabsList>
+
+          {/* USAGE */}
+          <TabsContent value="usage" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Kpi icon={TrendingUp} label="Active today (DAU)" value={activity.totals.dau} accent="text-primary" />
+              <Kpi icon={TrendingUp} label="Active this week (WAU)" value={activity.totals.wau} accent="text-primary" />
+              <Kpi icon={TrendingUp} label="Active this month (MAU)" value={activity.totals.mau} accent="text-primary" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader><CardTitle className="text-base">New clinic signups (last 30 days)</CardTitle></CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <AreaChart data={activity.signupsByDay}>
+                      <defs>
+                        <linearGradient id="cs" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="day" tick={{ fontSize: 11 }} interval={4} />
+                      <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
+                      <Area type="monotone" dataKey="signups" stroke="hsl(var(--primary))" fill="url(#cs)" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle className="text-base">Platform revenue (last 30 days)</CardTitle></CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={activity.revenueByDay}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="day" tick={{ fontSize: 11 }} interval={4} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: any) => `₹${Number(v).toLocaleString()}`} />
+                      <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Top 10 clinics by revenue</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={[...clinics].sort((a: any, b: any) => b.revenue - a.revenue).slice(0, 10)} layout="vertical" margin={{ left: 100 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
+                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: any) => `₹${Number(v).toLocaleString()}`} />
+                    <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* CLINICS */}
+          <TabsContent value="clinics" className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search clinic name or email…" value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="trial">Trial</SelectItem>
+                  <SelectItem value="trial_expired">Trial expired</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+              <CreateClinicDialog onSubmit={(d) => createClinic.mutate(d)} loading={createClinic.isPending} />
+            </div>
+
+            <Card>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Clinic</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Patients</TableHead>
+                      <TableHead className="text-right">Staff</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
+                      <TableHead className="hidden md:table-cell">Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {clinicsLoading ? (
+                      <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Loading…</TableCell></TableRow>
+                    ) : filtered.length === 0 ? (
+                      <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No clinics found</TableCell></TableRow>
+                    ) : filtered.map((c: any) => {
+                      const status = getStatus(c.subscription);
+                      return (
+                        <TableRow key={c.id}>
+                          <TableCell>
+                            <div className="font-medium">{c.name}</div>
+                            <div className="text-xs text-muted-foreground">{c.email || c.phone || "—"}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={STATUS_COLORS[status]}>{status.replace("_", " ")}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{c.patient_count}</TableCell>
+                          <TableCell className="text-right">{c.staff_count}</TableCell>
+                          <TableCell className="text-right font-medium">₹{c.revenue.toLocaleString()}</TableCell>
+                          <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{format(new Date(c.created_at), "MMM d, yyyy")}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              {status !== "active" && (
+                                <Button size="sm" variant="outline" className="h-8 text-xs text-green-600"
+                                  onClick={() => updateStatus.mutate({ clinicId: c.id, status: "active" })}>
+                                  <CheckCircle className="h-3.5 w-3.5 mr-1" />Activate
+                                </Button>
+                              )}
+                              {status !== "suspended" && (
+                                <Button size="sm" variant="outline" className="h-8 text-xs text-destructive"
+                                  onClick={() => updateStatus.mutate({ clinicId: c.id, status: "suspended" })}>
+                                  <PauseCircle className="h-3.5 w-3.5 mr-1" />Suspend
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* SUPER ADMINS */}
+          <TabsContent value="admins" className="space-y-4">
+            <AddAdminCard onAdd={(email) => addAdmin.mutate(email)} loading={addAdmin.isPending} />
+
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" />Active super admins ({admins.length})</CardTitle></CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead className="hidden md:table-cell">Granted</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {admins.length === 0 ? (
+                      <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No super admins yet</TableCell></TableRow>
+                    ) : admins.map((a: any) => (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">{a.profile?.full_name || "Unknown user"}</TableCell>
+                        <TableCell className="text-muted-foreground">{a.profile?.phone || "—"}</TableCell>
+                        <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{format(new Date(a.created_at), "MMM d, yyyy")}</TableCell>
+                        <TableCell className="text-right">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="ghost" className="h-8 text-destructive">
+                                <Trash2 className="h-3.5 w-3.5 mr-1" />Revoke
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Revoke super admin access?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {a.profile?.full_name || "This user"} will lose access to the Platform Console immediately.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => removeAdmin.mutate(a.id)}>Revoke</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+function Kpi({ icon: Icon, label, value, accent }: { icon: any; label: string; value: any; accent: string }) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground truncate">{label}</p>
+            <p className="text-xl font-bold mt-0.5 truncate">{value}</p>
+          </div>
+          <Icon className={`h-5 w-5 shrink-0 ${accent}`} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CreateClinicDialog({ onSubmit, loading }: { onSubmit: (d: { name: string; email: string; phone: string }) => void; loading: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const submit = () => {
+    if (!form.name.trim()) return toast.error("Clinic name is required");
+    onSubmit(form);
+    setForm({ name: "", email: "", phone: "" });
+    setOpen(false);
+  };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button><Plus className="h-4 w-4 mr-2" />New clinic</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create clinic</DialogTitle>
+          <DialogDescription>This creates an empty clinic with a 14-day trial subscription.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
+          <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
+          <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={loading}>{loading ? "Creating…" : "Create"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddAdminCard({ onAdd, loading }: { onAdd: (q: string) => void; loading: boolean }) {
+  const [query, setQuery] = useState("");
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base flex items-center gap-2"><UserPlus className="h-4 w-4" />Grant super admin access</CardTitle></CardHeader>
+      <CardContent>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input placeholder="Search by full name or phone (must already have an account)"
+            value={query} onChange={e => setQuery(e.target.value)} className="flex-1" />
+          <Button onClick={() => { if (!query.trim()) return toast.error("Enter a name or phone"); onAdd(query.trim()); setQuery(""); }} disabled={loading}>
+            {loading ? "Granting…" : "Grant access"}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">User must already be signed up. Search must match exactly one profile.</p>
+      </CardContent>
+    </Card>
+  );
+}
