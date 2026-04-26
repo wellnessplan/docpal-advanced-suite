@@ -58,7 +58,19 @@ const Incidents = lazy(() => import("./pages/Incidents"));
 const FocusToday = lazy(() => import("./pages/focus/FocusToday"));
 const FocusPatient = lazy(() => import("./pages/focus/FocusPatient"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Serve cached data instantly when switching tabs/pages,
+      // while a silent background refetch keeps it fresh.
+      staleTime: 60 * 1000,            // 1 min — data considered fresh
+      gcTime: 10 * 60 * 1000,          // 10 min — keep in cache after unmount
+      refetchOnWindowFocus: false,     // don't refetch on tab focus
+      refetchOnReconnect: false,
+      retry: 1,
+    },
+  },
+});
 
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
