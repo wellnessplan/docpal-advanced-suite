@@ -169,11 +169,16 @@ export default function PlatformConsole() {
   });
 
   const addAdmin = useMutation({
-    mutationFn: async (email: string) => {
-      const { data: prof, error: pe } = await supabase.from("profiles").select("id, email").eq("email", email).maybeSingle();
+    mutationFn: async (query: string) => {
+      const { data: profs, error: pe } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, phone")
+        .or(`full_name.ilike.%${query}%,phone.ilike.%${query}%`)
+        .limit(2);
       if (pe) throw pe;
-      if (!prof) throw new Error("No user found with that email. They must sign up first.");
-      const { error } = await supabase.from("super_admins" as any).insert({ user_id: prof.id });
+      if (!profs || profs.length === 0) throw new Error("No user found matching that name/phone.");
+      if (profs.length > 1) throw new Error("Multiple users matched — be more specific.");
+      const { error } = await supabase.from("super_admins" as any).insert({ user_id: profs[0].user_id });
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["platform-admins"] }); toast.success("Super admin added"); },
