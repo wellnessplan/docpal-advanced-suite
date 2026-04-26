@@ -423,7 +423,7 @@ export default function PlatformConsole() {
                     ) : admins.map((a: any) => (
                       <TableRow key={a.id}>
                         <TableCell className="font-medium">{a.profile?.full_name || "Unknown user"}</TableCell>
-                        <TableCell className="text-muted-foreground">{a.profile?.email || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{a.profile?.phone || "—"}</TableCell>
                         <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{format(new Date(a.created_at), "MMM d, yyyy")}</TableCell>
                         <TableCell className="text-right">
                           <AlertDialog>
