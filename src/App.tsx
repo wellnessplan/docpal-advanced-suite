@@ -52,6 +52,7 @@ const Partners = lazy(() => import("./pages/Partners"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
+const Platform = lazy(() => import("./pages/Platform"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
 const SocialCalendar = lazy(() => import("./pages/SocialCalendar"));
 const Incidents = lazy(() => import("./pages/Incidents"));
@@ -133,6 +134,7 @@ const App = () => (
                 <Route path="/social-calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/super-admin" element={<SuperAdmin />} />
+                <Route path="/platform" element={<Platform />} />
                 <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
                 <Route path="/focus" element={<ProtectedRoute><FocusToday /></ProtectedRoute>} />
                 <Route path="/focus/patient/:id" element={<ProtectedRoute><FocusPatient /></ProtectedRoute>} />

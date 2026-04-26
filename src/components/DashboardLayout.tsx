@@ -243,6 +243,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               {isSuperAdmin && (
                 <>
                   <Link
+                    to="/platform"
+                    title={collapsed ? "Platform Console" : undefined}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors",
+                      pathname === "/platform"
+                        ? "bg-white text-primary"
+                        : "text-amber-200 hover:bg-white/15"
+                    )}
+                  >
+                    <Shield className="h-[18px] w-[18px] shrink-0" />
+                    {!collapsed && <span>Platform Console</span>}
+                  </Link>
+                  <Link
                     to="/super-admin"
                     title={collapsed ? "Super Admin" : undefined}
                     className={cn(
