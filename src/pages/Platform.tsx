@@ -133,8 +133,8 @@ export default function PlatformConsole() {
       const { data: rows } = await supabase.from("super_admins" as any).select("id, user_id, created_at");
       if (!rows?.length) return [];
       const ids = rows.map((r: any) => r.user_id);
-      const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
-      const profMap = new Map((profs || []).map((p: any) => [p.id, p]));
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name, phone").in("user_id", ids);
+      const profMap = new Map((profs || []).map((p: any) => [p.user_id, p]));
       return rows.map((r: any) => ({ ...r, profile: profMap.get(r.user_id) }));
     },
     enabled: !!isSuperAdmin,
