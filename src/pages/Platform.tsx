@@ -508,20 +508,20 @@ function CreateClinicDialog({ onSubmit, loading }: { onSubmit: (d: { name: strin
   );
 }
 
-function AddAdminCard({ onAdd, loading }: { onAdd: (email: string) => void; loading: boolean }) {
-  const [email, setEmail] = useState("");
+function AddAdminCard({ onAdd, loading }: { onAdd: (q: string) => void; loading: boolean }) {
+  const [query, setQuery] = useState("");
   return (
     <Card>
       <CardHeader><CardTitle className="text-base flex items-center gap-2"><UserPlus className="h-4 w-4" />Grant super admin access</CardTitle></CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Input placeholder="user@email.com (must already have an account)"
-            value={email} onChange={e => setEmail(e.target.value)} type="email" className="flex-1" />
-          <Button onClick={() => { if (!email.trim()) return toast.error("Enter an email"); onAdd(email.trim()); setEmail(""); }} disabled={loading}>
+          <Input placeholder="Search by full name or phone (must already have an account)"
+            value={query} onChange={e => setQuery(e.target.value)} className="flex-1" />
+          <Button onClick={() => { if (!query.trim()) return toast.error("Enter a name or phone"); onAdd(query.trim()); setQuery(""); }} disabled={loading}>
             {loading ? "Granting…" : "Grant access"}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">The user must already have signed up in the app.</p>
+        <p className="text-xs text-muted-foreground mt-2">User must already be signed up. Search must match exactly one profile.</p>
       </CardContent>
     </Card>
   );
