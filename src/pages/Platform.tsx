@@ -412,7 +412,7 @@ export default function PlatformConsole() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>User</TableHead>
-                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
                       <TableHead className="hidden md:table-cell">Granted</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
