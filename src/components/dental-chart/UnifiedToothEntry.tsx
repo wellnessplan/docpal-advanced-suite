@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Save, Trash2 } from "lucide-react";
+import { useTreatmentCatalog } from "@/hooks/useTreatmentCatalog";
 
 interface UnifiedToothEntryProps {
   prescriptionId: string;
@@ -22,13 +23,15 @@ interface UnifiedToothEntryProps {
 }
 
 const COMMON_CONDITIONS = ["Caries", "Cavity", "Crack", "Abscess", "Gingivitis", "Periodontitis", "Erosion", "Impacted", "Malocclusion", "Attrition", "Abrasion", "Fracture", "Mobility", "Stain", "Calculus", "Infection"];
-const COMMON_TREATMENTS = ["Filling", "Root Canal (RCT)", "Crown", "Extraction", "Scaling", "Veneer", "Bridge", "Implant", "Whitening", "Orthodontics", "Denture", "Pulp Procedure", "X-Ray", "Observation"];
+const FALLBACK_TREATMENTS = ["Filling", "Root Canal (RCT)", "Crown", "Extraction", "Scaling", "Veneer", "Bridge", "Implant", "Whitening", "Orthodontics", "Denture", "Pulp Procedure", "X-Ray", "Observation"];
 const TOOTH_STATUSES = ["healthy", "decayed", "missing", "treated", "needs_treatment", "under_observation", "restored"];
 
 export default function UnifiedToothEntry({
   prescriptionId, clinicId, toothNumber, currentStatus, toothRecordId, patientId, onUpdate,
 }: UnifiedToothEntryProps) {
   const queryClient = useQueryClient();
+  const { names: catalogNames } = useTreatmentCatalog();
+  const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [form, setForm] = useState({
     condition: "",
     treatment: "",
@@ -191,7 +194,7 @@ export default function UnifiedToothEntry({
               <Select value={form.treatment} onValueChange={handleTreatmentSelect}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
-                  {COMMON_TREATMENTS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {treatmentOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

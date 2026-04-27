@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Stethoscope, Pill, FileText } from "lucide-react";
 import { fireInstantPostTreatment } from "@/lib/automation-triggers";
+import { useTreatmentCatalog } from "@/hooks/useTreatmentCatalog";
 
 interface ToothDetailPanelProps {
   patientId: string;
@@ -24,12 +25,14 @@ interface ToothDetailPanelProps {
 
 const TOOTH_STATUSES = ["healthy", "decayed", "missing", "treated", "needs_treatment", "under_observation", "restored"];
 const COMMON_CONDITIONS = ["Caries", "Cavity", "Crack", "Abscess", "Gingivitis", "Periodontitis", "Erosion", "Impacted", "Malocclusion", "Attrition", "Abrasion", "Fracture", "Mobility", "Stain", "Calculus", "Infection"];
-const COMMON_TREATMENTS = ["Filling", "Root Canal (RCT)", "Crown", "Extraction", "Scaling", "Veneer", "Bridge", "Implant", "Whitening"];
+const FALLBACK_TREATMENTS = ["Filling", "Root Canal (RCT)", "Crown", "Extraction", "Scaling", "Veneer", "Bridge", "Implant", "Whitening"];
 
 export default function ToothDetailPanel({
   patientId, clinicId, toothNumber, toothRecordId, currentStatus, onUpdate,
 }: ToothDetailPanelProps) {
   const queryClient = useQueryClient();
+  const { names: catalogNames } = useTreatmentCatalog();
+  const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [showConditionForm, setShowConditionForm] = useState(false);
   const [showTreatmentForm, setShowTreatmentForm] = useState(false);
   const [conditionForm, setConditionForm] = useState({ condition_name: "", severity: "moderate", notes: "" });
@@ -268,7 +271,7 @@ export default function ToothDetailPanel({
                 <Select value={treatmentForm.treatment_name} onValueChange={handleTreatmentSelect}>
                   <SelectTrigger><SelectValue placeholder="Select treatment" /></SelectTrigger>
                   <SelectContent>
-                    {COMMON_TREATMENTS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    {treatmentOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Select value={treatmentForm.status} onValueChange={v => setTreatmentForm(f => ({ ...f, status: v }))}>

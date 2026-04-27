@@ -27,6 +27,7 @@ import TreatmentTimeline from "@/components/patients/TreatmentTimeline";
 import ConsentForms from "@/components/patients/ConsentForms";
 import LabWorkTracker from "@/components/patients/LabWorkTracker";
 import RecallReminders from "@/components/patients/RecallReminders";
+import { useTreatmentCatalog } from "@/hooks/useTreatmentCatalog";
 
 const STATUS_COLORS: Record<string, string> = {
   planned: "bg-primary/10 text-primary border-primary/30",
@@ -35,7 +36,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
-const COMMON_TREATMENTS = [
+const FALLBACK_TREATMENTS = [
   "Filling", "Root Canal (RCT)", "Crown", "Extraction", "Scaling",
   "Veneer", "Bridge", "Implant", "Whitening", "Denture", "RPD", "FPD",
   "Pulp Capping", "Post & Core", "Inlay", "Onlay", "Orthodontics",
@@ -49,6 +50,8 @@ export default function PatientProfilePage() {
   const navigate = useNavigate();
   const { clinicId } = useAuth();
   const queryClient = useQueryClient();
+  const { names: catalogNames } = useTreatmentCatalog();
+  const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [showAddTreatment, setShowAddTreatment] = useState(false);
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [invoiceData, setInvoiceData] = useState<{ treatmentId: string; name: string; cost: number; discount: number } | null>(null);
@@ -439,7 +442,7 @@ export default function PatientProfilePage() {
                         <Select value={newTx.treatment_name} onValueChange={v => setNewTx(f => ({ ...f, treatment_name: v }))}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
                           <SelectContent>
-                            {COMMON_TREATMENTS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            {treatmentOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>

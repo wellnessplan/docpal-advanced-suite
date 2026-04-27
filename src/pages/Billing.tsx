@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Plus, FileText, IndianRupee } from "lucide-react";
 import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
@@ -41,6 +42,8 @@ export default function BillingPage() {
     discount_amount: "0", discount_percent: "0", coupon_code: "", tax_rate: "0",
   });
   const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
+  // Coupons vs Membership are mutually exclusive — user picks ONE source
+  const [discountSource, setDiscountSource] = useState<"none" | "coupon" | "membership">("none");
 
   const { data: patients } = useQuery({
     queryKey: ["patients-list", clinicId],
@@ -73,7 +76,10 @@ export default function BillingPage() {
     enabled: !!form.patient_id,
   });
 
-  useEffect(() => { setSelectedTreatments([]); }, [form.patient_id]);
+  useEffect(() => {
+    setSelectedTreatments([]);
+    setDiscountSource("none");
+  }, [form.patient_id]);
 
   // Look up active membership for selected patient — auto-apply discount
   const { data: membership } = useQuery({
@@ -102,6 +108,17 @@ export default function BillingPage() {
     if (benefits && typeof benefits === "object" && benefits.discount_percent) return Number(benefits.discount_percent);
     return 0;
   })();
+
+  // Auto-suggest membership when available; clear if patient loses it
+  useEffect(() => {
+    if (membershipDiscountPct > 0 && discountSource === "none") {
+      setDiscountSource("membership");
+    }
+    if (!membership && discountSource === "membership") {
+      setDiscountSource("none");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membershipDiscountPct, membership]);
 
   // Look up coupon by code (live as user types)
   const { data: coupon } = useQuery({
@@ -132,12 +149,15 @@ export default function BillingPage() {
   }, 0);
   const discountAmt = Number(form.discount_amount) || 0;
   const discountPct = Number(form.discount_percent) || 0;
-  const couponDiscount = coupon && !(coupon as any)._invalid
+  const rawCouponDiscount = coupon && !(coupon as any)._invalid
     ? (coupon.discount_type === "percent"
         ? (subtotal * Number(coupon.discount_value) / 100)
         : Number(coupon.discount_value))
     : 0;
-  const membershipDiscount = subtotal * membershipDiscountPct / 100;
+  const rawMembershipDiscount = subtotal * membershipDiscountPct / 100;
+  // Mutually exclusive: only the selected source counts
+  const couponDiscount = discountSource === "coupon" ? rawCouponDiscount : 0;
+  const membershipDiscount = discountSource === "membership" ? rawMembershipDiscount : 0;
   const discountTotal = discountAmt + (subtotal * discountPct / 100) + couponDiscount + membershipDiscount;
   const afterDiscount = Math.max(0, subtotal - discountTotal);
   const taxRate = Number(form.tax_rate) || 0;
@@ -200,7 +220,7 @@ export default function BillingPage() {
         subtotal: subtotal,
         discount: discountTotal,
         discount_percent: discountPct,
-        coupon_code: coupon && !(coupon as any)._invalid ? coupon.code : null,
+        coupon_code: discountSource === "coupon" && coupon && !(coupon as any)._invalid ? coupon.code : null,
         tax_rate: taxRate,
         tax_amount: taxAmount,
         due_date: form.due_date || null,
@@ -222,8 +242,8 @@ export default function BillingPage() {
         await supabase.from("invoice_items").insert(items);
       }
 
-      // Increment coupon usage if a valid coupon was applied
-      if (coupon && !(coupon as any)._invalid) {
+      // Increment coupon usage only if coupon was the chosen discount source
+      if (discountSource === "coupon" && coupon && !(coupon as any)._invalid) {
         await supabase
           .from("discount_coupons")
           .update({ used_count: (coupon.used_count || 0) + 1 })
@@ -258,6 +278,7 @@ export default function BillingPage() {
       setOpen(false);
       setForm({ patient_id: "", due_date: "", notes: "", discount_amount: "0", discount_percent: "0", coupon_code: "", tax_rate: "0" });
       setSelectedTreatments([]);
+      setDiscountSource("none");
       toast.success("Invoice created!");
     },
     onError: (e: any) => toast.error(e.message),
@@ -394,26 +415,62 @@ export default function BillingPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Coupon Code</Label>
-                    <Input placeholder="e.g. SMILE10" value={form.coupon_code} onChange={e => setForm(f => ({ ...f, coupon_code: e.target.value.toUpperCase() }))} className="uppercase" />
-                    {form.coupon_code.trim() && coupon && !(coupon as any)._invalid && (
-                      <p className="text-xs text-success">
-                        ✓ Applied: {coupon.discount_type === "percent" ? `${coupon.discount_value}% off` : `Rs ${coupon.discount_value} off`}
-                      </p>
-                    )}
-                    {form.coupon_code.trim() && coupon && (coupon as any)._invalid && (
-                      <p className="text-xs text-destructive">✗ {(coupon as any)._invalid}</p>
-                    )}
-                    {form.coupon_code.trim() && !coupon && (
-                      <p className="text-xs text-destructive">✗ Invalid coupon</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Due Date</Label>
-                    <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
-                  </div>
+                {/* Discount source — Coupon OR Membership (mutually exclusive) */}
+                <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+                  <Label className="text-xs font-semibold">Apply Discount From</Label>
+                  <RadioGroup
+                    value={discountSource}
+                    onValueChange={(v) => setDiscountSource(v as "none" | "coupon" | "membership")}
+                    className="flex flex-wrap gap-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="none" id="ds-none" />
+                      <Label htmlFor="ds-none" className="text-xs cursor-pointer">None</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="coupon" id="ds-coupon" />
+                      <Label htmlFor="ds-coupon" className="text-xs cursor-pointer">Coupon Code</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="membership" id="ds-membership" disabled={!membership || membershipDiscountPct === 0} />
+                      <Label htmlFor="ds-membership" className={`text-xs cursor-pointer ${(!membership || membershipDiscountPct === 0) ? "opacity-50" : ""}`}>
+                        Membership {membership ? `(${membership.plan_name} · ${membershipDiscountPct}%)` : "(none active)"}
+                      </Label>
+                    </div>
+                  </RadioGroup>
+
+                  {discountSource === "coupon" && (
+                    <div className="space-y-1 pt-1">
+                      <Input
+                        placeholder="e.g. SMILE10"
+                        value={form.coupon_code}
+                        onChange={e => setForm(f => ({ ...f, coupon_code: e.target.value.toUpperCase() }))}
+                        className="uppercase"
+                      />
+                      {form.coupon_code.trim() && coupon && !(coupon as any)._invalid && (
+                        <p className="text-xs text-success">
+                          ✓ Applied: {coupon.discount_type === "percent" ? `${coupon.discount_value}% off` : `Rs ${coupon.discount_value} off`}
+                        </p>
+                      )}
+                      {form.coupon_code.trim() && coupon && (coupon as any)._invalid && (
+                        <p className="text-xs text-destructive">✗ {(coupon as any)._invalid}</p>
+                      )}
+                      {form.coupon_code.trim() && !coupon && (
+                        <p className="text-xs text-destructive">✗ Invalid coupon</p>
+                      )}
+                    </div>
+                  )}
+
+                  {discountSource === "membership" && membership && (
+                    <p className="text-xs text-success pt-1">
+                      ✓ {membershipDiscountPct}% auto-discount from {membership.plan_name}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Due Date</Label>
+                  <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
                 </div>
 
                 {selectedTreatments.length > 0 && (
