@@ -13,9 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, IndianRupee, TrendingUp } from "lucide-react";
-
-const COMMON_TREATMENTS = ["Filling", "Root Canal (RCT)", "Crown", "Extraction", "Scaling", "Veneer", "Bridge", "Implant", "Whitening"];
+import { Plus, Pencil, Trash2, IndianRupee, TrendingUp, Upload } from "lucide-react";
+import BulkImportDialog from "@/components/shared/BulkImportDialog";
 
 const emptyForm = {
   treatment_name: "", base_price: "", material_cost: "", doctor_fee: "", lab_cost: "", other_cost: "", notes: "",
