@@ -13,9 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, IndianRupee, TrendingUp } from "lucide-react";
-
-const COMMON_TREATMENTS = ["Filling", "Root Canal (RCT)", "Crown", "Extraction", "Scaling", "Veneer", "Bridge", "Implant", "Whitening"];
+import { Plus, Pencil, Trash2, IndianRupee, TrendingUp, Upload } from "lucide-react";
+import BulkImportDialog from "@/components/shared/BulkImportDialog";
 
 const emptyForm = {
   treatment_name: "", base_price: "", material_cost: "", doctor_fee: "", lab_cost: "", other_cost: "", notes: "",
@@ -26,6 +25,7 @@ export default function TreatmentCosting() {
   const clinicId = profile?.clinic_id;
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
 
@@ -132,9 +132,14 @@ export default function TreatmentCosting() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-heading text-2xl font-bold">Treatment Costing</h1>
-        <Button onClick={() => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); }}>
-          <Plus className="h-4 w-4 mr-1" /> Add Pricing
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setBulkOpen(true)}>
+            <Upload className="h-4 w-4 mr-1" /> Bulk Import
+          </Button>
+          <Button onClick={() => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Add Pricing
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
@@ -199,13 +204,19 @@ export default function TreatmentCosting() {
           </DialogHeader>
           <form onSubmit={e => { e.preventDefault(); upsert.mutate(); }} className="space-y-4">
             <div>
-              <Label>Treatment</Label>
-              <Select value={form.treatment_name} onValueChange={v => setForm(f => ({ ...f, treatment_name: v }))} disabled={!!editingId}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select treatment" /></SelectTrigger>
-                <SelectContent>
-                  {COMMON_TREATMENTS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label>Treatment Name</Label>
+              <Input
+                list="treatment-name-suggestions"
+                value={form.treatment_name}
+                onChange={e => setForm(f => ({ ...f, treatment_name: e.target.value }))}
+                disabled={!!editingId}
+                placeholder="Type any procedure name…"
+                className="mt-1"
+              />
+              <datalist id="treatment-name-suggestions">
+                {pricings.map((p: any) => <option key={p.id} value={p.treatment_name} />)}
+              </datalist>
+              <p className="text-xs text-muted-foreground mt-1">Add any custom procedure name — it appears across the app.</p>
             </div>
 
             <div>
@@ -258,6 +269,61 @@ export default function TreatmentCosting() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <BulkImportDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        title="Bulk Import Treatment Pricing"
+        description="Upload a CSV or paste rows from Excel. Existing treatments with the same name will be updated."
+        templateFileName="treatment-pricing-template.csv"
+        columns={[
+          { key: "treatment_name", header: "treatment_name", required: true },
+          { key: "base_price", header: "base_price", required: true, parse: (v) => Number(v) || 0 },
+          { key: "material_cost", header: "material_cost", parse: (v) => Number(v) || 0 },
+          { key: "doctor_fee", header: "doctor_fee", parse: (v) => Number(v) || 0 },
+          { key: "lab_cost", header: "lab_cost", parse: (v) => Number(v) || 0 },
+          { key: "other_cost", header: "other_cost", parse: (v) => Number(v) || 0 },
+          { key: "notes", header: "notes" },
+        ]}
+        onImport={async (rows) => {
+          if (!clinicId) throw new Error("No clinic");
+          let inserted = 0;
+          let skipped = 0;
+          for (const r of rows) {
+            const name = String(r.treatment_name).trim();
+            if (!name) { skipped++; continue; }
+            const payload = {
+              clinic_id: clinicId,
+              treatment_name: name,
+              base_price: r.base_price ?? 0,
+              material_cost: r.material_cost ?? 0,
+              doctor_fee: r.doctor_fee ?? 0,
+              lab_cost: r.lab_cost ?? 0,
+              other_cost: r.other_cost ?? 0,
+              notes: r.notes ?? null,
+            };
+            // Look up existing row (case-insensitive) and update, else insert
+            const { data: existing } = await (supabase.from("treatment_pricing") as any)
+              .select("id")
+              .eq("clinic_id", clinicId)
+              .ilike("treatment_name", name)
+              .maybeSingle();
+            if (existing?.id) {
+              const { error } = await (supabase.from("treatment_pricing") as any)
+                .update(payload)
+                .eq("id", existing.id);
+              if (error) throw error;
+            } else {
+              const { error } = await (supabase.from("treatment_pricing") as any).insert(payload);
+              if (error) throw error;
+            }
+            inserted++;
+          }
+          queryClient.invalidateQueries({ queryKey: ["treatment-pricing"] });
+          queryClient.invalidateQueries({ queryKey: ["treatment-catalog"] });
+          return { inserted, skipped };
+        }}
+      />
     </DashboardLayout>
   );
 }

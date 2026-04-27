@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Package, AlertTriangle, Calendar, ArrowDown, ArrowUp, History, Search, Trash2, Link2 } from "lucide-react";
+import { Plus, Package, AlertTriangle, Calendar, ArrowDown, ArrowUp, History, Search, Trash2, Link2, Upload } from "lucide-react";
 import TreatmentMaterialMappings from "@/components/inventory/TreatmentMaterialMappings";
+import BulkImportDialog from "@/components/shared/BulkImportDialog";
 import { format, differenceInDays } from "date-fns";
 
 const CATEGORIES = ["General", "Consumables", "Instruments", "Medications", "PPE", "Dental Materials", "Lab Supplies"];
@@ -24,6 +25,7 @@ export default function Inventory() {
   const clinicId = profile?.clinic_id;
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
   const [restockItem, setRestockItem] = useState<any>(null);
   const [search, setSearch] = useState("");
@@ -149,32 +151,37 @@ export default function Inventory() {
             <TabsTrigger value="history"><History className="h-4 w-4 mr-1" /> History</TabsTrigger>
             <TabsTrigger value="mappings"><Link2 className="h-4 w-4 mr-1" /> Mappings</TabsTrigger>
           </TabsList>
-          <Dialog open={addOpen} onOpenChange={setAddOpen}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Item</Button></DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>Add Inventory Item</DialogTitle></DialogHeader>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2"><Label>Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
-                <div><Label>Category</Label>
-                  <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}>
+              <Upload className="h-4 w-4 mr-1" /> Bulk Import
+            </Button>
+            <Dialog open={addOpen} onOpenChange={setAddOpen}>
+              <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Item</Button></DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Add Inventory Item</DialogTitle></DialogHeader>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2"><Label>Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
+                  <div><Label>Category</Label>
+                    <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>SKU</Label><Input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} /></div>
+                  <div><Label>Quantity</Label><Input type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} /></div>
+                  <div><Label>Unit</Label><Input value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} placeholder="pcs, ml, boxes" /></div>
+                  <div><Label>Min Stock Level</Label><Input type="number" value={form.min_stock_level} onChange={e => setForm({ ...form, min_stock_level: e.target.value })} /></div>
+                  <div><Label>Cost/Unit (Rs )</Label><Input type="number" value={form.cost_per_unit} onChange={e => setForm({ ...form, cost_per_unit: e.target.value })} /></div>
+                  <div><Label>Supplier</Label><Input value={form.supplier_name} onChange={e => setForm({ ...form, supplier_name: e.target.value })} /></div>
+                  <div><Label>Expiry Date</Label><Input type="date" value={form.expiry_date} onChange={e => setForm({ ...form, expiry_date: e.target.value })} /></div>
+                  <div className="col-span-2"><Label>Notes</Label><Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
                 </div>
-                <div><Label>SKU</Label><Input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} /></div>
-                <div><Label>Quantity</Label><Input type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} /></div>
-                <div><Label>Unit</Label><Input value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} placeholder="pcs, ml, boxes" /></div>
-                <div><Label>Min Stock Level</Label><Input type="number" value={form.min_stock_level} onChange={e => setForm({ ...form, min_stock_level: e.target.value })} /></div>
-                <div><Label>Cost/Unit (Rs )</Label><Input type="number" value={form.cost_per_unit} onChange={e => setForm({ ...form, cost_per_unit: e.target.value })} /></div>
-                <div><Label>Supplier</Label><Input value={form.supplier_name} onChange={e => setForm({ ...form, supplier_name: e.target.value })} /></div>
-                <div><Label>Expiry Date</Label><Input type="date" value={form.expiry_date} onChange={e => setForm({ ...form, expiry_date: e.target.value })} /></div>
-                <div className="col-span-2"><Label>Notes</Label><Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
-              </div>
-              <Button onClick={() => addItem.mutate()} disabled={!form.name || addItem.isPending} className="mt-2 w-full">
-                {addItem.isPending ? "Adding..." : "Add Item"}
-              </Button>
-            </DialogContent>
-          </Dialog>
+                <Button onClick={() => addItem.mutate()} disabled={!form.name || addItem.isPending} className="mt-2 w-full">
+                  {addItem.isPending ? "Adding..." : "Add Item"}
+                </Button>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Items Tab */}
@@ -355,6 +362,55 @@ export default function Inventory() {
           </Button>
         </DialogContent>
       </Dialog>
+
+      <BulkImportDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        title="Bulk Import Inventory Items"
+        description="Upload a CSV or paste rows from Excel. Items with the same name (case-insensitive) will be updated."
+        templateFileName="inventory-template.csv"
+        columns={[
+          { key: "name", header: "name", required: true },
+          { key: "category", header: "category" },
+          { key: "quantity", header: "quantity", parse: (v) => Number(v) || 0 },
+          { key: "unit", header: "unit" },
+          { key: "min_stock_level", header: "min_stock_level", parse: (v) => Number(v) || 0 },
+          { key: "unit_cost", header: "unit_cost", parse: (v) => Number(v) || 0 },
+          { key: "supplier", header: "supplier" },
+          { key: "expiry_date", header: "expiry_date" },
+        ]}
+        onImport={async (rows) => {
+          if (!clinicId) throw new Error("No clinic");
+          let inserted = 0, skipped = 0;
+          for (const r of rows) {
+            const name = String(r.name || "").trim();
+            if (!name) { skipped++; continue; }
+            const payload: any = {
+              clinic_id: clinicId,
+              name,
+              category: r.category || "General",
+              quantity: r.quantity ?? 0,
+              unit: r.unit || "pcs",
+              min_stock_level: r.min_stock_level ?? 5,
+              unit_cost: r.unit_cost ?? 0,
+              supplier: r.supplier || null,
+              expiry_date: r.expiry_date || null,
+            };
+            const { data: existing } = await (supabase.from("inventory_items") as any)
+              .select("id").eq("clinic_id", clinicId).ilike("name", name).maybeSingle();
+            if (existing?.id) {
+              const { error } = await (supabase.from("inventory_items") as any).update(payload).eq("id", existing.id);
+              if (error) throw error;
+            } else {
+              const { error } = await (supabase.from("inventory_items") as any).insert(payload);
+              if (error) throw error;
+            }
+            inserted++;
+          }
+          queryClient.invalidateQueries({ queryKey: ["inventory"] });
+          return { inserted, skipped };
+        }}
+      />
     </DashboardLayout>
   );
 }
