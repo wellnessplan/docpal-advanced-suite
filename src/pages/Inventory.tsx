@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Package, AlertTriangle, Calendar, ArrowDown, ArrowUp, History, Search, Trash2, Link2 } from "lucide-react";
+import { Plus, Package, AlertTriangle, Calendar, ArrowDown, ArrowUp, History, Search, Trash2, Link2, Upload } from "lucide-react";
 import TreatmentMaterialMappings from "@/components/inventory/TreatmentMaterialMappings";
+import BulkImportDialog from "@/components/shared/BulkImportDialog";
 import { format, differenceInDays } from "date-fns";
 
 const CATEGORIES = ["General", "Consumables", "Instruments", "Medications", "PPE", "Dental Materials", "Lab Supplies"];
@@ -24,6 +25,7 @@ export default function Inventory() {
   const clinicId = profile?.clinic_id;
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
   const [restockItem, setRestockItem] = useState<any>(null);
   const [search, setSearch] = useState("");
