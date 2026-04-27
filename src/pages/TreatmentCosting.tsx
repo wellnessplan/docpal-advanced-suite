@@ -25,6 +25,7 @@ export default function TreatmentCosting() {
   const clinicId = profile?.clinic_id;
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
 
@@ -131,9 +132,14 @@ export default function TreatmentCosting() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-heading text-2xl font-bold">Treatment Costing</h1>
-        <Button onClick={() => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); }}>
-          <Plus className="h-4 w-4 mr-1" /> Add Pricing
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setBulkOpen(true)}>
+            <Upload className="h-4 w-4 mr-1" /> Bulk Import
+          </Button>
+          <Button onClick={() => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Add Pricing
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
