@@ -287,23 +287,41 @@ export default function TreatmentCosting() {
         ]}
         onImport={async (rows) => {
           if (!clinicId) throw new Error("No clinic");
-          const payload = rows.map((r) => ({
-            clinic_id: clinicId,
-            treatment_name: String(r.treatment_name).trim(),
-            base_price: r.base_price ?? 0,
-            material_cost: r.material_cost ?? 0,
-            doctor_fee: r.doctor_fee ?? 0,
-            lab_cost: r.lab_cost ?? 0,
-            other_cost: r.other_cost ?? 0,
-            notes: r.notes ?? null,
-          }));
-          const { error } = await (supabase.from("treatment_pricing") as any).upsert(payload, {
-            onConflict: "clinic_id,treatment_name",
-          });
-          if (error) throw error;
+          let inserted = 0;
+          let skipped = 0;
+          for (const r of rows) {
+            const name = String(r.treatment_name).trim();
+            if (!name) { skipped++; continue; }
+            const payload = {
+              clinic_id: clinicId,
+              treatment_name: name,
+              base_price: r.base_price ?? 0,
+              material_cost: r.material_cost ?? 0,
+              doctor_fee: r.doctor_fee ?? 0,
+              lab_cost: r.lab_cost ?? 0,
+              other_cost: r.other_cost ?? 0,
+              notes: r.notes ?? null,
+            };
+            // Look up existing row (case-insensitive) and update, else insert
+            const { data: existing } = await (supabase.from("treatment_pricing") as any)
+              .select("id")
+              .eq("clinic_id", clinicId)
+              .ilike("treatment_name", name)
+              .maybeSingle();
+            if (existing?.id) {
+              const { error } = await (supabase.from("treatment_pricing") as any)
+                .update(payload)
+                .eq("id", existing.id);
+              if (error) throw error;
+            } else {
+              const { error } = await (supabase.from("treatment_pricing") as any).insert(payload);
+              if (error) throw error;
+            }
+            inserted++;
+          }
           queryClient.invalidateQueries({ queryKey: ["treatment-pricing"] });
           queryClient.invalidateQueries({ queryKey: ["treatment-catalog"] });
-          return { inserted: payload.length };
+          return { inserted, skipped };
         }}
       />
     </DashboardLayout>
