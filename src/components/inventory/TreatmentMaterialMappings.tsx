@@ -10,13 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Trash2, Link2 } from "lucide-react";
+import { useTreatmentCatalog } from "@/hooks/useTreatmentCatalog";
 
-const COMMON_TREATMENTS = ["Filling", "Root Canal (RCT)", "Crown", "Extraction", "Scaling", "Veneer", "Bridge", "Implant", "Whitening"];
+const FALLBACK_TREATMENTS = ["Filling", "Root Canal (RCT)", "Crown", "Extraction", "Scaling", "Veneer", "Bridge", "Implant", "Whitening"];
 
 export default function TreatmentMaterialMappings() {
   const { profile } = useAuth();
   const clinicId = profile?.clinic_id;
   const queryClient = useQueryClient();
+  const { names: catalogNames } = useTreatmentCatalog();
+  const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [treatment, setTreatment] = useState("");
   const [itemId, setItemId] = useState("");
   const [qty, setQty] = useState("1");
@@ -98,7 +101,7 @@ export default function TreatmentMaterialMappings() {
               <Select value={treatment} onValueChange={setTreatment}>
                 <SelectTrigger><SelectValue placeholder="Treatment type" /></SelectTrigger>
                 <SelectContent>
-                  {COMMON_TREATMENTS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {treatmentOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
