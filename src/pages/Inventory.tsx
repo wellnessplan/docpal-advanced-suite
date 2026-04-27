@@ -362,6 +362,55 @@ export default function Inventory() {
           </Button>
         </DialogContent>
       </Dialog>
+
+      <BulkImportDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        title="Bulk Import Inventory Items"
+        description="Upload a CSV or paste rows from Excel. Items with the same name (case-insensitive) will be updated."
+        templateFileName="inventory-template.csv"
+        columns={[
+          { key: "name", header: "name", required: true },
+          { key: "category", header: "category" },
+          { key: "quantity", header: "quantity", parse: (v) => Number(v) || 0 },
+          { key: "unit", header: "unit" },
+          { key: "min_stock_level", header: "min_stock_level", parse: (v) => Number(v) || 0 },
+          { key: "unit_cost", header: "unit_cost", parse: (v) => Number(v) || 0 },
+          { key: "supplier", header: "supplier" },
+          { key: "expiry_date", header: "expiry_date" },
+        ]}
+        onImport={async (rows) => {
+          if (!clinicId) throw new Error("No clinic");
+          let inserted = 0, skipped = 0;
+          for (const r of rows) {
+            const name = String(r.name || "").trim();
+            if (!name) { skipped++; continue; }
+            const payload: any = {
+              clinic_id: clinicId,
+              name,
+              category: r.category || "General",
+              quantity: r.quantity ?? 0,
+              unit: r.unit || "pcs",
+              min_stock_level: r.min_stock_level ?? 5,
+              unit_cost: r.unit_cost ?? 0,
+              supplier: r.supplier || null,
+              expiry_date: r.expiry_date || null,
+            };
+            const { data: existing } = await (supabase.from("inventory_items") as any)
+              .select("id").eq("clinic_id", clinicId).ilike("name", name).maybeSingle();
+            if (existing?.id) {
+              const { error } = await (supabase.from("inventory_items") as any).update(payload).eq("id", existing.id);
+              if (error) throw error;
+            } else {
+              const { error } = await (supabase.from("inventory_items") as any).insert(payload);
+              if (error) throw error;
+            }
+            inserted++;
+          }
+          queryClient.invalidateQueries({ queryKey: ["inventory"] });
+          return { inserted, skipped };
+        }}
+      />
     </DashboardLayout>
   );
 }
