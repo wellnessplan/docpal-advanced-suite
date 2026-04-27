@@ -198,13 +198,19 @@ export default function TreatmentCosting() {
           </DialogHeader>
           <form onSubmit={e => { e.preventDefault(); upsert.mutate(); }} className="space-y-4">
             <div>
-              <Label>Treatment</Label>
-              <Select value={form.treatment_name} onValueChange={v => setForm(f => ({ ...f, treatment_name: v }))} disabled={!!editingId}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select treatment" /></SelectTrigger>
-                <SelectContent>
-                  {COMMON_TREATMENTS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label>Treatment Name</Label>
+              <Input
+                list="treatment-name-suggestions"
+                value={form.treatment_name}
+                onChange={e => setForm(f => ({ ...f, treatment_name: e.target.value }))}
+                disabled={!!editingId}
+                placeholder="Type any procedure name…"
+                className="mt-1"
+              />
+              <datalist id="treatment-name-suggestions">
+                {pricings.map((p: any) => <option key={p.id} value={p.treatment_name} />)}
+              </datalist>
+              <p className="text-xs text-muted-foreground mt-1">Add any custom procedure name — it appears across the app.</p>
             </div>
 
             <div>
