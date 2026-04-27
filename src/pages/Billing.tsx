@@ -135,12 +135,15 @@ export default function BillingPage() {
   }, 0);
   const discountAmt = Number(form.discount_amount) || 0;
   const discountPct = Number(form.discount_percent) || 0;
-  const couponDiscount = coupon && !(coupon as any)._invalid
+  const rawCouponDiscount = coupon && !(coupon as any)._invalid
     ? (coupon.discount_type === "percent"
         ? (subtotal * Number(coupon.discount_value) / 100)
         : Number(coupon.discount_value))
     : 0;
-  const membershipDiscount = subtotal * membershipDiscountPct / 100;
+  const rawMembershipDiscount = subtotal * membershipDiscountPct / 100;
+  // Mutually exclusive: only the selected source counts
+  const couponDiscount = discountSource === "coupon" ? rawCouponDiscount : 0;
+  const membershipDiscount = discountSource === "membership" ? rawMembershipDiscount : 0;
   const discountTotal = discountAmt + (subtotal * discountPct / 100) + couponDiscount + membershipDiscount;
   const afterDiscount = Math.max(0, subtotal - discountTotal);
   const taxRate = Number(form.tax_rate) || 0;
