@@ -264,6 +264,7 @@ export default function BillingPage() {
       setOpen(false);
       setForm({ patient_id: "", due_date: "", notes: "", discount_amount: "0", discount_percent: "0", coupon_code: "", tax_rate: "0" });
       setSelectedTreatments([]);
+      setDiscountSource("none");
       toast.success("Invoice created!");
     },
     onError: (e: any) => toast.error(e.message),
