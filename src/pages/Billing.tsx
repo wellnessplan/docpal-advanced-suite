@@ -220,7 +220,7 @@ export default function BillingPage() {
         subtotal: subtotal,
         discount: discountTotal,
         discount_percent: discountPct,
-        coupon_code: coupon && !(coupon as any)._invalid ? coupon.code : null,
+        coupon_code: discountSource === "coupon" && coupon && !(coupon as any)._invalid ? coupon.code : null,
         tax_rate: taxRate,
         tax_amount: taxAmount,
         due_date: form.due_date || null,
@@ -242,8 +242,8 @@ export default function BillingPage() {
         await supabase.from("invoice_items").insert(items);
       }
 
-      // Increment coupon usage if a valid coupon was applied
-      if (coupon && !(coupon as any)._invalid) {
+      // Increment coupon usage only if coupon was the chosen discount source
+      if (discountSource === "coupon" && coupon && !(coupon as any)._invalid) {
         await supabase
           .from("discount_coupons")
           .update({ used_count: (coupon.used_count || 0) + 1 })
