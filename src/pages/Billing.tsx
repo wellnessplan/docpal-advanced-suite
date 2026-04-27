@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Plus, FileText, IndianRupee } from "lucide-react";
 import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
@@ -41,6 +42,8 @@ export default function BillingPage() {
     discount_amount: "0", discount_percent: "0", coupon_code: "", tax_rate: "0",
   });
   const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
+  // Coupons vs Membership are mutually exclusive — user picks ONE source
+  const [discountSource, setDiscountSource] = useState<"none" | "coupon" | "membership">("none");
 
   const { data: patients } = useQuery({
     queryKey: ["patients-list", clinicId],
