@@ -131,9 +131,9 @@ export default function BulkImportDialog({
     }
     setBusy(true);
     try {
-      const res = (await onImport(rows)) as { inserted?: number; skipped?: number } | void;
-      const inserted = res?.inserted ?? rows.length;
-      const skipped = res?.skipped ?? 0;
+      const res = (await onImport(rows)) as any;
+      const inserted = (res && res.inserted) ?? rows.length;
+      const skipped = (res && res.skipped) ?? 0;
       toast.success(`Imported ${inserted} row${inserted === 1 ? "" : "s"}${skipped ? ` (${skipped} skipped)` : ""}`);
       reset();
       onOpenChange(false);
