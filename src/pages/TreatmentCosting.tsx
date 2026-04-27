@@ -269,6 +269,43 @@ export default function TreatmentCosting() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <BulkImportDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        title="Bulk Import Treatment Pricing"
+        description="Upload a CSV or paste rows from Excel. Existing treatments with the same name will be updated."
+        templateFileName="treatment-pricing-template.csv"
+        columns={[
+          { key: "treatment_name", header: "treatment_name", required: true },
+          { key: "base_price", header: "base_price", required: true, parse: (v) => Number(v) || 0 },
+          { key: "material_cost", header: "material_cost", parse: (v) => Number(v) || 0 },
+          { key: "doctor_fee", header: "doctor_fee", parse: (v) => Number(v) || 0 },
+          { key: "lab_cost", header: "lab_cost", parse: (v) => Number(v) || 0 },
+          { key: "other_cost", header: "other_cost", parse: (v) => Number(v) || 0 },
+          { key: "notes", header: "notes" },
+        ]}
+        onImport={async (rows) => {
+          if (!clinicId) throw new Error("No clinic");
+          const payload = rows.map((r) => ({
+            clinic_id: clinicId,
+            treatment_name: String(r.treatment_name).trim(),
+            base_price: r.base_price ?? 0,
+            material_cost: r.material_cost ?? 0,
+            doctor_fee: r.doctor_fee ?? 0,
+            lab_cost: r.lab_cost ?? 0,
+            other_cost: r.other_cost ?? 0,
+            notes: r.notes ?? null,
+          }));
+          const { error } = await (supabase.from("treatment_pricing") as any).upsert(payload, {
+            onConflict: "clinic_id,treatment_name",
+          });
+          if (error) throw error;
+          queryClient.invalidateQueries({ queryKey: ["treatment-pricing"] });
+          queryClient.invalidateQueries({ queryKey: ["treatment-catalog"] });
+          return { inserted: payload.length };
+        }}
+      />
     </DashboardLayout>
   );
 }
