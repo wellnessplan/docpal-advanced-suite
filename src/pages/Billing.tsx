@@ -76,7 +76,10 @@ export default function BillingPage() {
     enabled: !!form.patient_id,
   });
 
-  useEffect(() => { setSelectedTreatments([]); }, [form.patient_id]);
+  useEffect(() => {
+    setSelectedTreatments([]);
+    setDiscountSource("none");
+  }, [form.patient_id]);
 
   // Look up active membership for selected patient — auto-apply discount
   const { data: membership } = useQuery({
@@ -105,6 +108,17 @@ export default function BillingPage() {
     if (benefits && typeof benefits === "object" && benefits.discount_percent) return Number(benefits.discount_percent);
     return 0;
   })();
+
+  // Auto-suggest membership when available; clear if patient loses it
+  useEffect(() => {
+    if (membershipDiscountPct > 0 && discountSource === "none") {
+      setDiscountSource("membership");
+    }
+    if (!membership && discountSource === "membership") {
+      setDiscountSource("none");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membershipDiscountPct, membership]);
 
   // Look up coupon by code (live as user types)
   const { data: coupon } = useQuery({
