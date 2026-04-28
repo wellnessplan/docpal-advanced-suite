@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import {
   Upload, FileImage, Trash2, ZoomIn, ZoomOut, RotateCw,
-  Maximize2, X, Move, Download, Filter,
+  Maximize2, X, Move, Download, Filter, GitCompare, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import XRayCompareDialog from "./XRayCompareDialog";
 
 interface XRayVaultProps {
   patientId: string;
