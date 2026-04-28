@@ -15,12 +15,15 @@ import TreatmentPlanBuilder from "@/components/dental-chart/TreatmentPlanBuilder
 import XRayVault from "@/components/xray/XRayVault";
 import AllergyBanner from "@/components/dental-chart/AllergyBanner";
 import VisitSummaryPDF from "@/components/dental-chart/VisitSummaryPDF";
+import PerioChart from "@/components/dental-chart/PerioChart";
+import EndoChart from "@/components/dental-chart/EndoChart";
+import IntraOralVault from "@/components/patients/IntraOralVault";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Phone, Calendar, Stethoscope, ClipboardList, FileImage, FileText } from "lucide-react";
+import { ArrowLeft, User, Phone, Calendar, Stethoscope, ClipboardList, FileImage, FileText, Activity, Zap, Camera } from "lucide-react";
 
 export default function DentalChartPage() {
   const { patientId } = useParams<{ patientId: string }>();
