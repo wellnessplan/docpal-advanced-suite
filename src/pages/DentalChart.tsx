@@ -15,12 +15,15 @@ import TreatmentPlanBuilder from "@/components/dental-chart/TreatmentPlanBuilder
 import XRayVault from "@/components/xray/XRayVault";
 import AllergyBanner from "@/components/dental-chart/AllergyBanner";
 import VisitSummaryPDF from "@/components/dental-chart/VisitSummaryPDF";
+import PerioChart from "@/components/dental-chart/PerioChart";
+import EndoChart from "@/components/dental-chart/EndoChart";
+import IntraOralVault from "@/components/patients/IntraOralVault";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Phone, Calendar, Stethoscope, ClipboardList, FileImage, FileText } from "lucide-react";
+import { ArrowLeft, User, Phone, Calendar, Stethoscope, ClipboardList, FileImage, FileText, Activity, Zap, Camera } from "lucide-react";
 
 export default function DentalChartPage() {
   const { patientId } = useParams<{ patientId: string }>();
@@ -154,7 +157,7 @@ export default function DentalChartPage() {
             <TabsTrigger value="chart" className="flex-1 gap-1 text-xs"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
             <TabsTrigger value="rx" className="flex-1 gap-1 text-xs"><FileText className="h-3 w-3" />Prescription</TabsTrigger>
             <TabsTrigger value="plan" className="flex-1 gap-1 text-xs"><ClipboardList className="h-3 w-3" />Treatment Plan</TabsTrigger>
-            <TabsTrigger value="xrays" className="flex-1 gap-1 text-xs"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
+            <TabsTrigger value="xrays" className="flex-1 gap-1 text-xs"><FileImage className="h-3 w-3" />Imaging+</TabsTrigger>
           </TabsList>
 
           {/* EXAMINE TAB */}
@@ -327,9 +330,20 @@ export default function DentalChartPage() {
             />
           </TabsContent>
 
-          {/* X-RAYS TAB */}
-          <TabsContent value="xrays" className="mt-3">
-            <XRayVault patientId={patientId} clinicId={clinicId} />
+          {/* IMAGING & SPECIALTY TAB */}
+          <TabsContent value="xrays" className="mt-3 space-y-3">
+            <Tabs defaultValue="xray">
+              <TabsList className="w-full">
+                <TabsTrigger value="xray" className="flex-1 gap-1 text-xs"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
+                <TabsTrigger value="intraoral" className="flex-1 gap-1 text-xs"><Camera className="h-3 w-3" />Intra-Oral</TabsTrigger>
+                <TabsTrigger value="perio" className="flex-1 gap-1 text-xs"><Activity className="h-3 w-3" />Perio</TabsTrigger>
+                <TabsTrigger value="endo" className="flex-1 gap-1 text-xs"><Zap className="h-3 w-3" />Endo</TabsTrigger>
+              </TabsList>
+              <TabsContent value="xray" className="mt-3"><XRayVault patientId={patientId} clinicId={clinicId} /></TabsContent>
+              <TabsContent value="intraoral" className="mt-3"><IntraOralVault patientId={patientId} clinicId={clinicId} /></TabsContent>
+              <TabsContent value="perio" className="mt-3"><PerioChart patientId={patientId} clinicId={clinicId} /></TabsContent>
+              <TabsContent value="endo" className="mt-3"><EndoChart patientId={patientId} clinicId={clinicId} /></TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </div>
