@@ -157,7 +157,7 @@ export default function DentalChartPage() {
             <TabsTrigger value="chart" className="flex-1 gap-1 text-xs"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
             <TabsTrigger value="rx" className="flex-1 gap-1 text-xs"><FileText className="h-3 w-3" />Prescription</TabsTrigger>
             <TabsTrigger value="plan" className="flex-1 gap-1 text-xs"><ClipboardList className="h-3 w-3" />Treatment Plan</TabsTrigger>
-            <TabsTrigger value="xrays" className="flex-1 gap-1 text-xs"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
+            <TabsTrigger value="xrays" className="flex-1 gap-1 text-xs"><FileImage className="h-3 w-3" />Imaging+</TabsTrigger>
           </TabsList>
 
           {/* EXAMINE TAB */}
