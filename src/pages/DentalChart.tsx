@@ -330,9 +330,20 @@ export default function DentalChartPage() {
             />
           </TabsContent>
 
-          {/* X-RAYS TAB */}
-          <TabsContent value="xrays" className="mt-3">
-            <XRayVault patientId={patientId} clinicId={clinicId} />
+          {/* IMAGING & SPECIALTY TAB */}
+          <TabsContent value="xrays" className="mt-3 space-y-3">
+            <Tabs defaultValue="xray">
+              <TabsList className="w-full">
+                <TabsTrigger value="xray" className="flex-1 gap-1 text-xs"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
+                <TabsTrigger value="intraoral" className="flex-1 gap-1 text-xs"><Camera className="h-3 w-3" />Intra-Oral</TabsTrigger>
+                <TabsTrigger value="perio" className="flex-1 gap-1 text-xs"><Activity className="h-3 w-3" />Perio</TabsTrigger>
+                <TabsTrigger value="endo" className="flex-1 gap-1 text-xs"><Zap className="h-3 w-3" />Endo</TabsTrigger>
+              </TabsList>
+              <TabsContent value="xray" className="mt-3"><XRayVault patientId={patientId} clinicId={clinicId} /></TabsContent>
+              <TabsContent value="intraoral" className="mt-3"><IntraOralVault patientId={patientId} clinicId={clinicId} /></TabsContent>
+              <TabsContent value="perio" className="mt-3"><PerioChart patientId={patientId} clinicId={clinicId} /></TabsContent>
+              <TabsContent value="endo" className="mt-3"><EndoChart patientId={patientId} clinicId={clinicId} /></TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </div>
