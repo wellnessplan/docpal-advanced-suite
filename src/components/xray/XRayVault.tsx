@@ -30,7 +30,9 @@ export default function XRayVault({ patientId, clinicId }: XRayVaultProps) {
   const [viewerUrl, setViewerUrl] = useState("");
   const [viewerTitle, setViewerTitle] = useState("");
   const [filterTooth, setFilterTooth] = useState("");
-
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [compareOpen, setCompareOpen] = useState(false);
   // Fetch X-ray documents
   const { data: xrays = [], isLoading } = useQuery({
     queryKey: ["xray-documents", patientId],
