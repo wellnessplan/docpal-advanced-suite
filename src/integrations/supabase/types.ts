@@ -24,6 +24,7 @@ export type Database = {
           duration_minutes: number | null
           id: string
           notes: string | null
+          operatory_id: string | null
           patient_id: string
           provider_id: string | null
           scheduled_at: string | null
@@ -40,6 +41,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           notes?: string | null
+          operatory_id?: string | null
           patient_id: string
           provider_id?: string | null
           scheduled_at?: string | null
@@ -56,6 +58,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           notes?: string | null
+          operatory_id?: string | null
           patient_id?: string
           provider_id?: string | null
           scheduled_at?: string | null
@@ -884,6 +887,60 @@ export type Database = {
           },
         ]
       }
+      endo_charts: {
+        Row: {
+          access_date: string
+          canals: Json
+          clinic_id: string
+          created_at: string
+          id: string
+          irrigants: string | null
+          notes: string | null
+          obturation_technique: string | null
+          patient_id: string
+          periapical_diagnosis: string | null
+          pulp_diagnosis: string | null
+          sealer: string | null
+          status: string | null
+          tooth_number: number
+          updated_at: string
+        }
+        Insert: {
+          access_date?: string
+          canals?: Json
+          clinic_id: string
+          created_at?: string
+          id?: string
+          irrigants?: string | null
+          notes?: string | null
+          obturation_technique?: string | null
+          patient_id: string
+          periapical_diagnosis?: string | null
+          pulp_diagnosis?: string | null
+          sealer?: string | null
+          status?: string | null
+          tooth_number: number
+          updated_at?: string
+        }
+        Update: {
+          access_date?: string
+          canals?: Json
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          irrigants?: string | null
+          notes?: string | null
+          obturation_technique?: string | null
+          patient_id?: string
+          periapical_diagnosis?: string | null
+          pulp_diagnosis?: string | null
+          sealer?: string | null
+          status?: string | null
+          tooth_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       error_logs: {
         Row: {
           clinic_id: string | null
@@ -1615,6 +1672,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      operatories: {
+        Row: {
+          clinic_id: string
+          color: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          color?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          color?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       ortho_aligner_cases: {
         Row: {
@@ -2637,6 +2727,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      perio_charts: {
+        Row: {
+          bop_b: boolean | null
+          bop_db: boolean | null
+          bop_dl: boolean | null
+          bop_l: boolean | null
+          bop_mb: boolean | null
+          bop_ml: boolean | null
+          chart_date: string
+          clinic_id: string
+          created_at: string
+          furcation: number | null
+          id: string
+          mobility: number | null
+          notes: string | null
+          patient_id: string
+          pd_b: number | null
+          pd_db: number | null
+          pd_dl: number | null
+          pd_l: number | null
+          pd_mb: number | null
+          pd_ml: number | null
+          plaque: boolean | null
+          recession_b: number | null
+          recession_l: number | null
+          tooth_number: number
+          updated_at: string
+        }
+        Insert: {
+          bop_b?: boolean | null
+          bop_db?: boolean | null
+          bop_dl?: boolean | null
+          bop_l?: boolean | null
+          bop_mb?: boolean | null
+          bop_ml?: boolean | null
+          chart_date?: string
+          clinic_id: string
+          created_at?: string
+          furcation?: number | null
+          id?: string
+          mobility?: number | null
+          notes?: string | null
+          patient_id: string
+          pd_b?: number | null
+          pd_db?: number | null
+          pd_dl?: number | null
+          pd_l?: number | null
+          pd_mb?: number | null
+          pd_ml?: number | null
+          plaque?: boolean | null
+          recession_b?: number | null
+          recession_l?: number | null
+          tooth_number: number
+          updated_at?: string
+        }
+        Update: {
+          bop_b?: boolean | null
+          bop_db?: boolean | null
+          bop_dl?: boolean | null
+          bop_l?: boolean | null
+          bop_mb?: boolean | null
+          bop_ml?: boolean | null
+          chart_date?: string
+          clinic_id?: string
+          created_at?: string
+          furcation?: number | null
+          id?: string
+          mobility?: number | null
+          notes?: string | null
+          patient_id?: string
+          pd_b?: number | null
+          pd_db?: number | null
+          pd_dl?: number | null
+          pd_l?: number | null
+          pd_mb?: number | null
+          pd_ml?: number | null
+          plaque?: boolean | null
+          recession_b?: number | null
+          recession_l?: number | null
+          tooth_number?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       platform_audit_log: {
         Row: {
