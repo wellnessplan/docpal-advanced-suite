@@ -161,8 +161,8 @@ export default function XRayVault({ patientId, clinicId }: XRayVaultProps) {
         </CardContent>
       </Card>
 
-      {/* Filter */}
-      <div className="flex items-center gap-2">
+      {/* Filter + Compare */}
+      <div className="flex items-center gap-2 flex-wrap">
         <Filter className="h-3.5 w-3.5 text-muted-foreground" />
         <Input
           placeholder="Filter by tooth #..."
@@ -171,6 +171,18 @@ export default function XRayVault({ patientId, clinicId }: XRayVaultProps) {
           className="h-7 text-xs w-32"
         />
         <Badge variant="secondary" className="text-[10px]">{filteredXrays.length} X-rays</Badge>
+        <div className="ml-auto flex items-center gap-1">
+          <Button size="sm" variant={selectMode ? "default" : "outline"} className="h-7 text-xs"
+            onClick={() => { setSelectMode(s => !s); setSelectedIds(new Set()); }}>
+            <GitCompare className="h-3 w-3 mr-1" /> {selectMode ? "Cancel" : "Compare"}
+          </Button>
+          {selectMode && (
+            <Button size="sm" className="h-7 text-xs" disabled={selectedIds.size < 2 || selectedIds.size > 4}
+              onClick={() => setCompareOpen(true)}>
+              <Check className="h-3 w-3 mr-1" /> Open ({selectedIds.size})
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Gallery Grid */}
@@ -186,16 +198,40 @@ export default function XRayVault({ patientId, clinicId }: XRayVaultProps) {
         </Card>
       ) : (
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
-          {filteredXrays.map((doc: any) => (
-            <XRayThumbnail
-              key={doc.id}
-              doc={doc}
-              onView={() => openViewer(doc)}
-              onDelete={() => deleteXray.mutate(doc)}
-            />
-          ))}
+          {filteredXrays.map((doc: any) => {
+            const isSelected = selectedIds.has(doc.id);
+            return (
+              <div key={doc.id} className={cn("relative", isSelected && "ring-2 ring-primary rounded-lg")}>
+                <XRayThumbnail
+                  doc={doc}
+                  onView={() => {
+                    if (selectMode) {
+                      setSelectedIds(s => {
+                        const n = new Set(s);
+                        if (n.has(doc.id)) n.delete(doc.id);
+                        else if (n.size < 4) n.add(doc.id);
+                        return n;
+                      });
+                    } else openViewer(doc);
+                  }}
+                  onDelete={() => deleteXray.mutate(doc)}
+                />
+                {selectMode && isSelected && (
+                  <div className="absolute top-2 left-2 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                    {Array.from(selectedIds).indexOf(doc.id) + 1}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
+
+      <XRayCompareDialog
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        docs={filteredXrays.filter((d: any) => selectedIds.has(d.id))}
+      />
 
       {/* Magnify Viewer */}
       <XRayViewer
