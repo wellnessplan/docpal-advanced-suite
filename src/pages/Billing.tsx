@@ -604,8 +604,8 @@ export default function BillingPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          {!isPaid && (
+                        <div className="flex items-center gap-1">
+                          {!isPaid && inv.status !== "cancelled" && (
                             <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
                               onClick={() => {
                                 setPaymentInvoice(inv);
@@ -620,6 +620,18 @@ export default function BillingPage() {
                             disabled={paid <= 0}>
                             <FileText className="h-3 w-3" /> Receipt
                           </Button>
+                          {inv.status !== "cancelled" && paid <= 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => voidInvoice.mutate(inv)}
+                              title="Void invoice (undo available)"
+                            >
+                              <Ban className="h-3 w-3" />
+                            </Button>
+                          )}
+                          <WhoChangedHover table="invoices" recordId={inv.id} className="ml-1" />
                         </div>
                       </TableCell>
                     </TableRow>
