@@ -172,6 +172,72 @@ export default function AppointmentsPage() {
     },
   });
 
+  // Drag-drop reschedule: change date / time / provider (chair) in one shot
+  const reschedule = useMutation({
+    mutationFn: async ({ id, date, time, provider_id, prev }: {
+      id: string; date: string; time: string; provider_id?: string | null;
+      prev: { date: string; time: string; provider_id: string | null };
+    }) => {
+      const scheduledAt = `${date}T${time}:00`;
+      const payload: any = { appointment_date: date, appointment_time: time, scheduled_at: scheduledAt };
+      if (provider_id !== undefined) payload.provider_id = provider_id;
+      const { error } = await supabase.from("appointments").update(payload).eq("id", id);
+      if (error) throw error;
+      return { id, prev };
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Appointment rescheduled", {
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const scheduledAt = `${res.prev.date}T${res.prev.time}:00`;
+            const { error } = await supabase.from("appointments").update({
+              appointment_date: res.prev.date,
+              appointment_time: res.prev.time,
+              scheduled_at: scheduledAt,
+              provider_id: res.prev.provider_id,
+            }).eq("id", res.id);
+            if (!error) {
+              queryClient.invalidateQueries({ queryKey: ["appointments"] });
+              toast.success("Reverted");
+            }
+          },
+        },
+      });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Delete (cancel) with 8-second undo window — soft-cancel pattern
+  const cancelAppointment = useMutation({
+    mutationFn: async (apt: any) => {
+      const prevStatus = apt.status;
+      const { error } = await supabase.from("appointments").update({ status: "cancelled" as any }).eq("id", apt.id);
+      if (error) throw error;
+      return { id: apt.id, prevStatus };
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast("Appointment cancelled", {
+        duration: 8000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const { error } = await supabase.from("appointments")
+              .update({ status: (res.prevStatus || "scheduled") as any })
+              .eq("id", res.id);
+            if (!error) {
+              queryClient.invalidateQueries({ queryKey: ["appointments"] });
+              toast.success("Restored");
+            }
+          },
+        },
+      });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const navigateDate = (dir: number) => {
     if (calendarView === "month") setCurrentDate(d => dir > 0 ? addMonths(d, 1) : subMonths(d, 1));
     else if (calendarView === "week") setCurrentDate(d => dir > 0 ? addWeeks(d, 1) : subWeeks(d, 1));
