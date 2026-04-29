@@ -514,9 +514,20 @@ export default function AppointmentsPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/patients/${apt.patient_id}`)}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/patients/${apt.patient_id}`)} title="View patient">
                                 <Eye className="h-3.5 w-3.5" />
                               </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                onClick={() => cancelAppointment.mutate(apt)}
+                                title="Cancel appointment"
+                                disabled={apt.status === "cancelled"}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <WhoChangedHover table="appointments" recordId={apt.id} className="ml-1" />
                             </div>
                           </td>
                         </tr>
