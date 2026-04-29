@@ -266,14 +266,57 @@ export default function AppointmentsPage() {
   };
 
   const AppointmentBlock = ({ apt, compact = false }: { apt: any; compact?: boolean }) => (
-    <div className={`rounded-md border border-l-4 px-2 py-1.5 text-xs ${statusStyle[apt.status] || "bg-muted"} ${typeColors[apt.type] || "border-l-muted-foreground"} cursor-pointer group relative`}>
-      <div className="font-medium truncate">{apt.patients?.full_name}</div>
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/apt", JSON.stringify({
+          id: apt.id,
+          prev: {
+            date: apt.appointment_date,
+            time: apt.appointment_time?.slice(0, 5),
+            provider_id: apt.provider_id ?? null,
+          },
+        }));
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      className={`rounded-md border border-l-4 px-2 py-1.5 text-xs ${statusStyle[apt.status] || "bg-muted"} ${typeColors[apt.type] || "border-l-muted-foreground"} cursor-grab active:cursor-grabbing group relative hover:shadow-md transition-shadow`}
+    >
+      <div className="flex items-start justify-between gap-1">
+        <div className="font-medium truncate flex-1">{apt.patients?.full_name}</div>
+        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+          <WhoChangedHover table="appointments" recordId={apt.id} />
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); cancelAppointment.mutate(apt); }}
+            title="Cancel appointment"
+            className="text-muted-foreground/70 hover:text-destructive"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
       {!compact && <div className="text-[10px] opacity-75">{apt.type} · {apt.duration_minutes}m</div>}
     </div>
   );
 
+  // Drop handler shared by day/week/chair grids
+  const handleDrop = (e: React.DragEvent, date: Date, time: string, providerId?: string | null) => {
+    e.preventDefault();
+    const raw = e.dataTransfer.getData("text/apt");
+    if (!raw) return;
+    try {
+      const { id, prev } = JSON.parse(raw);
+      const newDate = format(date, "yyyy-MM-dd");
+      // No-op if same slot & same provider
+      if (newDate === prev.date && time === prev.time && (providerId ?? null) === prev.provider_id) return;
+      reschedule.mutate({ id, date: newDate, time, provider_id: providerId, prev });
+    } catch {}
+  };
+  const allowDrop = (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
+
   const calDateLabel = calendarView === "month" ? format(currentDate, "MMMM yyyy")
     : calendarView === "week" ? `${format(weekStart, "MMM d")} – ${format(weekEnd, "MMM d, yyyy")}`
+    : calendarView === "chair" ? `Chair view · ${format(currentDate, "EEEE, MMMM d")}`
     : format(currentDate, "EEEE, MMMM d, yyyy");
 
   return (
