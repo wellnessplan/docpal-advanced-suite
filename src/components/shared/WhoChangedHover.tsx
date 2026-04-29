@@ -20,7 +20,7 @@ export default function WhoChangedHover({ table, recordId, className }: Props) {
     queryFn: async () => {
       const { data } = await supabase
         .from("audit_log")
-        .select("action, created_at, user_id, profiles:profiles!audit_log_user_id_fkey(full_name)")
+        .select("action, created_at, user_name")
         .eq("table_name", table)
         .eq("record_id", recordId)
         .order("created_at", { ascending: false })
