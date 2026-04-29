@@ -153,11 +153,14 @@ export default function DentalChartPage() {
         />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full">
-            <TabsTrigger value="chart" className="flex-1 gap-1 text-xs"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
-            <TabsTrigger value="rx" className="flex-1 gap-1 text-xs"><FileText className="h-3 w-3" />Prescription</TabsTrigger>
-            <TabsTrigger value="plan" className="flex-1 gap-1 text-xs"><ClipboardList className="h-3 w-3" />Treatment Plan</TabsTrigger>
-            <TabsTrigger value="xrays" className="flex-1 gap-1 text-xs"><FileImage className="h-3 w-3" />Imaging+</TabsTrigger>
+          <TabsList className="w-full flex-wrap h-auto">
+            <TabsTrigger value="chart" className="flex-1 gap-1 text-xs min-w-[90px]"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
+            <TabsTrigger value="rx" className="flex-1 gap-1 text-xs min-w-[90px]"><FileText className="h-3 w-3" />Prescription</TabsTrigger>
+            <TabsTrigger value="plan" className="flex-1 gap-1 text-xs min-w-[90px]"><ClipboardList className="h-3 w-3" />Plan</TabsTrigger>
+            <TabsTrigger value="xrays" className="flex-1 gap-1 text-xs min-w-[80px]"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
+            <TabsTrigger value="intraoral" className="flex-1 gap-1 text-xs min-w-[90px]"><Camera className="h-3 w-3" />Intra-Oral</TabsTrigger>
+            <TabsTrigger value="perio" className="flex-1 gap-1 text-xs min-w-[70px]"><Activity className="h-3 w-3" />Perio</TabsTrigger>
+            <TabsTrigger value="endo" className="flex-1 gap-1 text-xs min-w-[70px]"><Zap className="h-3 w-3" />Endo</TabsTrigger>
           </TabsList>
 
           {/* EXAMINE TAB */}
@@ -330,20 +333,24 @@ export default function DentalChartPage() {
             />
           </TabsContent>
 
-          {/* IMAGING & SPECIALTY TAB */}
-          <TabsContent value="xrays" className="mt-3 space-y-3">
-            <Tabs defaultValue="xray">
-              <TabsList className="w-full">
-                <TabsTrigger value="xray" className="flex-1 gap-1 text-xs"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
-                <TabsTrigger value="intraoral" className="flex-1 gap-1 text-xs"><Camera className="h-3 w-3" />Intra-Oral</TabsTrigger>
-                <TabsTrigger value="perio" className="flex-1 gap-1 text-xs"><Activity className="h-3 w-3" />Perio</TabsTrigger>
-                <TabsTrigger value="endo" className="flex-1 gap-1 text-xs"><Zap className="h-3 w-3" />Endo</TabsTrigger>
-              </TabsList>
-              <TabsContent value="xray" className="mt-3"><XRayVault patientId={patientId} clinicId={clinicId} /></TabsContent>
-              <TabsContent value="intraoral" className="mt-3"><IntraOralVault patientId={patientId} clinicId={clinicId} /></TabsContent>
-              <TabsContent value="perio" className="mt-3"><PerioChart patientId={patientId} clinicId={clinicId} /></TabsContent>
-              <TabsContent value="endo" className="mt-3"><EndoChart patientId={patientId} clinicId={clinicId} /></TabsContent>
-            </Tabs>
+          {/* X-RAYS TAB */}
+          <TabsContent value="xrays" className="mt-3">
+            <XRayVault patientId={patientId} clinicId={clinicId} />
+          </TabsContent>
+
+          {/* INTRA-ORAL PHOTOS TAB */}
+          <TabsContent value="intraoral" className="mt-3">
+            <IntraOralVault patientId={patientId} clinicId={clinicId} />
+          </TabsContent>
+
+          {/* PERIO TAB */}
+          <TabsContent value="perio" className="mt-3">
+            <PerioChart patientId={patientId} clinicId={clinicId} />
+          </TabsContent>
+
+          {/* ENDO TAB */}
+          <TabsContent value="endo" className="mt-3">
+            <EndoChart patientId={patientId} clinicId={clinicId} />
           </TabsContent>
         </Tabs>
       </div>

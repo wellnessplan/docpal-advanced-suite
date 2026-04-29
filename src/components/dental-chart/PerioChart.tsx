@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +52,7 @@ export default function PerioChart({ patientId, clinicId }: Props) {
   });
 
   // Hydrate state from db
-  useMemo(() => {
+  useEffect(() => {
     const map: Record<number, PerioRow> = {};
     existing.forEach((r: any) => { map[r.tooth_number] = r; });
     setRows(map);
