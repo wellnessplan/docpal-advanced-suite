@@ -14,7 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, FileText, IndianRupee } from "lucide-react";
+import { Plus, FileText, IndianRupee, Ban } from "lucide-react";
+import WhoChangedHover from "@/components/shared/WhoChangedHover";
 import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
 import { queueSystemEmail } from "@/lib/system-emails";
 
