@@ -12,11 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, Clock, List, RefreshCw, Search, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, Clock, List, RefreshCw, Search, Eye, Pencil, Trash2, Armchair } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, subWeeks, subDays, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, getDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import WhoChangedHover from "@/components/shared/WhoChangedHover";
 
 const statusStyle: Record<string, string> = {
   scheduled: "border-primary/40 text-primary bg-primary/5",
@@ -48,7 +49,7 @@ export default function AppointmentsPage() {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [mainTab, setMainTab] = useState<"appointment" | "checkin" | "calendar">("appointment");
-  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("day");
+  const [calendarView, setCalendarView] = useState<"day" | "week" | "month" | "chair">("day");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [doctorFilter, setDoctorFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -171,6 +172,72 @@ export default function AppointmentsPage() {
     },
   });
 
+  // Drag-drop reschedule: change date / time / provider (chair) in one shot
+  const reschedule = useMutation({
+    mutationFn: async ({ id, date, time, provider_id, prev }: {
+      id: string; date: string; time: string; provider_id?: string | null;
+      prev: { date: string; time: string; provider_id: string | null };
+    }) => {
+      const scheduledAt = `${date}T${time}:00`;
+      const payload: any = { appointment_date: date, appointment_time: time, scheduled_at: scheduledAt };
+      if (provider_id !== undefined) payload.provider_id = provider_id;
+      const { error } = await supabase.from("appointments").update(payload).eq("id", id);
+      if (error) throw error;
+      return { id, prev };
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Appointment rescheduled", {
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const scheduledAt = `${res.prev.date}T${res.prev.time}:00`;
+            const { error } = await supabase.from("appointments").update({
+              appointment_date: res.prev.date,
+              appointment_time: res.prev.time,
+              scheduled_at: scheduledAt,
+              provider_id: res.prev.provider_id,
+            }).eq("id", res.id);
+            if (!error) {
+              queryClient.invalidateQueries({ queryKey: ["appointments"] });
+              toast.success("Reverted");
+            }
+          },
+        },
+      });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Delete (cancel) with 8-second undo window — soft-cancel pattern
+  const cancelAppointment = useMutation({
+    mutationFn: async (apt: any) => {
+      const prevStatus = apt.status;
+      const { error } = await supabase.from("appointments").update({ status: "cancelled" as any }).eq("id", apt.id);
+      if (error) throw error;
+      return { id: apt.id, prevStatus };
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast("Appointment cancelled", {
+        duration: 8000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const { error } = await supabase.from("appointments")
+              .update({ status: (res.prevStatus || "scheduled") as any })
+              .eq("id", res.id);
+            if (!error) {
+              queryClient.invalidateQueries({ queryKey: ["appointments"] });
+              toast.success("Restored");
+            }
+          },
+        },
+      });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const navigateDate = (dir: number) => {
     if (calendarView === "month") setCurrentDate(d => dir > 0 ? addMonths(d, 1) : subMonths(d, 1));
     else if (calendarView === "week") setCurrentDate(d => dir > 0 ? addWeeks(d, 1) : subWeeks(d, 1));
@@ -199,14 +266,57 @@ export default function AppointmentsPage() {
   };
 
   const AppointmentBlock = ({ apt, compact = false }: { apt: any; compact?: boolean }) => (
-    <div className={`rounded-md border border-l-4 px-2 py-1.5 text-xs ${statusStyle[apt.status] || "bg-muted"} ${typeColors[apt.type] || "border-l-muted-foreground"} cursor-pointer group relative`}>
-      <div className="font-medium truncate">{apt.patients?.full_name}</div>
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/apt", JSON.stringify({
+          id: apt.id,
+          prev: {
+            date: apt.appointment_date,
+            time: apt.appointment_time?.slice(0, 5),
+            provider_id: apt.provider_id ?? null,
+          },
+        }));
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      className={`rounded-md border border-l-4 px-2 py-1.5 text-xs ${statusStyle[apt.status] || "bg-muted"} ${typeColors[apt.type] || "border-l-muted-foreground"} cursor-grab active:cursor-grabbing group relative hover:shadow-md transition-shadow`}
+    >
+      <div className="flex items-start justify-between gap-1">
+        <div className="font-medium truncate flex-1">{apt.patients?.full_name}</div>
+        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+          <WhoChangedHover table="appointments" recordId={apt.id} />
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); cancelAppointment.mutate(apt); }}
+            title="Cancel appointment"
+            className="text-muted-foreground/70 hover:text-destructive"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
       {!compact && <div className="text-[10px] opacity-75">{apt.type} · {apt.duration_minutes}m</div>}
     </div>
   );
 
+  // Drop handler shared by day/week/chair grids
+  const handleDrop = (e: React.DragEvent, date: Date, time: string, providerId?: string | null) => {
+    e.preventDefault();
+    const raw = e.dataTransfer.getData("text/apt");
+    if (!raw) return;
+    try {
+      const { id, prev } = JSON.parse(raw);
+      const newDate = format(date, "yyyy-MM-dd");
+      // No-op if same slot & same provider
+      if (newDate === prev.date && time === prev.time && (providerId ?? null) === prev.provider_id) return;
+      reschedule.mutate({ id, date: newDate, time, provider_id: providerId, prev });
+    } catch {}
+  };
+  const allowDrop = (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
+
   const calDateLabel = calendarView === "month" ? format(currentDate, "MMMM yyyy")
     : calendarView === "week" ? `${format(weekStart, "MMM d")} – ${format(weekEnd, "MMM d, yyyy")}`
+    : calendarView === "chair" ? `Chair view · ${format(currentDate, "EEEE, MMMM d")}`
     : format(currentDate, "EEEE, MMMM d, yyyy");
 
   return (
@@ -404,9 +514,20 @@ export default function AppointmentsPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/patients/${apt.patient_id}`)}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/patients/${apt.patient_id}`)} title="View patient">
                                 <Eye className="h-3.5 w-3.5" />
                               </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                onClick={() => cancelAppointment.mutate(apt)}
+                                title="Cancel appointment"
+                                disabled={apt.status === "cancelled"}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <WhoChangedHover table="appointments" recordId={apt.id} className="ml-1" />
                             </div>
                           </td>
                         </tr>
@@ -435,6 +556,7 @@ export default function AppointmentsPage() {
                     <TabsTrigger value="day" className="text-xs h-7 px-3">Day</TabsTrigger>
                     <TabsTrigger value="week" className="text-xs h-7 px-3">Week</TabsTrigger>
                     <TabsTrigger value="month" className="text-xs h-7 px-3">Month</TabsTrigger>
+                    <TabsTrigger value="chair" className="text-xs h-7 px-3 gap-1"><Armchair className="h-3 w-3" />Chairs</TabsTrigger>
                   </TabsList>
                 </Tabs>
                 <Select value={doctorFilter} onValueChange={setDoctorFilter}>
@@ -447,20 +569,36 @@ export default function AppointmentsPage() {
               </div>
             </div>
 
-            {/* Day View */}
+            {/* Day View — drag to reschedule between 30-min slots */}
             {calendarView === "day" && (
               <Card className="shadow-card border-0 overflow-hidden">
                 <CardContent className="p-0">
                   <div className="max-h-[65vh] overflow-y-auto">
                     {HOURS.map(hour => {
-                      const apts = getAptsForHour(hour);
+                      const halves = [0, 30];
                       return (
-                        <div key={hour} className="flex border-b min-h-[60px]">
+                        <div key={hour} className="flex border-b">
                           <div className="w-16 shrink-0 px-2 py-2 text-xs text-muted-foreground font-medium border-r bg-muted/30 flex items-start justify-end">
                             {format(new Date(2000, 0, 1, hour), "h a")}
                           </div>
-                          <div className="flex-1 p-1.5 space-y-1">
-                            {apts.map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} />)}
+                          <div className="flex-1 flex flex-col">
+                            {halves.map(min => {
+                              const slot = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+                              const slotApts = filteredAppointments.filter((a: any) =>
+                                a.appointment_time?.slice(0, 5) === slot &&
+                                isSameDay(new Date(a.appointment_date + "T00:00:00"), currentDate)
+                              );
+                              return (
+                                <div
+                                  key={min}
+                                  onDragOver={allowDrop}
+                                  onDrop={(e) => handleDrop(e, currentDate, slot)}
+                                  className="min-h-[30px] p-1 border-b last:border-b-0 hover:bg-primary/[0.04] transition-colors"
+                                >
+                                  {slotApts.map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} />)}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -470,7 +608,7 @@ export default function AppointmentsPage() {
               </Card>
             )}
 
-            {/* Week View */}
+            {/* Week View — drag to reschedule */}
             {calendarView === "week" && (
               <Card className="shadow-card border-0 overflow-hidden">
                 <CardContent className="p-0">
@@ -489,14 +627,102 @@ export default function AppointmentsPage() {
                         <div className="w-14 shrink-0 px-1 py-1 text-[10px] text-muted-foreground font-medium border-r bg-muted/20 flex items-start justify-end">
                           {format(new Date(2000, 0, 1, hour), "h a")}
                         </div>
-                        {weekDays.map(day => (
-                          <div key={day.toISOString()} className={`flex-1 min-h-[48px] p-0.5 border-r last:border-r-0 ${isSameDay(day, new Date()) ? "bg-primary/5" : ""}`}>
-                            {getAptsForHour(hour, day).map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} />)}
-                          </div>
-                        ))}
+                        {weekDays.map(day => {
+                          const slot = `${String(hour).padStart(2, "0")}:00`;
+                          return (
+                            <div
+                              key={day.toISOString()}
+                              onDragOver={allowDrop}
+                              onDrop={(e) => handleDrop(e, day, slot)}
+                              className={`flex-1 min-h-[48px] p-0.5 border-r last:border-r-0 hover:bg-primary/[0.04] transition-colors ${isSameDay(day, new Date()) ? "bg-primary/5" : ""}`}
+                            >
+                              {getAptsForHour(hour, day).map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} />)}
+                            </div>
+                          );
+                        })}
                       </div>
                     ))}
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Chair / Operatory View — one column per doctor (chair), 30-min slots */}
+            {calendarView === "chair" && (
+              <Card className="shadow-card border-0 overflow-hidden">
+                <CardContent className="p-0">
+                  {doctors.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-muted-foreground">
+                      No doctors/chairs configured. Add doctors in Staff settings to see chair utilization.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex border-b bg-muted/30 sticky top-0 z-10">
+                        <div className="w-16 shrink-0 border-r" />
+                        {doctors.map((d: any) => {
+                          const dayApts = filteredAppointments.filter((a: any) =>
+                            a.provider_id === d.id &&
+                            isSameDay(new Date(a.appointment_date + "T00:00:00"), currentDate) &&
+                            a.status !== "cancelled"
+                          );
+                          const totalMins = dayApts.reduce((s: number, a: any) => s + (a.duration_minutes || 30), 0);
+                          const utilPct = Math.min(100, Math.round((totalMins / (HOURS.length * 60)) * 100));
+                          return (
+                            <div key={d.id} className="flex-1 text-center py-2 border-r last:border-r-0 min-w-[140px]">
+                              <div className="flex items-center justify-center gap-1 text-xs font-semibold">
+                                <Armchair className="h-3 w-3 text-primary" />{d.full_name || "Chair"}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground mt-0.5">
+                                {dayApts.length} appts · {utilPct}% used
+                              </div>
+                              <div className="h-1 bg-muted rounded-full overflow-hidden mt-1 mx-2">
+                                <div
+                                  className={cn(
+                                    "h-full rounded-full transition-all",
+                                    utilPct < 50 ? "bg-success" : utilPct < 80 ? "bg-warning" : "bg-destructive"
+                                  )}
+                                  style={{ width: `${utilPct}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="max-h-[60vh] overflow-y-auto">
+                        {HOURS.map(hour => (
+                          <div key={hour}>
+                            {[0, 30].map(min => {
+                              const slot = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+                              return (
+                                <div key={`${hour}-${min}`} className="flex border-b">
+                                  <div className="w-16 shrink-0 px-2 py-1 text-[10px] text-muted-foreground font-medium border-r bg-muted/20 flex items-start justify-end">
+                                    {min === 0 ? format(new Date(2000, 0, 1, hour), "h a") : ":30"}
+                                  </div>
+                                  {doctors.map((d: any) => {
+                                    const slotApts = filteredAppointments.filter((a: any) =>
+                                      a.provider_id === d.id &&
+                                      a.appointment_time?.slice(0, 5) === slot &&
+                                      isSameDay(new Date(a.appointment_date + "T00:00:00"), currentDate)
+                                    );
+                                    return (
+                                      <div
+                                        key={d.id}
+                                        onDragOver={allowDrop}
+                                        onDrop={(e) => handleDrop(e, currentDate, slot, d.id)}
+                                        className="flex-1 min-h-[34px] p-0.5 border-r last:border-r-0 hover:bg-primary/[0.04] transition-colors min-w-[140px]"
+                                      >
+                                        {slotApts.map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} compact />)}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}

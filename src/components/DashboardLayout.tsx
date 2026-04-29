@@ -19,32 +19,36 @@ import {
   ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
   Target, Star, Gift, Crown, UserCog, ScrollText, CalendarClock, Shield,
-  Truck, ListChecks, Focus
+  Truck, ListChecks, Focus, MessageCircle, MoreHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+interface NavItem { href: string; label: string; icon: React.ElementType; roles?: string[] }
 interface NavGroup {
   label: string;
   groupIcon: React.ElementType;
   collapsible?: boolean;
-  items: { href: string; label: string; icon: React.ElementType }[];
+  items: NavItem[];
 }
 
-const navGroups: NavGroup[] = [
-  {
-    label: "",
-    groupIcon: LayoutDashboard,
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    ],
-  },
+// Role visibility:
+//  - Front-desk essentials are pinned at top: Calendar, Patients, Billing, WhatsApp.
+//  - Everything else lives under role-filtered groups, hidden by default behind "More".
+//  - Assistants/receptionists do NOT see Revenue/Finance/Reports.
+const FRONT_DESK_ESSENTIALS: NavItem[] = [
+  { href: "/today-schedule", label: "Calendar", icon: CalendarDays },
+  { href: "/patients", label: "Patients", icon: Users },
+  { href: "/billing", label: "Billing", icon: Receipt },
+  { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+];
+
+const moreGroups: NavGroup[] = [
   {
     label: "PATIENTS",
     groupIcon: Users,
     collapsible: true,
     items: [
-      { href: "/patients", label: "Patients", icon: Users },
-      { href: "/today-schedule", label: "Today's Schedule", icon: CalendarClock },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
       { href: "/queue", label: "Queue", icon: ListOrdered },
     ],
@@ -54,11 +58,11 @@ const navGroups: NavGroup[] = [
     groupIcon: Stethoscope,
     collapsible: true,
     items: [
-      { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope },
+      { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope, roles: ["owner", "dentist"] },
       { href: "/tasks", label: "Follow-Ups", icon: ClipboardList },
       { href: "/treatment-plans", label: "Treatment Plans", icon: ClipboardCheck },
-      { href: "/treatment-costing", label: "Procedure List", icon: ListChecks },
-      { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
+      { href: "/treatment-costing", label: "Procedure List", icon: ListChecks, roles: ["owner", "dentist"] },
+      { href: "/ortho", label: "Orthodontics", icon: FlaskConical, roles: ["owner", "dentist"] },
       { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
     ],
   },
@@ -67,10 +71,9 @@ const navGroups: NavGroup[] = [
     groupIcon: Receipt,
     collapsible: true,
     items: [
-      { href: "/billing", label: "Invoices", icon: Receipt },
       { href: "/payments", label: "Payments", icon: Wallet },
       { href: "/insurance", label: "Insurance", icon: ShieldCheck },
-      { href: "/finance", label: "Expenses", icon: TrendingUp },
+      { href: "/finance", label: "Expenses", icon: TrendingUp, roles: ["owner", "admin"] },
       { href: "/inventory", label: "Inventory", icon: Package },
     ],
   },
@@ -92,39 +95,59 @@ const navGroups: NavGroup[] = [
     groupIcon: Settings,
     collapsible: true,
     items: [
-      { href: "/reports", label: "Reports", icon: BarChart3 },
-      { href: "/revenue", label: "Revenue", icon: IndianRupee },
-      { href: "/performance", label: "Performance", icon: Activity },
-      { href: "/settings?tab=vendors", label: "Vendors", icon: Truck },
-      { href: "/staff", label: "Staff", icon: UserCog },
-      { href: "/audit-log", label: "Audit Log", icon: ScrollText },
-      { href: "/settings", label: "Settings", icon: Settings },
+      { href: "/reports", label: "Reports", icon: BarChart3, roles: ["owner", "admin", "dentist"] },
+      { href: "/revenue", label: "Revenue", icon: IndianRupee, roles: ["owner", "admin"] },
+      { href: "/performance", label: "Performance", icon: Activity, roles: ["owner", "admin"] },
+      { href: "/settings?tab=vendors", label: "Vendors", icon: Truck, roles: ["owner", "admin"] },
+      { href: "/staff", label: "Staff", icon: UserCog, roles: ["owner", "admin"] },
+      { href: "/audit-log", label: "Audit Log", icon: ScrollText, roles: ["owner", "admin"] },
+      { href: "/settings", label: "Settings", icon: Settings, roles: ["owner", "admin"] },
     ],
   },
 ];
+
+function filterByRole(items: NavItem[], role: string | undefined | null): NavItem[] {
+  if (!role) return items.filter(i => !i.roles);
+  return items.filter(i => !i.roles || i.roles.includes(role));
+}
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { profile, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [moreOpen, setMoreOpen] = useState(false);
   const isMobile = useIsMobile();
   useKeyboardShortcuts();
   useThemeLoader();
   useClinicPdfDefaults(profile?.clinic_id);
   const { data: isSuperAdmin } = useSuperAdmin();
 
-  const allItems = navGroups.flatMap((g) => g.items);
+  const role = profile?.role as string | undefined;
+
+  // Role-filtered groups for the "More" section
+  const visibleGroups = moreGroups
+    .map(g => ({ ...g, items: filterByRole(g.items, role) }))
+    .filter(g => g.items.length > 0);
+
+  const allItems = [...FRONT_DESK_ESSENTIALS, ...visibleGroups.flatMap((g) => g.items)];
   const currentPageLabel = allItems.find((i) => {
     const href = i.href.split("?")[0];
     return pathname === href || pathname.startsWith(href + "/");
   })?.label ?? "DoctorsBuddy";
 
+  // Auto-open "More" if current route is in a More group
+  const currentInMore = visibleGroups.some(g => g.items.some(i => {
+    const href = i.href.split("?")[0];
+    return pathname === href || pathname.startsWith(href + "/");
+  }));
+  const moreEffective = moreOpen || currentInMore || collapsed;
+
   const toggleGroup = (label: string) => {
     setExpandedGroups(prev => {
       const isCurrentlyOpen = prev[label];
       const allClosed: Record<string, boolean> = {};
-      navGroups.forEach(g => { if (g.collapsible) allClosed[g.label] = false; });
+      visibleGroups.forEach(g => { if (g.collapsible) allClosed[g.label] = false; });
       return { ...allClosed, [label]: !isCurrentlyOpen };
     });
   };
@@ -136,6 +159,30 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     });
 
   const initials = (profile?.full_name || "U").charAt(0).toUpperCase();
+
+  const renderNavItem = (item: NavItem) => {
+    const hrefBase = item.href.split("?")[0];
+    const isActive = pathname === hrefBase || pathname.startsWith(hrefBase + "/");
+    return (
+      <Link
+        key={item.href}
+        to={item.href}
+        title={collapsed ? item.label : undefined}
+        className={cn(
+          "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-semibold transition-all duration-200 text-base",
+          isActive
+            ? "bg-white text-primary shadow-md"
+            : "text-white/95 hover:bg-white/15 hover:text-white"
+        )}
+      >
+        <item.icon className={cn(
+          "h-[18px] w-[18px] shrink-0 transition-colors",
+          isActive ? "text-primary" : "text-white"
+        )} />
+        {!collapsed && <span className="text-sm">{item.label}</span>}
+      </Link>
+    );
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -175,14 +222,41 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             )}
 
             <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-1">
-              {navGroups.map((group, gi) => {
+              {/* Pinned essentials */}
+              <div className="space-y-0.5">
+                {FRONT_DESK_ESSENTIALS.map(renderNavItem)}
+              </div>
+
+              {/* More toggle */}
+              <div className="pt-2">
+                {!collapsed && <div className="h-px bg-white/[0.15] mx-2 mb-2" />}
+                {!collapsed ? (
+                  <button
+                    onClick={() => setMoreOpen(o => !o)}
+                    className="flex w-full items-center justify-between px-2.5 py-1.5 mb-1 rounded-lg hover:bg-white/[0.08] transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <MoreHorizontal className="h-3.5 w-3.5 text-white/80" />
+                      <span className="font-bold tracking-[0.08em] text-white/85 uppercase font-sans text-xs">More</span>
+                    </div>
+                    {moreEffective ? <ChevronUp className="h-3 w-3 text-white/70" /> : <ChevronDown className="h-3 w-3 text-white/70" />}
+                  </button>
+                ) : (
+                  <div className="flex justify-center py-1">
+                    <MoreHorizontal className="h-4 w-4 text-white/70" />
+                  </div>
+                )}
+              </div>
+
+              {/* More groups (role-filtered) */}
+              {moreEffective && visibleGroups.map((group, gi) => {
                 const groupActive = isGroupActive(group);
                 const isExpanded = group.collapsible ? (expandedGroups[group.label] ?? groupActive) : true;
 
                 return (
                   <div key={group.label} className={gi > 0 ? "pt-2" : ""}>
                     {gi > 0 && !collapsed && (
-                      <div className="h-px bg-white/[0.15] mx-2 mb-2" />
+                      <div className="h-px bg-white/[0.10] mx-2 mb-2" />
                     )}
 
                     {!collapsed && group.collapsible ? (
@@ -209,29 +283,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
                     {(isExpanded || collapsed) && (
                       <div className="space-y-0.5">
-                        {group.items.map((item) => {
-                          const hrefBase = item.href.split("?")[0];
-                          const isActive = pathname === hrefBase || pathname.startsWith(hrefBase + "/");
-                          return (
-                            <Link
-                              key={item.href}
-                              to={item.href}
-                              title={collapsed ? item.label : undefined}
-                              className={cn(
-                                "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-semibold transition-all duration-200 text-base",
-                                isActive
-                                  ? "bg-white text-primary shadow-md"
-                                  : "text-white/95 hover:bg-white/15 hover:text-white"
-                              )}
-                            >
-                              <item.icon className={cn(
-                                "h-[18px] w-[18px] shrink-0 transition-colors",
-                                isActive ? "text-primary" : "text-white"
-                              )} />
-                              {!collapsed && <span className="text-sm">{item.label}</span>}
-                            </Link>
-                          );
-                        })}
+                        {group.items.map(renderNavItem)}
                       </div>
                     )}
                   </div>

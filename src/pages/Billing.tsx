@@ -14,7 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, FileText, IndianRupee } from "lucide-react";
+import { Plus, FileText, IndianRupee, Ban } from "lucide-react";
+import WhoChangedHover from "@/components/shared/WhoChangedHover";
 import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
 import { queueSystemEmail } from "@/lib/system-emails";
 
@@ -323,6 +324,35 @@ export default function BillingPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Void invoice with 8-second undo
+  const voidInvoice = useMutation({
+    mutationFn: async (inv: any) => {
+      const prevStatus = inv.status;
+      const { error } = await supabase.from("invoices").update({ status: "cancelled" }).eq("id", inv.id);
+      if (error) throw error;
+      return { id: inv.id, prevStatus };
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast("Invoice voided", {
+        duration: 8000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const { error } = await supabase.from("invoices")
+              .update({ status: res.prevStatus || "draft" })
+              .eq("id", res.id);
+            if (!error) {
+              queryClient.invalidateQueries({ queryKey: ["invoices"] });
+              toast.success("Restored");
+            }
+          },
+        },
+      });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const totalPending = invoices?.filter(i => !["paid", "cancelled"].includes(i.status || "")).reduce((s, i) => s + (Number(i.amount) - Number(i.paid_amount || 0)), 0) ?? 0;
   const totalPaid = invoices?.reduce((s, i) => s + Number(i.paid_amount || 0), 0) ?? 0;
 
@@ -574,8 +604,8 @@ export default function BillingPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          {!isPaid && (
+                        <div className="flex items-center gap-1">
+                          {!isPaid && inv.status !== "cancelled" && (
                             <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
                               onClick={() => {
                                 setPaymentInvoice(inv);
@@ -590,6 +620,18 @@ export default function BillingPage() {
                             disabled={paid <= 0}>
                             <FileText className="h-3 w-3" /> Receipt
                           </Button>
+                          {inv.status !== "cancelled" && paid <= 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => voidInvoice.mutate(inv)}
+                              title="Void invoice (undo available)"
+                            >
+                              <Ban className="h-3 w-3" />
+                            </Button>
+                          )}
+                          <WhoChangedHover table="invoices" recordId={inv.id} className="ml-1" />
                         </div>
                       </TableCell>
                     </TableRow>
