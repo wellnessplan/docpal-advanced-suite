@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -169,10 +169,10 @@ export default function IntraOralVault({ patientId, clinicId }: Props) {
 
 function Thumb({ doc, onOpen, onDelete }: { doc: any; onOpen: () => void; onDelete: () => void; }) {
   const [url, setUrl] = useState<string | null>(null);
-  useState(() => {
+  useEffect(() => {
     supabase.storage.from("patient-files").createSignedUrl(doc.file_url, 3600)
       .then(({ data }) => { if (data?.signedUrl) setUrl(data.signedUrl); });
-  });
+  }, [doc.file_url]);
   return (
     <div className="relative group rounded-lg overflow-hidden aspect-square bg-muted cursor-pointer" onClick={onOpen}>
       {url ? (
