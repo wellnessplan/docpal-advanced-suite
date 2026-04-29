@@ -49,7 +49,7 @@ export default function AppointmentsPage() {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [mainTab, setMainTab] = useState<"appointment" | "checkin" | "calendar">("appointment");
-  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("day");
+  const [calendarView, setCalendarView] = useState<"day" | "week" | "month" | "chair">("day");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [doctorFilter, setDoctorFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
