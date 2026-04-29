@@ -23,28 +23,32 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+interface NavItem { href: string; label: string; icon: React.ElementType; roles?: string[] }
 interface NavGroup {
   label: string;
   groupIcon: React.ElementType;
   collapsible?: boolean;
-  items: { href: string; label: string; icon: React.ElementType }[];
+  items: NavItem[];
 }
 
-const navGroups: NavGroup[] = [
-  {
-    label: "",
-    groupIcon: LayoutDashboard,
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    ],
-  },
+// Role visibility:
+//  - Front-desk essentials are pinned at top: Calendar, Patients, Billing, WhatsApp.
+//  - Everything else lives under role-filtered groups, hidden by default behind "More".
+//  - Assistants/receptionists do NOT see Revenue/Finance/Reports.
+const FRONT_DESK_ESSENTIALS: NavItem[] = [
+  { href: "/today-schedule", label: "Calendar", icon: CalendarDays },
+  { href: "/patients", label: "Patients", icon: Users },
+  { href: "/billing", label: "Billing", icon: Receipt },
+  { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+];
+
+const moreGroups: NavGroup[] = [
   {
     label: "PATIENTS",
     groupIcon: Users,
     collapsible: true,
     items: [
-      { href: "/patients", label: "Patients", icon: Users },
-      { href: "/today-schedule", label: "Today's Schedule", icon: CalendarClock },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
       { href: "/queue", label: "Queue", icon: ListOrdered },
     ],
@@ -54,11 +58,11 @@ const navGroups: NavGroup[] = [
     groupIcon: Stethoscope,
     collapsible: true,
     items: [
-      { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope },
+      { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope, roles: ["owner", "dentist"] },
       { href: "/tasks", label: "Follow-Ups", icon: ClipboardList },
       { href: "/treatment-plans", label: "Treatment Plans", icon: ClipboardCheck },
-      { href: "/treatment-costing", label: "Procedure List", icon: ListChecks },
-      { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
+      { href: "/treatment-costing", label: "Procedure List", icon: ListChecks, roles: ["owner", "dentist"] },
+      { href: "/ortho", label: "Orthodontics", icon: FlaskConical, roles: ["owner", "dentist"] },
       { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
     ],
   },
@@ -67,10 +71,9 @@ const navGroups: NavGroup[] = [
     groupIcon: Receipt,
     collapsible: true,
     items: [
-      { href: "/billing", label: "Invoices", icon: Receipt },
       { href: "/payments", label: "Payments", icon: Wallet },
       { href: "/insurance", label: "Insurance", icon: ShieldCheck },
-      { href: "/finance", label: "Expenses", icon: TrendingUp },
+      { href: "/finance", label: "Expenses", icon: TrendingUp, roles: ["owner", "admin"] },
       { href: "/inventory", label: "Inventory", icon: Package },
     ],
   },
@@ -92,16 +95,21 @@ const navGroups: NavGroup[] = [
     groupIcon: Settings,
     collapsible: true,
     items: [
-      { href: "/reports", label: "Reports", icon: BarChart3 },
-      { href: "/revenue", label: "Revenue", icon: IndianRupee },
-      { href: "/performance", label: "Performance", icon: Activity },
-      { href: "/settings?tab=vendors", label: "Vendors", icon: Truck },
-      { href: "/staff", label: "Staff", icon: UserCog },
-      { href: "/audit-log", label: "Audit Log", icon: ScrollText },
-      { href: "/settings", label: "Settings", icon: Settings },
+      { href: "/reports", label: "Reports", icon: BarChart3, roles: ["owner", "admin", "dentist"] },
+      { href: "/revenue", label: "Revenue", icon: IndianRupee, roles: ["owner", "admin"] },
+      { href: "/performance", label: "Performance", icon: Activity, roles: ["owner", "admin"] },
+      { href: "/settings?tab=vendors", label: "Vendors", icon: Truck, roles: ["owner", "admin"] },
+      { href: "/staff", label: "Staff", icon: UserCog, roles: ["owner", "admin"] },
+      { href: "/audit-log", label: "Audit Log", icon: ScrollText, roles: ["owner", "admin"] },
+      { href: "/settings", label: "Settings", icon: Settings, roles: ["owner", "admin"] },
     ],
   },
 ];
+
+function filterByRole(items: NavItem[], role: string | undefined | null): NavItem[] {
+  if (!role) return items.filter(i => !i.roles);
+  return items.filter(i => !i.roles || i.roles.includes(role));
+}
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
