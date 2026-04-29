@@ -545,6 +545,7 @@ export default function AppointmentsPage() {
                     <TabsTrigger value="day" className="text-xs h-7 px-3">Day</TabsTrigger>
                     <TabsTrigger value="week" className="text-xs h-7 px-3">Week</TabsTrigger>
                     <TabsTrigger value="month" className="text-xs h-7 px-3">Month</TabsTrigger>
+                    <TabsTrigger value="chair" className="text-xs h-7 px-3 gap-1"><Armchair className="h-3 w-3" />Chairs</TabsTrigger>
                   </TabsList>
                 </Tabs>
                 <Select value={doctorFilter} onValueChange={setDoctorFilter}>
