@@ -558,20 +558,36 @@ export default function AppointmentsPage() {
               </div>
             </div>
 
-            {/* Day View */}
+            {/* Day View — drag to reschedule between 30-min slots */}
             {calendarView === "day" && (
               <Card className="shadow-card border-0 overflow-hidden">
                 <CardContent className="p-0">
                   <div className="max-h-[65vh] overflow-y-auto">
                     {HOURS.map(hour => {
-                      const apts = getAptsForHour(hour);
+                      const halves = [0, 30];
                       return (
-                        <div key={hour} className="flex border-b min-h-[60px]">
+                        <div key={hour} className="flex border-b">
                           <div className="w-16 shrink-0 px-2 py-2 text-xs text-muted-foreground font-medium border-r bg-muted/30 flex items-start justify-end">
                             {format(new Date(2000, 0, 1, hour), "h a")}
                           </div>
-                          <div className="flex-1 p-1.5 space-y-1">
-                            {apts.map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} />)}
+                          <div className="flex-1 flex flex-col">
+                            {halves.map(min => {
+                              const slot = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+                              const slotApts = filteredAppointments.filter((a: any) =>
+                                a.appointment_time?.slice(0, 5) === slot &&
+                                isSameDay(new Date(a.appointment_date + "T00:00:00"), currentDate)
+                              );
+                              return (
+                                <div
+                                  key={min}
+                                  onDragOver={allowDrop}
+                                  onDrop={(e) => handleDrop(e, currentDate, slot)}
+                                  className="min-h-[30px] p-1 border-b last:border-b-0 hover:bg-primary/[0.04] transition-colors"
+                                >
+                                  {slotApts.map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} />)}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -581,7 +597,7 @@ export default function AppointmentsPage() {
               </Card>
             )}
 
-            {/* Week View */}
+            {/* Week View — drag to reschedule */}
             {calendarView === "week" && (
               <Card className="shadow-card border-0 overflow-hidden">
                 <CardContent className="p-0">
@@ -600,14 +616,102 @@ export default function AppointmentsPage() {
                         <div className="w-14 shrink-0 px-1 py-1 text-[10px] text-muted-foreground font-medium border-r bg-muted/20 flex items-start justify-end">
                           {format(new Date(2000, 0, 1, hour), "h a")}
                         </div>
-                        {weekDays.map(day => (
-                          <div key={day.toISOString()} className={`flex-1 min-h-[48px] p-0.5 border-r last:border-r-0 ${isSameDay(day, new Date()) ? "bg-primary/5" : ""}`}>
-                            {getAptsForHour(hour, day).map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} />)}
-                          </div>
-                        ))}
+                        {weekDays.map(day => {
+                          const slot = `${String(hour).padStart(2, "0")}:00`;
+                          return (
+                            <div
+                              key={day.toISOString()}
+                              onDragOver={allowDrop}
+                              onDrop={(e) => handleDrop(e, day, slot)}
+                              className={`flex-1 min-h-[48px] p-0.5 border-r last:border-r-0 hover:bg-primary/[0.04] transition-colors ${isSameDay(day, new Date()) ? "bg-primary/5" : ""}`}
+                            >
+                              {getAptsForHour(hour, day).map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} />)}
+                            </div>
+                          );
+                        })}
                       </div>
                     ))}
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Chair / Operatory View — one column per doctor (chair), 30-min slots */}
+            {calendarView === "chair" && (
+              <Card className="shadow-card border-0 overflow-hidden">
+                <CardContent className="p-0">
+                  {doctors.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-muted-foreground">
+                      No doctors/chairs configured. Add doctors in Staff settings to see chair utilization.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex border-b bg-muted/30 sticky top-0 z-10">
+                        <div className="w-16 shrink-0 border-r" />
+                        {doctors.map((d: any) => {
+                          const dayApts = filteredAppointments.filter((a: any) =>
+                            a.provider_id === d.id &&
+                            isSameDay(new Date(a.appointment_date + "T00:00:00"), currentDate) &&
+                            a.status !== "cancelled"
+                          );
+                          const totalMins = dayApts.reduce((s: number, a: any) => s + (a.duration_minutes || 30), 0);
+                          const utilPct = Math.min(100, Math.round((totalMins / (HOURS.length * 60)) * 100));
+                          return (
+                            <div key={d.id} className="flex-1 text-center py-2 border-r last:border-r-0 min-w-[140px]">
+                              <div className="flex items-center justify-center gap-1 text-xs font-semibold">
+                                <Armchair className="h-3 w-3 text-primary" />{d.full_name || "Chair"}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground mt-0.5">
+                                {dayApts.length} appts · {utilPct}% used
+                              </div>
+                              <div className="h-1 bg-muted rounded-full overflow-hidden mt-1 mx-2">
+                                <div
+                                  className={cn(
+                                    "h-full rounded-full transition-all",
+                                    utilPct < 50 ? "bg-success" : utilPct < 80 ? "bg-warning" : "bg-destructive"
+                                  )}
+                                  style={{ width: `${utilPct}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="max-h-[60vh] overflow-y-auto">
+                        {HOURS.map(hour => (
+                          <div key={hour}>
+                            {[0, 30].map(min => {
+                              const slot = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+                              return (
+                                <div key={`${hour}-${min}`} className="flex border-b">
+                                  <div className="w-16 shrink-0 px-2 py-1 text-[10px] text-muted-foreground font-medium border-r bg-muted/20 flex items-start justify-end">
+                                    {min === 0 ? format(new Date(2000, 0, 1, hour), "h a") : ":30"}
+                                  </div>
+                                  {doctors.map((d: any) => {
+                                    const slotApts = filteredAppointments.filter((a: any) =>
+                                      a.provider_id === d.id &&
+                                      a.appointment_time?.slice(0, 5) === slot &&
+                                      isSameDay(new Date(a.appointment_date + "T00:00:00"), currentDate)
+                                    );
+                                    return (
+                                      <div
+                                        key={d.id}
+                                        onDragOver={allowDrop}
+                                        onDrop={(e) => handleDrop(e, currentDate, slot, d.id)}
+                                        className="flex-1 min-h-[34px] p-0.5 border-r last:border-r-0 hover:bg-primary/[0.04] transition-colors min-w-[140px]"
+                                      >
+                                        {slotApts.map((apt: any) => <AppointmentBlock key={apt.id} apt={apt} compact />)}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}
