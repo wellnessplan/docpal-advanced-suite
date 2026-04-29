@@ -12,11 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, Clock, List, RefreshCw, Search, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, Clock, List, RefreshCw, Search, Eye, Pencil, Trash2, Armchair } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, subWeeks, subDays, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, getDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import WhoChangedHover from "@/components/shared/WhoChangedHover";
 
 const statusStyle: Record<string, string> = {
   scheduled: "border-primary/40 text-primary bg-primary/5",
