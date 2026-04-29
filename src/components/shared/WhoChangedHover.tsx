@@ -48,7 +48,7 @@ export default function WhoChangedHover({ table, recordId, className }: Props) {
           <div className="space-y-1">
             <div className="font-semibold capitalize">{(data.action || "modified").replace(/_/g, " ")}</div>
             <div className="text-muted-foreground">
-              by <span className="text-foreground">{data.profiles?.full_name || "System"}</span>
+              by <span className="text-foreground">{data.user_name || "System"}</span>
             </div>
             <div className="text-muted-foreground">
               {data.created_at ? format(new Date(data.created_at), "dd MMM yyyy, h:mm a") : "—"}
