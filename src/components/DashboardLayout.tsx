@@ -116,23 +116,38 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [moreOpen, setMoreOpen] = useState(false);
   const isMobile = useIsMobile();
   useKeyboardShortcuts();
   useThemeLoader();
   useClinicPdfDefaults(profile?.clinic_id);
   const { data: isSuperAdmin } = useSuperAdmin();
 
-  const allItems = navGroups.flatMap((g) => g.items);
+  const role = profile?.role as string | undefined;
+
+  // Role-filtered groups for the "More" section
+  const visibleGroups = moreGroups
+    .map(g => ({ ...g, items: filterByRole(g.items, role) }))
+    .filter(g => g.items.length > 0);
+
+  const allItems = [...FRONT_DESK_ESSENTIALS, ...visibleGroups.flatMap((g) => g.items)];
   const currentPageLabel = allItems.find((i) => {
     const href = i.href.split("?")[0];
     return pathname === href || pathname.startsWith(href + "/");
   })?.label ?? "DoctorsBuddy";
 
+  // Auto-open "More" if current route is in a More group
+  const currentInMore = visibleGroups.some(g => g.items.some(i => {
+    const href = i.href.split("?")[0];
+    return pathname === href || pathname.startsWith(href + "/");
+  }));
+  const moreEffective = moreOpen || currentInMore || collapsed;
+
   const toggleGroup = (label: string) => {
     setExpandedGroups(prev => {
       const isCurrentlyOpen = prev[label];
       const allClosed: Record<string, boolean> = {};
-      navGroups.forEach(g => { if (g.collapsible) allClosed[g.label] = false; });
+      visibleGroups.forEach(g => { if (g.collapsible) allClosed[g.label] = false; });
       return { ...allClosed, [label]: !isCurrentlyOpen };
     });
   };
@@ -144,6 +159,30 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     });
 
   const initials = (profile?.full_name || "U").charAt(0).toUpperCase();
+
+  const renderNavItem = (item: NavItem) => {
+    const hrefBase = item.href.split("?")[0];
+    const isActive = pathname === hrefBase || pathname.startsWith(hrefBase + "/");
+    return (
+      <Link
+        key={item.href}
+        to={item.href}
+        title={collapsed ? item.label : undefined}
+        className={cn(
+          "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-semibold transition-all duration-200 text-base",
+          isActive
+            ? "bg-white text-primary shadow-md"
+            : "text-white/95 hover:bg-white/15 hover:text-white"
+        )}
+      >
+        <item.icon className={cn(
+          "h-[18px] w-[18px] shrink-0 transition-colors",
+          isActive ? "text-primary" : "text-white"
+        )} />
+        {!collapsed && <span className="text-sm">{item.label}</span>}
+      </Link>
+    );
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -183,14 +222,41 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             )}
 
             <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-1">
-              {navGroups.map((group, gi) => {
+              {/* Pinned essentials */}
+              <div className="space-y-0.5">
+                {FRONT_DESK_ESSENTIALS.map(renderNavItem)}
+              </div>
+
+              {/* More toggle */}
+              <div className="pt-2">
+                {!collapsed && <div className="h-px bg-white/[0.15] mx-2 mb-2" />}
+                {!collapsed ? (
+                  <button
+                    onClick={() => setMoreOpen(o => !o)}
+                    className="flex w-full items-center justify-between px-2.5 py-1.5 mb-1 rounded-lg hover:bg-white/[0.08] transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <MoreHorizontal className="h-3.5 w-3.5 text-white/80" />
+                      <span className="font-bold tracking-[0.08em] text-white/85 uppercase font-sans text-xs">More</span>
+                    </div>
+                    {moreEffective ? <ChevronUp className="h-3 w-3 text-white/70" /> : <ChevronDown className="h-3 w-3 text-white/70" />}
+                  </button>
+                ) : (
+                  <div className="flex justify-center py-1">
+                    <MoreHorizontal className="h-4 w-4 text-white/70" />
+                  </div>
+                )}
+              </div>
+
+              {/* More groups (role-filtered) */}
+              {moreEffective && visibleGroups.map((group, gi) => {
                 const groupActive = isGroupActive(group);
                 const isExpanded = group.collapsible ? (expandedGroups[group.label] ?? groupActive) : true;
 
                 return (
                   <div key={group.label} className={gi > 0 ? "pt-2" : ""}>
                     {gi > 0 && !collapsed && (
-                      <div className="h-px bg-white/[0.15] mx-2 mb-2" />
+                      <div className="h-px bg-white/[0.10] mx-2 mb-2" />
                     )}
 
                     {!collapsed && group.collapsible ? (
@@ -217,29 +283,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
                     {(isExpanded || collapsed) && (
                       <div className="space-y-0.5">
-                        {group.items.map((item) => {
-                          const hrefBase = item.href.split("?")[0];
-                          const isActive = pathname === hrefBase || pathname.startsWith(hrefBase + "/");
-                          return (
-                            <Link
-                              key={item.href}
-                              to={item.href}
-                              title={collapsed ? item.label : undefined}
-                              className={cn(
-                                "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-semibold transition-all duration-200 text-base",
-                                isActive
-                                  ? "bg-white text-primary shadow-md"
-                                  : "text-white/95 hover:bg-white/15 hover:text-white"
-                              )}
-                            >
-                              <item.icon className={cn(
-                                "h-[18px] w-[18px] shrink-0 transition-colors",
-                                isActive ? "text-primary" : "text-white"
-                              )} />
-                              {!collapsed && <span className="text-sm">{item.label}</span>}
-                            </Link>
-                          );
-                        })}
+                        {group.items.map(renderNavItem)}
                       </div>
                     )}
                   </div>
