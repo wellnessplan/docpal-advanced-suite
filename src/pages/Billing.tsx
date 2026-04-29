@@ -352,6 +352,8 @@ export default function BillingPage() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const totalPending = invoices?.filter(i => !["paid", "cancelled"].includes(i.status || "")).reduce((s, i) => s + (Number(i.amount) - Number(i.paid_amount || 0)), 0) ?? 0;
   const totalPaid = invoices?.reduce((s, i) => s + Number(i.paid_amount || 0), 0) ?? 0;
 
   const selectedPatient = patients?.find(p => p.id === form.patient_id);
