@@ -324,7 +324,34 @@ export default function BillingPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const totalPending = invoices?.filter(i => !["paid", "cancelled"].includes(i.status || "")).reduce((s, i) => s + (Number(i.amount) - Number(i.paid_amount || 0)), 0) ?? 0;
+  // Void invoice with 8-second undo
+  const voidInvoice = useMutation({
+    mutationFn: async (inv: any) => {
+      const prevStatus = inv.status;
+      const { error } = await supabase.from("invoices").update({ status: "cancelled" }).eq("id", inv.id);
+      if (error) throw error;
+      return { id: inv.id, prevStatus };
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast("Invoice voided", {
+        duration: 8000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const { error } = await supabase.from("invoices")
+              .update({ status: res.prevStatus || "draft" })
+              .eq("id", res.id);
+            if (!error) {
+              queryClient.invalidateQueries({ queryKey: ["invoices"] });
+              toast.success("Restored");
+            }
+          },
+        },
+      });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
   const totalPaid = invoices?.reduce((s, i) => s + Number(i.paid_amount || 0), 0) ?? 0;
 
   const selectedPatient = patients?.find(p => p.id === form.patient_id);
