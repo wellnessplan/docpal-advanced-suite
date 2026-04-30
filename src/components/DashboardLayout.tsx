@@ -85,6 +85,8 @@ const moreGroups: NavGroup[] = [
     items: [
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
       { href: "/social-calendar", label: "Social Calendar", icon: CalendarDays },
+      { href: "/patient-education", label: "Patient Education", icon: Library },
+      { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
       { href: "/leads", label: "Leads", icon: Target },
       { href: "/reviews", label: "Feedback", icon: Star },
       { href: "/referrals", label: "Referrals", icon: Gift },
