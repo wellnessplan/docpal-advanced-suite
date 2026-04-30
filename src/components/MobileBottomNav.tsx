@@ -3,6 +3,7 @@ import { LayoutDashboard, Users, ListOrdered, MoreHorizontal } from "lucide-reac
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import MobileMoreDrawer from "./MobileMoreDrawer";
+import { prefetchRoute } from "@/lib/route-prefetch";
 
 const tabs = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
@@ -24,6 +25,8 @@ export default function MobileBottomNav() {
               <Link
                 key={tab.href}
                 to={tab.href}
+                onTouchStart={() => prefetchRoute(tab.href)}
+                onMouseEnter={() => prefetchRoute(tab.href)}
                 className={cn(
                   "flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors min-h-[44px]",
                   isActive ? "text-primary" : "text-muted-foreground"
