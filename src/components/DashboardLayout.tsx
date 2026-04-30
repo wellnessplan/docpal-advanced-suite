@@ -12,6 +12,7 @@ import MobileQuickFab from "./MobileQuickFab";
 import InstallPromptBanner from "./InstallPromptBanner";
 import GlobalSearchDialog from "./GlobalSearchDialog";
 import UserMenuDropdown from "./UserMenuDropdown";
+import { prefetchRoute } from "@/lib/route-prefetch";
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
   Settings, LogOut, ChevronLeft, ChevronRight,
@@ -167,6 +168,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Link
         key={item.href}
         to={item.href}
+        onMouseEnter={() => prefetchRoute(item.href)}
+        onFocus={() => prefetchRoute(item.href)}
         title={collapsed ? item.label : undefined}
         className={cn(
           "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-semibold transition-all duration-200 text-base",

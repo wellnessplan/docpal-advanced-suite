@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense, useEffect } from "react";
+import { QueryClient, QueryClientProvider, keepPreviousData } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -62,22 +62,48 @@ const FocusPatient = lazy(() => import("./pages/focus/FocusPatient"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Serve cached data instantly when switching tabs/pages,
-      // while a silent background refetch keeps it fresh.
-      staleTime: 60 * 1000,            // 1 min — data considered fresh
-      gcTime: 10 * 60 * 1000,          // 10 min — keep in cache after unmount
-      refetchOnWindowFocus: false,     // don't refetch on tab focus
+      // Cached data is shown instantly on tab switches; refresh happens silently in background.
+      staleTime: 5 * 60 * 1000,        // 5 min — keep tabs feeling instant
+      gcTime: 30 * 60 * 1000,          // 30 min — survive deep navigation
+      refetchOnWindowFocus: false,
       refetchOnReconnect: false,
+      refetchOnMount: false,           // don't re-fetch if cache exists
+      placeholderData: keepPreviousData,
       retry: 1,
     },
   },
 });
 
+// Hairline progress bar — only visible while a NEW chunk is downloading.
 const PageLoader = () => (
   <div className="fixed top-0 left-0 right-0 h-0.5 bg-primary/20 overflow-hidden z-50">
     <div className="h-full w-1/3 bg-primary animate-[slide_1s_ease-in-out_infinite]" />
   </div>
 );
+
+// Warm up route chunks at idle so first-time navigation feels instant.
+function RoutePrefetcher() {
+  useEffect(() => {
+    const idle = (cb: () => void) =>
+      (window as any).requestIdleCallback ? (window as any).requestIdleCallback(cb, { timeout: 2500 }) : setTimeout(cb, 800);
+    idle(() => {
+      // Essentials first
+      import("./pages/Dashboard");
+      import("./pages/Patients");
+      import("./pages/Appointments");
+      import("./pages/Billing");
+      import("./pages/WhatsApp");
+      idle(() => {
+        import("./pages/PatientProfile");
+        import("./pages/TodaySchedule");
+        import("./pages/Settings");
+        import("./pages/Tasks");
+        import("./pages/DentalChart");
+      });
+    });
+  }, []);
+  return null;
+}
 
 const App = () => (
   <ErrorBoundary>
@@ -88,6 +114,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
+            <RoutePrefetcher />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
