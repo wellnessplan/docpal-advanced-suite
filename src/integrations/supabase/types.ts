@@ -845,6 +845,217 @@ export type Database = {
           },
         ]
       }
+      display_branding: {
+        Row: {
+          clinic_id: string
+          clinic_name: string | null
+          doctor_on_duty: string | null
+          logo_url: string | null
+          phone: string | null
+          primary_color: string | null
+          show_doctor_on_duty: boolean | null
+          show_now_serving: boolean | null
+          show_queue_panel: boolean | null
+          tagline: string | null
+          text_color: string | null
+          ticker_messages: string[] | null
+          ticker_speed_sec: number | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          clinic_name?: string | null
+          doctor_on_duty?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          show_doctor_on_duty?: boolean | null
+          show_now_serving?: boolean | null
+          show_queue_panel?: boolean | null
+          tagline?: string | null
+          text_color?: string | null
+          ticker_messages?: string[] | null
+          ticker_speed_sec?: number | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          clinic_name?: string | null
+          doctor_on_duty?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          show_doctor_on_duty?: boolean | null
+          show_now_serving?: boolean | null
+          show_queue_panel?: boolean | null
+          tagline?: string | null
+          text_color?: string | null
+          ticker_messages?: string[] | null
+          ticker_speed_sec?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "display_branding_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      display_playlist_items: {
+        Row: {
+          created_at: string
+          id: string
+          playlist_id: string
+          position: number
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          playlist_id: string
+          position?: number
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          playlist_id?: string
+          position?: number
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "display_playlist_items_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "display_playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "display_playlist_items_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "education_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      display_playlists: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          id: string
+          loop: boolean | null
+          name: string
+          shuffle: boolean | null
+          zone: string | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          id?: string
+          loop?: boolean | null
+          name: string
+          shuffle?: boolean | null
+          zone?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          loop?: boolean | null
+          name?: string
+          shuffle?: boolean | null
+          zone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "display_playlists_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      display_screens: {
+        Row: {
+          clinic_id: string
+          command: Json | null
+          command_at: string | null
+          created_at: string
+          current_playlist_id: string | null
+          current_video_id: string | null
+          id: string
+          is_paired: boolean
+          is_playing: boolean
+          last_seen_at: string | null
+          name: string
+          pair_code: string
+          show_lower_third: boolean
+          show_queue: boolean
+          updated_at: string
+          volume: number
+          zone: string
+        }
+        Insert: {
+          clinic_id: string
+          command?: Json | null
+          command_at?: string | null
+          created_at?: string
+          current_playlist_id?: string | null
+          current_video_id?: string | null
+          id?: string
+          is_paired?: boolean
+          is_playing?: boolean
+          last_seen_at?: string | null
+          name: string
+          pair_code: string
+          show_lower_third?: boolean
+          show_queue?: boolean
+          updated_at?: string
+          volume?: number
+          zone?: string
+        }
+        Update: {
+          clinic_id?: string
+          command?: Json | null
+          command_at?: string | null
+          created_at?: string
+          current_playlist_id?: string | null
+          current_video_id?: string | null
+          id?: string
+          is_paired?: boolean
+          is_playing?: boolean
+          last_seen_at?: string | null
+          name?: string
+          pair_code?: string
+          show_lower_third?: boolean
+          show_queue?: boolean
+          updated_at?: string
+          volume?: number
+          zone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "display_screens_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "display_screens_current_video_id_fkey"
+            columns: ["current_video_id"]
+            isOneToOne: false
+            referencedRelation: "education_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_chairs: {
         Row: {
           available_days: string[] | null
@@ -883,6 +1094,71 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education_videos: {
+        Row: {
+          category: string
+          clinic_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_sec: number | null
+          id: string
+          is_active: boolean
+          is_global: boolean
+          language: string
+          source_type: string
+          source_url: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          clinic_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_sec?: number | null
+          id?: string
+          is_active?: boolean
+          is_global?: boolean
+          language?: string
+          source_type?: string
+          source_url: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          clinic_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_sec?: number | null
+          id?: string
+          is_active?: boolean
+          is_global?: boolean
+          language?: string
+          source_type?: string
+          source_url?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_videos_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
             referencedColumns: ["id"]
           },
         ]

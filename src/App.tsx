@@ -58,6 +58,10 @@ const SocialCalendar = lazy(() => import("./pages/SocialCalendar"));
 const Incidents = lazy(() => import("./pages/Incidents"));
 const FocusToday = lazy(() => import("./pages/focus/FocusToday"));
 const FocusPatient = lazy(() => import("./pages/focus/FocusPatient"));
+const PatientEducation = lazy(() => import("./pages/PatientEducation"));
+const DisplayManager = lazy(() => import("./pages/DisplayManager"));
+const DisplayPair = lazy(() => import("./pages/DisplayPair"));
+const DisplayScreen = lazy(() => import("./pages/DisplayScreen"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -125,6 +129,8 @@ const App = () => (
                 <Route path="/onboarding" element={<AuthOnlyRoute><Onboarding /></AuthOnlyRoute>} />
                 <Route path="/register" element={<PatientSelfRegister />} />
                 <Route path="/accept-invite/:token" element={<AcceptInvite />} />
+                <Route path="/display" element={<DisplayPair />} />
+                <Route path="/display/:code" element={<DisplayScreen />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/dr-dashboard" element={<ProtectedRoute><DrDashboard /></ProtectedRoute>} />
                 <Route path="/today-schedule" element={<ProtectedRoute><TodaySchedule /></ProtectedRoute>} />
@@ -165,6 +171,8 @@ const App = () => (
                 <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
                 <Route path="/focus" element={<ProtectedRoute><FocusToday /></ProtectedRoute>} />
                 <Route path="/focus/patient/:id" element={<ProtectedRoute><FocusPatient /></ProtectedRoute>} />
+                <Route path="/patient-education" element={<ProtectedRoute><PatientEducation /></ProtectedRoute>} />
+                <Route path="/displays" element={<ProtectedRoute><DisplayManager /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
