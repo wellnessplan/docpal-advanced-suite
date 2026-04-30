@@ -129,6 +129,8 @@ const App = () => (
                 <Route path="/onboarding" element={<AuthOnlyRoute><Onboarding /></AuthOnlyRoute>} />
                 <Route path="/register" element={<PatientSelfRegister />} />
                 <Route path="/accept-invite/:token" element={<AcceptInvite />} />
+                <Route path="/display" element={<DisplayPair />} />
+                <Route path="/display/:code" element={<DisplayScreen />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/dr-dashboard" element={<ProtectedRoute><DrDashboard /></ProtectedRoute>} />
                 <Route path="/today-schedule" element={<ProtectedRoute><TodaySchedule /></ProtectedRoute>} />
