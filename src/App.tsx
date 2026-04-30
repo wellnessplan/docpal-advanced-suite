@@ -58,6 +58,10 @@ const SocialCalendar = lazy(() => import("./pages/SocialCalendar"));
 const Incidents = lazy(() => import("./pages/Incidents"));
 const FocusToday = lazy(() => import("./pages/focus/FocusToday"));
 const FocusPatient = lazy(() => import("./pages/focus/FocusPatient"));
+const PatientEducation = lazy(() => import("./pages/PatientEducation"));
+const DisplayManager = lazy(() => import("./pages/DisplayManager"));
+const DisplayPair = lazy(() => import("./pages/DisplayPair"));
+const DisplayScreen = lazy(() => import("./pages/DisplayScreen"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
