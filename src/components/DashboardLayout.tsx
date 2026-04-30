@@ -20,7 +20,7 @@ import {
   ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
   Target, Star, Gift, Crown, UserCog, ScrollText, CalendarClock, Shield,
-  Truck, ListChecks, Focus, MessageCircle, MoreHorizontal
+  Truck, ListChecks, Focus, MessageCircle, MoreHorizontal, Library, Tv
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
