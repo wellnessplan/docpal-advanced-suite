@@ -8,10 +8,12 @@ import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Maximize2, Radio, Save } from "lucide-react";
+import { Maximize2, Radio, Save, Image as ImageIcon, Video } from "lucide-react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { buildEmbedUrl, isDirectVideo } from "@/lib/video-utils";
 import LowerThird, { LOWER_THIRD_STYLES, LowerThirdStyle, LowerThirdBranding } from "./LowerThird";
 
 interface Props {
