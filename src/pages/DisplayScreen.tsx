@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { buildEmbedUrl } from "@/lib/video-utils";
 import { Tv } from "lucide-react";
+import LowerThird from "@/components/displays/LowerThird";
 
 // Public TV display screen — no auth. Reads by pair_code, listens to realtime updates.
 export default function DisplayScreen() {
