@@ -215,31 +215,8 @@ export default function DisplayScreen() {
         </div>
       )}
 
-      {/* Lower-third — broadcast style */}
-      {screen.show_lower_third && (
-        <div className="absolute bottom-0 left-0 right-0">
-          {/* Ticker bar */}
-          {currentTicker && (
-            <div className="px-6 py-2 text-sm font-medium animate-fade-in" style={{ background: `${primary}DD`, color: textColor }}>
-              <span className="opacity-80 mr-2">●</span>{currentTicker}
-            </div>
-          )}
-          {/* Logo bar */}
-          <div className="flex items-center gap-4 px-6 py-4 bg-gradient-to-t from-black/90 to-black/60 text-white">
-            {branding?.logo_url && <img src={branding.logo_url} alt="" className="h-14 w-14 rounded-lg object-contain bg-white/10 p-1" />}
-            <div className="flex-1 min-w-0">
-              <p className="text-2xl font-bold leading-tight truncate" style={{ color: primary }}>{branding?.clinic_name || ""}</p>
-              {branding?.tagline && <p className="text-sm opacity-80 truncate">{branding.tagline}</p>}
-            </div>
-            {branding?.phone && (
-              <div className="text-right shrink-0">
-                <p className="text-xs opacity-70">Call us</p>
-                <p className="text-xl font-bold font-mono">{branding.phone}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Lower-third — uses clinic-selected style (broadcast | minimal | news | cinema) */}
+      {screen.show_lower_third && <LowerThird branding={branding} />}
     </div>
   );
 }
