@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tv, Plus, Play, Pause, SkipForward, Volume2, Trash2, Copy, Settings as SettingsIcon, Wifi, WifiOff, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { generatePairCode } from "@/lib/video-utils";
+import LowerThirdStudio from "@/components/displays/LowerThirdStudio";
 
 const ZONES = [
   { value: "waiting_room", label: "Waiting Room" },
