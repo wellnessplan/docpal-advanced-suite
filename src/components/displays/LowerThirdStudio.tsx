@@ -30,6 +30,22 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
   const [active, setActive] = useState<LowerThirdStyle>(
     (branding?.lower_third_style as LowerThirdStyle) || "broadcast"
   );
+  const [bgMode, setBgMode] = useState<"image" | "video">("image");
+  const [selectedVideoId, setSelectedVideoId] = useState<string>("");
+
+  const { data: videos = [] } = useQuery({
+    queryKey: ["education-videos-studio", clinicId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("education_videos" as any)
+        .select("id,title,source_type,source_url,thumbnail_url")
+        .eq("is_active", true);
+      return (data || []) as any[];
+    },
+    enabled: !!clinicId,
+  });
+
+  const selectedVideo = videos.find((v: any) => v.id === selectedVideoId);
 
   const previewBranding = useMemo(
     () => ({ ...(branding || {}), lower_third_style: active }) as LowerThirdBranding,
