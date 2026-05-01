@@ -58,6 +58,15 @@ export default function DisplayManager() {
     enabled: !!clinicId,
   });
 
+  const { data: branding } = useQuery({
+    queryKey: ["display-branding", clinicId],
+    queryFn: async () => {
+      const { data } = await supabase.from("display_branding" as any).select("*").eq("clinic_id", clinicId).maybeSingle();
+      return data as any;
+    },
+    enabled: !!clinicId,
+  });
+
   const updateScreen = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: any }) => {
       const { error } = await supabase.from("display_screens" as any).update(patch).eq("id", id);
