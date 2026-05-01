@@ -1,0 +1,1 @@
+ALTER TABLE public.display_branding ADD COLUMN IF NOT EXISTS lower_third_style TEXT NOT NULL DEFAULT 'broadcast' CHECK (lower_third_style IN ('broadcast','minimal','news','cinema'));

@@ -851,6 +851,7 @@ export type Database = {
           clinic_name: string | null
           doctor_on_duty: string | null
           logo_url: string | null
+          lower_third_style: string
           phone: string | null
           primary_color: string | null
           show_doctor_on_duty: boolean | null
@@ -867,6 +868,7 @@ export type Database = {
           clinic_name?: string | null
           doctor_on_duty?: string | null
           logo_url?: string | null
+          lower_third_style?: string
           phone?: string | null
           primary_color?: string | null
           show_doctor_on_duty?: boolean | null
@@ -883,6 +885,7 @@ export type Database = {
           clinic_name?: string | null
           doctor_on_duty?: string | null
           logo_url?: string | null
+          lower_third_style?: string
           phone?: string | null
           primary_color?: string | null
           show_doctor_on_duty?: boolean | null

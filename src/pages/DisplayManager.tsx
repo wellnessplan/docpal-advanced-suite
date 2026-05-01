@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tv, Plus, Play, Pause, SkipForward, Volume2, Trash2, Copy, Settings as SettingsIcon, Wifi, WifiOff, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { generatePairCode } from "@/lib/video-utils";
+import LowerThirdStudio from "@/components/displays/LowerThirdStudio";
 
 const ZONES = [
   { value: "waiting_room", label: "Waiting Room" },
@@ -53,6 +54,15 @@ export default function DisplayManager() {
     queryFn: async () => {
       const { data } = await supabase.from("education_videos" as any).select("*").eq("is_active", true);
       return (data || []) as any[];
+    },
+    enabled: !!clinicId,
+  });
+
+  const { data: branding } = useQuery({
+    queryKey: ["display-branding", clinicId],
+    queryFn: async () => {
+      const { data } = await supabase.from("display_branding" as any).select("*").eq("clinic_id", clinicId).maybeSingle();
+      return data as any;
     },
     enabled: !!clinicId,
   });
@@ -124,6 +134,9 @@ export default function DisplayManager() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Lower-third studio (live preview + broadcast + presenter mode) */}
+        <LowerThirdStudio branding={branding} clinicId={clinicId} screens={screens} />
 
         {screens.length === 0 ? (
           <Card><CardContent className="p-12 text-center text-muted-foreground text-sm">
@@ -299,6 +312,7 @@ function BrandingDialog({ open, onClose, clinicId }: { open: boolean; onClose: (
     ticker_messages: [], doctor_on_duty: "", show_doctor_on_duty: true,
     show_now_serving: true, show_queue_panel: true,
     primary_color: "#5BADE6", text_color: "#FFFFFF", ticker_speed_sec: 5,
+    lower_third_style: "broadcast",
   });
   const [tickerInput, setTickerInput] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
