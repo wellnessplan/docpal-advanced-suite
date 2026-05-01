@@ -135,6 +135,9 @@ export default function DisplayManager() {
           </CardContent>
         </Card>
 
+        {/* Lower-third studio (live preview + broadcast + presenter mode) */}
+        <LowerThirdStudio branding={branding} clinicId={clinicId} screens={screens} />
+
         {screens.length === 0 ? (
           <Card><CardContent className="p-12 text-center text-muted-foreground text-sm">
             No screens yet. Click "Pair New Screen" to add your first TV.
