@@ -312,6 +312,7 @@ function BrandingDialog({ open, onClose, clinicId }: { open: boolean; onClose: (
     ticker_messages: [], doctor_on_duty: "", show_doctor_on_duty: true,
     show_now_serving: true, show_queue_panel: true,
     primary_color: "#5BADE6", text_color: "#FFFFFF", ticker_speed_sec: 5,
+    lower_third_style: "broadcast",
   });
   const [tickerInput, setTickerInput] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
