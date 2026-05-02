@@ -14,6 +14,7 @@ export default function DisplayScreen() {
   const [queue, setQueue] = useState<any[]>([]);
   const [tickerIdx, setTickerIdx] = useState(0);
   const [now, setNow] = useState(new Date());
+  const [videoTime, setVideoTime] = useState(0);
   const tickRef = useRef<any>(null);
 
   // Initial load + heartbeat
