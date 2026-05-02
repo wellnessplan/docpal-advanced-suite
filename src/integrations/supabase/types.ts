@@ -996,6 +996,8 @@ export type Database = {
           is_paired: boolean
           is_playing: boolean
           last_seen_at: string | null
+          lower_third_hide_at_sec: number | null
+          lower_third_show_at_sec: number
           name: string
           pair_code: string
           show_lower_third: boolean
@@ -1015,6 +1017,8 @@ export type Database = {
           is_paired?: boolean
           is_playing?: boolean
           last_seen_at?: string | null
+          lower_third_hide_at_sec?: number | null
+          lower_third_show_at_sec?: number
           name: string
           pair_code: string
           show_lower_third?: boolean
@@ -1034,6 +1038,8 @@ export type Database = {
           is_paired?: boolean
           is_playing?: boolean
           last_seen_at?: string | null
+          lower_third_hide_at_sec?: number | null
+          lower_third_show_at_sec?: number
           name?: string
           pair_code?: string
           show_lower_third?: boolean
@@ -1844,6 +1850,63 @@ export type Database = {
             columns: ["converted_patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lower_third_presets: {
+        Row: {
+          branding_overrides: Json
+          clinic_id: string
+          created_at: string
+          hide_at_sec: number | null
+          id: string
+          name: string
+          show_at_sec: number
+          sort_order: number
+          style: string
+          updated_at: string
+          video_id: string | null
+        }
+        Insert: {
+          branding_overrides?: Json
+          clinic_id: string
+          created_at?: string
+          hide_at_sec?: number | null
+          id?: string
+          name: string
+          show_at_sec?: number
+          sort_order?: number
+          style?: string
+          updated_at?: string
+          video_id?: string | null
+        }
+        Update: {
+          branding_overrides?: Json
+          clinic_id?: string
+          created_at?: string
+          hide_at_sec?: number | null
+          id?: string
+          name?: string
+          show_at_sec?: number
+          sort_order?: number
+          style?: string
+          updated_at?: string
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lower_third_presets_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lower_third_presets_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "education_videos"
             referencedColumns: ["id"]
           },
         ]

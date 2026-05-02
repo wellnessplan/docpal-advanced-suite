@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { buildEmbedUrl } from "@/lib/video-utils";
+import { buildEmbedUrl, isDirectVideo } from "@/lib/video-utils";
 import { Tv } from "lucide-react";
 import LowerThird from "@/components/displays/LowerThird";
 
@@ -14,6 +14,7 @@ export default function DisplayScreen() {
   const [queue, setQueue] = useState<any[]>([]);
   const [tickerIdx, setTickerIdx] = useState(0);
   const [now, setNow] = useState(new Date());
+  const [videoTime, setVideoTime] = useState(0);
   const tickRef = useRef<any>(null);
 
   // Initial load + heartbeat
@@ -158,6 +159,7 @@ export default function DisplayScreen() {
               autoPlay
               loop
               muted={(screen.volume || 0) === 0}
+              onTimeUpdate={(e) => setVideoTime(e.currentTarget.currentTime)}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -215,8 +217,18 @@ export default function DisplayScreen() {
         </div>
       )}
 
-      {/* Lower-third — uses clinic-selected style (broadcast | minimal | news | cinema) */}
-      {screen.show_lower_third && <LowerThird branding={branding} />}
+      {/* Lower-third — honors per-screen show_at/hide_at timing during education videos */}
+      {screen.show_lower_third && (() => {
+        const showAt = screen.lower_third_show_at_sec || 0;
+        const hideAt = screen.lower_third_hide_at_sec;
+        // Timing only applies when a direct video with timeupdate is playing
+        const timingActive = video && (video.source_type === "upload" || video.source_type === "url");
+        if (timingActive) {
+          if (videoTime < showAt) return null;
+          if (typeof hideAt === "number" && hideAt > 0 && videoTime >= hideAt) return null;
+        }
+        return <LowerThird branding={branding} />;
+      })()}
     </div>
   );
 }
