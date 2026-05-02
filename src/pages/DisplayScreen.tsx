@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { buildEmbedUrl } from "@/lib/video-utils";
+import { buildEmbedUrl, isDirectVideo } from "@/lib/video-utils";
 import { Tv } from "lucide-react";
 import LowerThird from "@/components/displays/LowerThird";
 
