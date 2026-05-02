@@ -159,6 +159,7 @@ export default function DisplayScreen() {
               autoPlay
               loop
               muted={(screen.volume || 0) === 0}
+              onTimeUpdate={(e) => setVideoTime(e.currentTarget.currentTime)}
               className="w-full h-full object-cover"
             />
           ) : (
