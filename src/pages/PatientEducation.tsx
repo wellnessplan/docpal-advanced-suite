@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Plus, Search, Trash2, Tv, Library, Upload as UploadIcon, Youtube } from "lucide-react";
+import { Play, Plus, Search, Trash2, Tv, Library, Upload as UploadIcon, Youtube, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { buildEmbedUrl } from "@/lib/video-utils";
@@ -140,11 +140,11 @@ export default function PatientEducation() {
                       )}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <div className="h-12 w-12 rounded-full bg-white/90 flex items-center justify-center">
-                          <Play className="h-5 w-5 text-foreground fill-current" />
+                          {v.media_type === "image" ? <ImageIcon className="h-5 w-5 text-foreground" /> : <Play className="h-5 w-5 text-foreground fill-current" />}
                         </div>
                       </div>
                       <Badge className="absolute top-2 left-2 text-[10px]" variant={v.is_global ? "secondary" : "default"}>
-                        {v.is_global ? "Library" : "Mine"}
+                        {v.media_type === "image" ? "Image" : v.is_global ? "Library" : "Mine"}
                       </Badge>
                     </div>
                     <CardContent className="p-3">
@@ -173,8 +173,10 @@ export default function PatientEducation() {
             </DialogHeader>
             {previewVideo && (
               <div className="space-y-3">
-                <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                  {previewVideo.source_type === "upload" || previewVideo.source_type === "url" ? (
+                <div className="aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
+                  {previewVideo.media_type === "image" ? (
+                    <img src={previewVideo.source_url} alt={previewVideo.title} className="w-full h-full object-contain" />
+                  ) : previewVideo.source_type === "upload" || previewVideo.source_type === "url" ? (
                     <video src={previewVideo.source_url} controls className="w-full h-full" />
                   ) : (
                     <iframe
