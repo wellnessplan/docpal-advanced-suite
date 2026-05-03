@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 
-export type LowerThirdStyle = "broadcast" | "minimal" | "news" | "cinema" | "spotlight" | "sidebar";
+export type LowerThirdStyle = "broadcast" | "minimal" | "news" | "cinema" | "spotlight" | "sidebar" | "image";
 
 export interface LowerThirdBranding {
   logo_url?: string | null;
@@ -23,6 +23,7 @@ export interface LowerThirdBranding {
   highlight_unit?: string | null;      // e.g. "MINUTES"
   cta_text?: string | null;            // e.g. "Scan Here! Make an appointment"
   qr_url?: string | null;              // image URL for QR code
+  banner_image_url?: string | null;    // full-width image banner overlay
 }
 
 interface Props {
@@ -39,6 +40,7 @@ export const LOWER_THIRD_STYLES: { value: LowerThirdStyle; label: string; descri
   { value: "cinema",    label: "Cinema",    description: "Subtle bottom-left credit, ideal for explanations" },
   { value: "spotlight", label: "Spotlight", description: "Right-side highlight tile + bottom info bar with QR" },
   { value: "sidebar",   label: "Sidebar",   description: "Right-rail info column + bottom-left logo" },
+  { value: "image",     label: "Image Banner", description: "Custom uploaded banner image as the lower third" },
 ];
 
 export default function LowerThird({ branding, style, className = "", opacity }: Props) {
@@ -218,6 +220,14 @@ export default function LowerThird({ branding, style, className = "", opacity }:
           {branding?.logo_url && <img src={branding.logo_url} alt="" className="h-12 object-contain" />}
           <p className="text-2xl font-bold uppercase tracking-wider">{name}</p>
         </div>
+      </div>
+    );
+  }
+
+  if (variant === "image" && branding?.banner_image_url) {
+    return (
+      <div className={`absolute bottom-0 left-0 right-0 ${className}`} style={layerStyle}>
+        <img src={branding.banner_image_url} alt="" className="w-full h-auto max-h-[35%] object-contain object-bottom" />
       </div>
     );
   }

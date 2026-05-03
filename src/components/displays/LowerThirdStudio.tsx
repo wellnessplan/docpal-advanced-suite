@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Maximize2, Radio, Save, Image as ImageIcon, Video, Play, Pause,
   Volume2, VolumeX, Send, Bookmark, Trash2, Plus, Clock, Copy,
-  SkipBack, SkipForward, X, ListVideo, Eye,
+  SkipBack, SkipForward, X, ListVideo, Eye, Download, Upload as UploadIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -72,9 +72,12 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
   // Per-preset overrides
   const [tickerText, setTickerText] = useState(""); // newline separated
   const [opacity, setOpacity] = useState(100);
+  const [bannerImageUrl, setBannerImageUrl] = useState<string>("");
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   // Preset name (for save)
   const [presetName, setPresetName] = useState("");
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const { data: videos = [] } = useQuery({
     queryKey: ["education-videos-studio", clinicId],
@@ -116,8 +119,9 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
       ...(branding || {}),
       lower_third_style: active,
       ticker_messages: tickerLines.length ? tickerLines : branding?.ticker_messages || [],
+      banner_image_url: bannerImageUrl || branding?.banner_image_url || null,
     };
-  }, [branding, active, tickerText]);
+  }, [branding, active, tickerText, bannerImageUrl]);
 
   const lowerThirdVisible = useMemo(() => {
     if (!isPlayable) return true;
@@ -263,6 +267,7 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     hide_at_sec: typeof hideAt === "number" ? hideAt : null,
     ticker_messages: tickerLines,
     opacity: opacity / 100,
+    banner_image_url: bannerImageUrl || null,
     branding_overrides: {},
   });
 
@@ -317,12 +322,87 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     setHideAt(p.hide_at_sec ?? "");
     setTickerText(((p.ticker_messages as string[]) || []).join("\n"));
     setOpacity(typeof p.opacity === "number" ? Math.round(p.opacity * 100) : 100);
+    setBannerImageUrl(p.banner_image_url || "");
     const ids: string[] = (p.video_ids && p.video_ids.length ? p.video_ids : (p.video_id ? [p.video_id] : []));
     setVideoQueue(ids);
     setQueueIdx(0);
     if (ids.length) setBgMode("video");
     toast.success(`Loaded "${p.name}"`);
   };
+
+  // ---------- Banner image upload ----------
+  const uploadBanner = async (file: File) => {
+    if (!clinicId) return;
+    setUploadingBanner(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${clinicId}/banner-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("education-videos").upload(path, file);
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("education-videos").getPublicUrl(path);
+      setBannerImageUrl(pub.publicUrl);
+      toast.success("Banner uploaded");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  // ---------- Export / Import presets ----------
+  const exportPresets = () => {
+    if (!presets.length) return toast.error("No presets to export");
+    const payload = {
+      version: 1,
+      exported_at: new Date().toISOString(),
+      presets: presets.map((p: any) => {
+        const { id, clinic_id, created_at, updated_at, video_id, ...rest } = p;
+        return rest;
+      }),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lower-third-presets-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${presets.length} preset${presets.length === 1 ? "" : "s"}`);
+  };
+
+  const importPresets = useMutation({
+    mutationFn: async (file: File) => {
+      if (!clinicId) throw new Error("No clinic");
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const list: any[] = Array.isArray(parsed) ? parsed : parsed.presets || [];
+      if (!list.length) throw new Error("No presets found in file");
+      // Strip ids/clinic and remap video_id/video_ids (may not exist in this clinic)
+      const rows = list.map((p) => ({
+        clinic_id: clinicId,
+        name: p.name || "Imported preset",
+        style: p.style || "broadcast",
+        show_at_sec: p.show_at_sec || 0,
+        hide_at_sec: p.hide_at_sec ?? null,
+        ticker_messages: p.ticker_messages || [],
+        opacity: typeof p.opacity === "number" ? p.opacity : 1,
+        banner_image_url: p.banner_image_url || null,
+        sort_order: p.sort_order || 0,
+        branding_overrides: p.branding_overrides || {},
+        // Skip foreign-keyed video refs since they belong to the source clinic
+        video_id: null,
+        video_ids: [],
+      }));
+      const { error } = await supabase.from("lower_third_presets" as any).insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`Imported ${n} preset${n === 1 ? "" : "s"}. Re-attach videos as needed.`);
+      queryClient.invalidateQueries({ queryKey: ["lt-presets"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   // ---------- Presenter Mode ----------
   const openFullscreen = () => {
@@ -598,6 +678,36 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
           </div>
         </div>
 
+        {/* Banner image (used when style = Image, otherwise saved with preset) */}
+        <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-semibold flex items-center gap-1.5">
+              <ImageIcon className="h-3.5 w-3.5 text-primary" /> Lower-Third Banner Image
+              {active === "image" && <Badge variant="default" className="text-[8px] h-3.5 px-1">Active style</Badge>}
+            </Label>
+            {bannerImageUrl && (
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] text-destructive" onClick={() => setBannerImageUrl("")}>
+                Remove
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2 items-center">
+            <Input
+              type="file"
+              accept="image/*"
+              disabled={uploadingBanner}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBanner(f); }}
+              className="h-8 text-xs flex-1"
+            />
+            {bannerImageUrl && (
+              <img src={bannerImageUrl} alt="banner" className="h-10 rounded border object-contain bg-black" />
+            )}
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Upload a wide PNG/JPG banner (e.g. 1920×360). Saved with the preset; switch style to <b>Image Banner</b> to display it.
+          </p>
+        </div>
+
         {/* Timing controls */}
         <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
           <div className="flex items-center gap-2 text-xs font-semibold">
@@ -661,8 +771,29 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
 
         {/* Presets */}
         <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-semibold">
-            <Bookmark className="h-3.5 w-3.5 text-primary" /> Saved Presets ({presets.length})
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <Bookmark className="h-3.5 w-3.5 text-primary" /> Saved Presets ({presets.length})
+            </div>
+            <div className="flex gap-1">
+              <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1" onClick={exportPresets} disabled={!presets.length}>
+                <Download className="h-3 w-3" /> Export
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1" onClick={() => importInputRef.current?.click()}>
+                <UploadIcon className="h-3 w-3" /> Import
+              </Button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) importPresets.mutate(f);
+                  if (e.target) e.target.value = "";
+                }}
+              />
+            </div>
           </div>
           <div className="flex gap-2">
             <Input

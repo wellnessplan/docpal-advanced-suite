@@ -847,6 +847,7 @@ export type Database = {
       }
       display_branding: {
         Row: {
+          banner_image_url: string | null
           clinic_id: string
           clinic_name: string | null
           doctor_on_duty: string | null
@@ -864,6 +865,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          banner_image_url?: string | null
           clinic_id: string
           clinic_name?: string | null
           doctor_on_duty?: string | null
@@ -881,6 +883,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          banner_image_url?: string | null
           clinic_id?: string
           clinic_name?: string | null
           doctor_on_duty?: string | null
@@ -1119,6 +1122,7 @@ export type Database = {
           is_active: boolean
           is_global: boolean
           language: string
+          media_type: string
           source_type: string
           source_url: string
           tags: string[] | null
@@ -1137,6 +1141,7 @@ export type Database = {
           is_active?: boolean
           is_global?: boolean
           language?: string
+          media_type?: string
           source_type?: string
           source_url: string
           tags?: string[] | null
@@ -1155,6 +1160,7 @@ export type Database = {
           is_active?: boolean
           is_global?: boolean
           language?: string
+          media_type?: string
           source_type?: string
           source_url?: string
           tags?: string[] | null
@@ -1856,6 +1862,7 @@ export type Database = {
       }
       lower_third_presets: {
         Row: {
+          banner_image_url: string | null
           branding_overrides: Json
           clinic_id: string
           created_at: string
@@ -1872,6 +1879,7 @@ export type Database = {
           video_ids: string[]
         }
         Insert: {
+          banner_image_url?: string | null
           branding_overrides?: Json
           clinic_id: string
           created_at?: string
@@ -1888,6 +1896,7 @@ export type Database = {
           video_ids?: string[]
         }
         Update: {
+          banner_image_url?: string | null
           branding_overrides?: Json
           clinic_id?: string
           created_at?: string

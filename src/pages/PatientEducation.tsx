@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Plus, Search, Trash2, Tv, Library, Upload as UploadIcon, Youtube } from "lucide-react";
+import { Play, Plus, Search, Trash2, Tv, Library, Upload as UploadIcon, Youtube, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { buildEmbedUrl } from "@/lib/video-utils";
@@ -140,11 +140,11 @@ export default function PatientEducation() {
                       )}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <div className="h-12 w-12 rounded-full bg-white/90 flex items-center justify-center">
-                          <Play className="h-5 w-5 text-foreground fill-current" />
+                          {v.media_type === "image" ? <ImageIcon className="h-5 w-5 text-foreground" /> : <Play className="h-5 w-5 text-foreground fill-current" />}
                         </div>
                       </div>
                       <Badge className="absolute top-2 left-2 text-[10px]" variant={v.is_global ? "secondary" : "default"}>
-                        {v.is_global ? "Library" : "Mine"}
+                        {v.media_type === "image" ? "Image" : v.is_global ? "Library" : "Mine"}
                       </Badge>
                     </div>
                     <CardContent className="p-3">
@@ -173,8 +173,10 @@ export default function PatientEducation() {
             </DialogHeader>
             {previewVideo && (
               <div className="space-y-3">
-                <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                  {previewVideo.source_type === "upload" || previewVideo.source_type === "url" ? (
+                <div className="aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
+                  {previewVideo.media_type === "image" ? (
+                    <img src={previewVideo.source_url} alt={previewVideo.title} className="w-full h-full object-contain" />
+                  ) : previewVideo.source_type === "upload" || previewVideo.source_type === "url" ? (
                     <video src={previewVideo.source_url} controls className="w-full h-full" />
                   ) : (
                     <iframe
@@ -202,7 +204,7 @@ export default function PatientEducation() {
 
 function AddVideoDialog({ clinicId, onClose }: { clinicId: string | undefined; onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<"youtube" | "upload">("youtube");
+  const [mode, setMode] = useState<"youtube" | "upload" | "image">("youtube");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("general");
@@ -220,6 +222,7 @@ function AddVideoDialog({ clinicId, onClose }: { clinicId: string | undefined; o
       let sourceUrl = url;
       let sourceType = "youtube";
       let thumbnail: string | null = null;
+      let mediaType: "video" | "image" = "video";
 
       if (mode === "youtube") {
         if (!url) { toast.error("Paste a YouTube/Vimeo URL"); setSaving(false); return; }
@@ -227,6 +230,17 @@ function AddVideoDialog({ clinicId, onClose }: { clinicId: string | undefined; o
         else sourceType = "youtube";
         const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})/);
         if (ytMatch) thumbnail = `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+      } else if (mode === "image") {
+        if (!file) { toast.error("Select an image file"); setSaving(false); return; }
+        const ext = file.name.split(".").pop();
+        const path = `${clinicId}/img-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("education-videos").upload(path, file);
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from("education-videos").getPublicUrl(path);
+        sourceUrl = pub.publicUrl;
+        thumbnail = pub.publicUrl;
+        sourceType = "url";
+        mediaType = "image";
       } else {
         if (!file) { toast.error("Select a video file"); setSaving(false); return; }
         const ext = file.name.split(".").pop();
@@ -246,11 +260,12 @@ function AddVideoDialog({ clinicId, onClose }: { clinicId: string | undefined; o
         source_type: sourceType,
         source_url: sourceUrl,
         thumbnail_url: thumbnail,
+        media_type: mediaType,
         is_global: false,
       });
       if (error) throw error;
 
-      toast.success("Video added");
+      toast.success(mediaType === "image" ? "Image added" : "Video added");
       queryClient.invalidateQueries({ queryKey: ["education-videos"] });
       onClose();
     } catch (e: any) {
@@ -262,12 +277,13 @@ function AddVideoDialog({ clinicId, onClose }: { clinicId: string | undefined; o
 
   return (
     <DialogContent className="max-w-md">
-      <DialogHeader><DialogTitle>Add Patient Education Video</DialogTitle></DialogHeader>
+      <DialogHeader><DialogTitle>Add Patient Education Media</DialogTitle></DialogHeader>
       <div className="space-y-4">
         <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
-          <TabsList className="grid grid-cols-2 w-full">
-            <TabsTrigger value="youtube"><Youtube className="h-4 w-4 mr-1" /> YouTube/Vimeo</TabsTrigger>
-            <TabsTrigger value="upload"><UploadIcon className="h-4 w-4 mr-1" /> Upload</TabsTrigger>
+          <TabsList className="grid grid-cols-3 w-full">
+            <TabsTrigger value="youtube"><Youtube className="h-4 w-4 mr-1" /> YouTube</TabsTrigger>
+            <TabsTrigger value="upload"><UploadIcon className="h-4 w-4 mr-1" /> Video</TabsTrigger>
+            <TabsTrigger value="image"><ImageIcon className="h-4 w-4 mr-1" /> Image</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -289,6 +305,11 @@ function AddVideoDialog({ clinicId, onClose }: { clinicId: string | undefined; o
             <Label>Video URL</Label>
             <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." />
           </div>
+        ) : mode === "image" ? (
+          <div className="space-y-2">
+            <Label>Image (JPG/PNG, infographics, posters)</Label>
+            <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          </div>
         ) : (
           <div className="space-y-2">
             <Label>Video file (MP4, max 100MB)</Label>
@@ -300,7 +321,7 @@ function AddVideoDialog({ clinicId, onClose }: { clinicId: string | undefined; o
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
         </div>
         <Button onClick={handleSubmit} disabled={saving} className="w-full">
-          {saving ? "Saving..." : "Add Video"}
+          {saving ? "Saving..." : mode === "image" ? "Add Image" : "Add Video"}
         </Button>
       </div>
     </DialogContent>
