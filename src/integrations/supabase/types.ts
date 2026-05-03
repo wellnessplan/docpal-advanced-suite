@@ -1862,11 +1862,14 @@ export type Database = {
           hide_at_sec: number | null
           id: string
           name: string
+          opacity: number
           show_at_sec: number
           sort_order: number
           style: string
+          ticker_messages: string[]
           updated_at: string
           video_id: string | null
+          video_ids: string[]
         }
         Insert: {
           branding_overrides?: Json
@@ -1875,11 +1878,14 @@ export type Database = {
           hide_at_sec?: number | null
           id?: string
           name: string
+          opacity?: number
           show_at_sec?: number
           sort_order?: number
           style?: string
+          ticker_messages?: string[]
           updated_at?: string
           video_id?: string | null
+          video_ids?: string[]
         }
         Update: {
           branding_overrides?: Json
@@ -1888,11 +1894,14 @@ export type Database = {
           hide_at_sec?: number | null
           id?: string
           name?: string
+          opacity?: number
           show_at_sec?: number
           sort_order?: number
           style?: string
+          ticker_messages?: string[]
           updated_at?: string
           video_id?: string | null
+          video_ids?: string[]
         }
         Relationships: [
           {

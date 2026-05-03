@@ -1,11 +1,13 @@
 // Live lower-third preview studio.
 // Features:
-//  - 6 styles to choose from
-//  - Presets: save (style + video + timing + branding overrides), quick-switch
-//  - Video player with play/pause/seek/volume — verify lower-third at any moment
-//  - Timing: lower-third can show/hide at specific timestamps during the video
+//  - 6 styles
+//  - Presets: save/load/DUPLICATE (style + video(s) + timing + ticker + opacity + branding overrides)
+//  - Per-preset ticker messages (override clinic ticker for this scenario)
+//  - Opacity slider for the lower-third layer (so video details aren't hidden)
+//  - Video sequence preview: queue multiple education videos and step through them
+//  - Player controls: play/pause/seek/volume
 //  - Send preview to a specific TV (or broadcast to all)
-//  - Presenter Mode (popup) with the same combo
+//  - Presenter Mode (popup)
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,11 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Maximize2, Radio, Save, Image as ImageIcon, Video, Play, Pause,
-  Volume2, VolumeX, Send, Bookmark, Trash2, Plus, Clock,
+  Volume2, VolumeX, Send, Bookmark, Trash2, Plus, Clock, Copy,
+  SkipBack, SkipForward, X, ListVideo, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,10 +51,13 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     (branding?.lower_third_style as LowerThirdStyle) || "broadcast"
   );
   const [bgMode, setBgMode] = useState<"image" | "video">("image");
-  const [selectedVideoId, setSelectedVideoId] = useState<string>("");
+  // Sequence: ordered list of video ids to step through. Index = current.
+  const [videoQueue, setVideoQueue] = useState<string[]>([]);
+  const [queueIdx, setQueueIdx] = useState(0);
+  const [addVideoId, setAddVideoId] = useState<string>("");
   const [selectedScreenId, setSelectedScreenId] = useState<string>("");
 
-  // Player state (only meaningful for direct/upload videos)
+  // Player state
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [muted, setMuted] = useState(true);
@@ -58,9 +65,13 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // Timing for lower-third visibility
+  // Lower-third visibility timing
   const [showAt, setShowAt] = useState(0);
   const [hideAt, setHideAt] = useState<number | "">("");
+
+  // Per-preset overrides
+  const [tickerText, setTickerText] = useState(""); // newline separated
+  const [opacity, setOpacity] = useState(100);
 
   // Preset name (for save)
   const [presetName, setPresetName] = useState("");
@@ -91,15 +102,23 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     enabled: !!clinicId,
   });
 
-  const selectedVideo = videos.find((v: any) => v.id === selectedVideoId);
+  const currentVideoId = videoQueue[queueIdx];
+  const selectedVideo = videos.find((v: any) => v.id === currentVideoId);
   const isPlayable = selectedVideo && isDirectVideo(selectedVideo.source_type);
 
-  const previewBranding = useMemo(
-    () => ({ ...(branding || {}), lower_third_style: active }) as LowerThirdBranding,
-    [branding, active]
-  );
+  // Merge per-preset ticker into branding for the preview
+  const previewBranding = useMemo<LowerThirdBranding>(() => {
+    const tickerLines = tickerText
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    return {
+      ...(branding || {}),
+      lower_third_style: active,
+      ticker_messages: tickerLines.length ? tickerLines : branding?.ticker_messages || [],
+    };
+  }, [branding, active, tickerText]);
 
-  // Should the lower-third be visible right now based on timing?
   const lowerThirdVisible = useMemo(() => {
     if (!isPlayable) return true;
     if (currentTime < showAt) return false;
@@ -113,7 +132,7 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     if (!v) return;
     if (isPlaying) v.play().catch(() => {});
     else v.pause();
-  }, [isPlaying, selectedVideoId]);
+  }, [isPlaying, currentVideoId]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -127,6 +146,28 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     if (!v) return;
     v.currentTime = val[0];
     setCurrentTime(val[0]);
+  };
+
+  const goToClip = (idx: number) => {
+    if (idx < 0 || idx >= videoQueue.length) return;
+    setQueueIdx(idx);
+    setCurrentTime(0);
+    setDuration(0);
+  };
+
+  const addToQueue = () => {
+    if (!addVideoId) return;
+    setVideoQueue((q) => [...q, addVideoId]);
+    setAddVideoId("");
+    if (videoQueue.length === 0) {
+      setBgMode("video");
+      setQueueIdx(0);
+    }
+  };
+
+  const removeFromQueue = (idx: number) => {
+    setVideoQueue((q) => q.filter((_, i) => i !== idx));
+    if (queueIdx >= idx && queueIdx > 0) setQueueIdx((i) => i - 1);
   };
 
   // ---------- Mutations ----------
@@ -159,10 +200,10 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
         command: { type: "refresh_branding" },
         command_at: new Date().toISOString(),
       };
-      if (selectedVideoId) {
-        patch.current_video_id = selectedVideoId;
+      if (currentVideoId) {
+        patch.current_video_id = currentVideoId;
         patch.is_playing = true;
-        patch.command = { type: "play_video", video_id: selectedVideoId };
+        patch.command = { type: "play_video", video_id: currentVideoId };
       }
       const { error } = await supabase
         .from("display_screens" as any)
@@ -192,10 +233,10 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
         lower_third_hide_at_sec: typeof hideAt === "number" ? hideAt : null,
         command_at: new Date().toISOString(),
       };
-      if (selectedVideoId) {
-        patch.current_video_id = selectedVideoId;
+      if (currentVideoId) {
+        patch.current_video_id = currentVideoId;
         patch.is_playing = true;
-        patch.command = { type: "play_video", video_id: selectedVideoId };
+        patch.command = { type: "play_video", video_id: currentVideoId };
       } else {
         patch.command = { type: "refresh_branding" };
       }
@@ -210,24 +251,50 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     onError: (e: any) => toast.error(e.message),
   });
 
+  const tickerLines = tickerText.split("\n").map((l) => l.trim()).filter(Boolean);
+
+  const buildPresetPayload = (name: string) => ({
+    clinic_id: clinicId,
+    name,
+    style: active,
+    video_id: videoQueue[0] || null,
+    video_ids: videoQueue,
+    show_at_sec: showAt,
+    hide_at_sec: typeof hideAt === "number" ? hideAt : null,
+    ticker_messages: tickerLines,
+    opacity: opacity / 100,
+    branding_overrides: {},
+  });
+
   const savePreset = useMutation({
     mutationFn: async () => {
       if (!clinicId) throw new Error("No clinic");
       if (!presetName.trim()) throw new Error("Name your preset first");
-      const { error } = await supabase.from("lower_third_presets" as any).insert({
-        clinic_id: clinicId,
-        name: presetName.trim(),
-        style: active,
-        video_id: selectedVideoId || null,
-        show_at_sec: showAt,
-        hide_at_sec: typeof hideAt === "number" ? hideAt : null,
-        branding_overrides: {},
-      });
+      const { error } = await supabase
+        .from("lower_third_presets" as any)
+        .insert(buildPresetPayload(presetName.trim()));
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success(`Preset "${presetName}" saved`);
       setPresetName("");
+      queryClient.invalidateQueries({ queryKey: ["lt-presets"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const duplicatePreset = useMutation({
+    mutationFn: async (p: any) => {
+      if (!clinicId) throw new Error("No clinic");
+      const { id, created_at, updated_at, ...rest } = p;
+      const { error } = await supabase.from("lower_third_presets" as any).insert({
+        ...rest,
+        name: `${p.name} (copy)`,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, p: any) => {
+      toast.success(`Duplicated "${p.name}"`);
       queryClient.invalidateQueries({ queryKey: ["lt-presets"] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -248,10 +315,12 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     setActive(p.style);
     setShowAt(p.show_at_sec || 0);
     setHideAt(p.hide_at_sec ?? "");
-    if (p.video_id) {
-      setSelectedVideoId(p.video_id);
-      setBgMode("video");
-    }
+    setTickerText(((p.ticker_messages as string[]) || []).join("\n"));
+    setOpacity(typeof p.opacity === "number" ? Math.round(p.opacity * 100) : 100);
+    const ids: string[] = (p.video_ids && p.video_ids.length ? p.video_ids : (p.video_id ? [p.video_id] : []));
+    setVideoQueue(ids);
+    setQueueIdx(0);
+    if (ids.length) setBgMode("video");
     toast.success(`Loaded "${p.name}"`);
   };
 
@@ -272,7 +341,6 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
 
     const html = `<!doctype html><html><head><title>Presenter</title>
       <meta name="viewport" content="width=device-width,initial-scale=1"/>
-      <script src="https://cdn.tailwindcss.com"></script>
       <style>body{margin:0;background:#000;overflow:hidden;font-family:system-ui}</style>
       </head><body>
       <div style="position:fixed;inset:0">${bgHtml}</div>
@@ -283,12 +351,19 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     toast.success(selectedVideo ? `Presenter opened with "${selectedVideo.title}"` : "Presenter opened");
   };
 
-  // Reset timing when switching video
+  // Reset playback timing when switching clip
   useEffect(() => {
     setCurrentTime(0);
-    setShowAt(0);
-    setHideAt("");
-  }, [selectedVideoId]);
+  }, [currentVideoId]);
+
+  // Auto-advance to next clip in sequence when current ends
+  const onEnded = () => {
+    if (queueIdx < videoQueue.length - 1) {
+      goToClip(queueIdx + 1);
+    } else if (videoQueue.length > 1) {
+      goToClip(0); // loop sequence
+    }
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -299,7 +374,7 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
               <Radio className="h-4 w-4 text-primary" /> Lower-Third Studio
             </h3>
             <p className="text-xs text-muted-foreground">
-              Pick a style, preview with a real video, save presets, and broadcast to one or all screens.
+              Style + video sequence + ticker + timing — preview, save as preset, broadcast.
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -315,7 +390,7 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
           </div>
         </div>
 
-        {/* Style picker — 6 styles, 2x3 on mobile, 3x2 on tablet, 6 wide on lg */}
+        {/* Style picker */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           {LOWER_THIRD_STYLES.map((s) => (
             <button
@@ -349,22 +424,68 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
               onClick={() => setBgMode("video")}
               className={`px-3 py-1.5 text-xs flex items-center gap-1.5 border-l ${bgMode === "video" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
             >
-              <Video className="h-3 w-3" /> Education Video
+              <Video className="h-3 w-3" /> Education Video{videoQueue.length > 1 ? "s" : ""}
             </button>
           </div>
           {bgMode === "video" && (
-            <Select value={selectedVideoId} onValueChange={setSelectedVideoId}>
-              <SelectTrigger className="h-8 text-xs flex-1 min-w-[200px]">
-                <SelectValue placeholder={videos.length ? "Choose a saved video..." : "No videos saved yet"} />
-              </SelectTrigger>
-              <SelectContent>
-                {videos.map((v: any) => (
-                  <SelectItem key={v.id} value={v.id} className="text-xs">{v.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-1 min-w-[200px] gap-1">
+              <Select value={addVideoId} onValueChange={setAddVideoId}>
+                <SelectTrigger className="h-8 text-xs flex-1">
+                  <SelectValue placeholder={videos.length ? "Add video to sequence..." : "No videos saved yet"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {videos.map((v: any) => (
+                    <SelectItem key={v.id} value={v.id} className="text-xs">{v.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={addToQueue} disabled={!addVideoId} className="h-8 gap-1">
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           )}
         </div>
+
+        {/* Video sequence list */}
+        {bgMode === "video" && videoQueue.length > 0 && (
+          <div className="rounded-lg border bg-muted/30 p-2 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold flex items-center gap-1.5">
+                <ListVideo className="h-3.5 w-3.5 text-primary" /> Sequence ({videoQueue.length})
+              </p>
+              <div className="flex gap-1">
+                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => goToClip(queueIdx - 1)} disabled={queueIdx === 0}>
+                  <SkipBack className="h-3.5 w-3.5" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => goToClip(queueIdx + 1)} disabled={queueIdx >= videoQueue.length - 1}>
+                  <SkipForward className="h-3.5 w-3.5" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => { setVideoQueue([]); setQueueIdx(0); }}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {videoQueue.map((vid, i) => {
+                const v = videos.find((x: any) => x.id === vid);
+                return (
+                  <div
+                    key={`${vid}-${i}`}
+                    className={`shrink-0 flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] ${
+                      i === queueIdx ? "bg-primary text-primary-foreground border-primary" : "bg-background"
+                    }`}
+                  >
+                    <button onClick={() => goToClip(i)} className="font-mono">{i + 1}.</button>
+                    <button onClick={() => goToClip(i)} className="truncate max-w-[140px]">{v?.title || "?"}</button>
+                    <button onClick={() => removeFromQueue(i)} className="opacity-60 hover:opacity-100">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Live preview — 16:9 */}
         <div className="relative w-full rounded-xl overflow-hidden border bg-black aspect-video">
@@ -375,11 +496,11 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
                 key={selectedVideo.id}
                 src={selectedVideo.source_url}
                 autoPlay
-                loop
                 muted={muted}
                 playsInline
                 onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
                 onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                onEnded={onEnded}
                 className="absolute inset-0 w-full h-full object-cover"
               />
             ) : (
@@ -396,29 +517,34 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             </>
           )}
-          {lowerThirdVisible && <LowerThird branding={previewBranding} style={active} />}
+          {lowerThirdVisible && <LowerThird branding={previewBranding} style={active} opacity={opacity / 100} />}
           {!lowerThirdVisible && (
             <div className="absolute top-3 left-3 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-mono">
               LT hidden ({fmtTime(currentTime)})
             </div>
           )}
+          {videoQueue.length > 1 && selectedVideo && (
+            <div className="absolute top-3 right-3 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-mono">
+              Clip {queueIdx + 1}/{videoQueue.length}
+            </div>
+          )}
         </div>
 
-        {/* Player controls — only for direct uploads */}
+        {/* Player controls */}
         {isPlayable && (
           <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
             <div className="flex items-center gap-2">
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => goToClip(queueIdx - 1)} disabled={queueIdx === 0}>
+                <SkipBack className="h-4 w-4" />
+              </Button>
               <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setIsPlaying((p) => !p)}>
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </Button>
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => goToClip(queueIdx + 1)} disabled={queueIdx >= videoQueue.length - 1}>
+                <SkipForward className="h-4 w-4" />
+              </Button>
               <span className="text-[11px] font-mono text-muted-foreground w-12 text-right">{fmtTime(currentTime)}</span>
-              <Slider
-                value={[currentTime]}
-                max={duration || 100}
-                step={0.1}
-                onValueChange={onSeek}
-                className="flex-1"
-              />
+              <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={onSeek} className="flex-1" />
               <span className="text-[11px] font-mono text-muted-foreground w-12">{fmtTime(duration)}</span>
               <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setMuted((m) => !m)}>
                 {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -435,9 +561,42 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
         )}
         {selectedVideo && !isPlayable && (
           <p className="text-[11px] text-muted-foreground italic">
-            Player controls (play/pause/seek/volume) only work with direct-uploaded MP4s. YouTube/Vimeo videos play automatically in the embed.
+            Player controls only work with direct-uploaded MP4s. YouTube/Vimeo videos play automatically.
           </p>
         )}
+
+        {/* Per-preset overrides: ticker + opacity */}
+        <div className="grid md:grid-cols-2 gap-3">
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold">Ticker messages (this preset)</Label>
+              <span className="text-[10px] text-muted-foreground">{tickerLines.length} lines</span>
+            </div>
+            <Textarea
+              value={tickerText}
+              onChange={(e) => setTickerText(e.target.value)}
+              placeholder={`One message per line.\nLeave empty to use clinic-wide ticker.`}
+              rows={4}
+              className="text-xs font-mono"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Overrides the default scrolling ticker for this scenario only.
+            </p>
+          </div>
+
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold flex items-center gap-1.5">
+                <Eye className="h-3.5 w-3.5 text-primary" /> Overlay Opacity
+              </Label>
+              <span className="text-[11px] font-mono">{opacity}%</span>
+            </div>
+            <Slider value={[opacity]} min={20} max={100} step={5} onValueChange={([v]) => setOpacity(v)} />
+            <p className="text-[10px] text-muted-foreground">
+              Lower it when the video has critical visual details that the lower-third would otherwise block.
+            </p>
+          </div>
+        </div>
 
         {/* Timing controls */}
         <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
@@ -469,7 +628,7 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            E.g. show LT at 0s, hide at 30s so the closing screen of the video stays clean.
+            Timing is per clip — when the sequence advances, the timing resets and re-applies to the next video.
           </p>
         </div>
 
@@ -496,7 +655,7 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Pushes the exact video + style + timing combo to the selected TV for testing — without disturbing the others.
+            Sends the current clip + style + timing to the selected TV.
           </p>
         </div>
 
@@ -517,20 +676,28 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
             </Button>
           </div>
           {presets.length > 0 && (
-            <div className="grid sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
+            <div className="grid sm:grid-cols-2 gap-1.5 max-h-60 overflow-y-auto">
               {presets.map((p: any) => {
-                const v = videos.find((vd: any) => vd.id === p.video_id);
+                const ids: string[] = (p.video_ids?.length ? p.video_ids : (p.video_id ? [p.video_id] : []));
+                const titles = ids.map((id) => videos.find((vd: any) => vd.id === id)?.title).filter(Boolean);
                 return (
-                  <div key={p.id} className="flex items-center gap-2 rounded border bg-background px-2 py-1.5 text-xs">
+                  <div key={p.id} className="flex items-center gap-1.5 rounded border bg-background px-2 py-1.5 text-xs">
                     <button onClick={() => loadPreset(p)} className="flex-1 text-left min-w-0">
                       <p className="font-semibold truncate">{p.name}</p>
                       <p className="text-[10px] text-muted-foreground truncate">
                         {LOWER_THIRD_STYLES.find((s) => s.value === p.style)?.label || p.style}
-                        {v && ` • ${v.title}`}
+                        {titles.length === 1 && ` • ${titles[0]}`}
+                        {titles.length > 1 && ` • ${titles.length} clips`}
                         {p.show_at_sec > 0 && ` • from ${p.show_at_sec}s`}
                         {p.hide_at_sec && ` to ${p.hide_at_sec}s`}
+                        {typeof p.opacity === "number" && p.opacity < 1 && ` • ${Math.round(p.opacity * 100)}% opacity`}
+                        {p.ticker_messages?.length ? ` • ${p.ticker_messages.length} ticker` : ""}
                       </p>
                     </button>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" title="Duplicate"
+                      onClick={() => duplicatePreset.mutate(p)}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
                     <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:text-destructive"
                       onClick={() => { if (confirm(`Delete preset "${p.name}"?`)) deletePreset.mutate(p.id); }}>
                       <Trash2 className="h-3 w-3" />
@@ -543,7 +710,7 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
         </div>
 
         <p className="text-[11px] text-muted-foreground">
-          Tip: Save your most-used (style + video + timing) combos as presets. One click loads the entire setup so you can switch between scenarios instantly.
+          Tip: Duplicate a preset to quickly tweak only the style or timing for a related scenario.
         </p>
       </CardContent>
     </Card>

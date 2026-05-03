@@ -29,6 +29,7 @@ interface Props {
   branding: LowerThirdBranding | null | undefined;
   style?: LowerThirdStyle;          // override the saved style (used by preview)
   className?: string;
+  opacity?: number;                 // 0..1 — overall layer transparency
 }
 
 export const LOWER_THIRD_STYLES: { value: LowerThirdStyle; label: string; description: string }[] = [
@@ -40,8 +41,9 @@ export const LOWER_THIRD_STYLES: { value: LowerThirdStyle; label: string; descri
   { value: "sidebar",   label: "Sidebar",   description: "Right-rail info column + bottom-left logo" },
 ];
 
-export default function LowerThird({ branding, style, className = "" }: Props) {
+export default function LowerThird({ branding, style, className = "", opacity }: Props) {
   const variant: LowerThirdStyle = style || branding?.lower_third_style || "broadcast";
+  const layerStyle = typeof opacity === "number" ? { opacity: Math.max(0, Math.min(1, opacity)) } : undefined;
   const primary = branding?.primary_color || "#5BADE6";
   const text = branding?.text_color || "#FFFFFF";
   const messages = (branding?.ticker_messages || []).filter(Boolean);
@@ -63,7 +65,7 @@ export default function LowerThird({ branding, style, className = "" }: Props) {
 
   if (variant === "minimal") {
     return (
-      <div className={`absolute bottom-0 left-0 right-0 ${className}`}>
+      <div className={`absolute bottom-0 left-0 right-0 ${className}`} style={layerStyle}>
         <div className="flex items-center gap-3 px-6 py-3 bg-black/70 backdrop-blur-md text-white">
           {branding?.logo_url && <img src={branding.logo_url} alt="" className="h-8 w-8 rounded object-contain bg-white/10 p-0.5" />}
           <p className="text-base font-semibold tracking-tight" style={{ color: primary }}>{name}</p>
@@ -76,7 +78,7 @@ export default function LowerThird({ branding, style, className = "" }: Props) {
 
   if (variant === "news") {
     return (
-      <div className={`absolute bottom-0 left-0 right-0 ${className}`}>
+      <div className={`absolute bottom-0 left-0 right-0 ${className}`} style={layerStyle}>
         <div className="flex items-stretch text-white">
           <div className="px-5 py-3 font-bold text-sm uppercase tracking-wider shrink-0 z-10" style={{ background: primary, color: text }}>
             {name}
@@ -104,7 +106,7 @@ export default function LowerThird({ branding, style, className = "" }: Props) {
 
   if (variant === "cinema") {
     return (
-      <div className={`absolute bottom-6 left-6 ${className}`}>
+      <div className={`absolute bottom-6 left-6 ${className}`} style={layerStyle}>
         <div className="flex items-center gap-3 bg-black/40 backdrop-blur-sm rounded-md px-4 py-2 text-white border-l-2" style={{ borderColor: primary }}>
           {branding?.logo_url && <img src={branding.logo_url} alt="" className="h-7 w-7 rounded object-contain" />}
           <div className="leading-tight">
@@ -119,7 +121,7 @@ export default function LowerThird({ branding, style, className = "" }: Props) {
   if (variant === "spotlight") {
     // Right-side highlight tile + bottom info bar (matches "Wait Time + QR" reference)
     return (
-      <div className={`absolute inset-0 pointer-events-none ${className}`}>
+      <div className={`absolute inset-0 pointer-events-none ${className}`} style={layerStyle}>
         {/* Right side highlight panel */}
         <div className="absolute top-6 right-6 w-56 rounded-2xl overflow-hidden shadow-2xl">
           <div className="px-4 py-3 text-white text-center" style={{ background: primary }}>
@@ -174,7 +176,7 @@ export default function LowerThird({ branding, style, className = "" }: Props) {
   if (variant === "sidebar") {
     // Right-rail stacked info cards + bottom-left logo (matches "weather/news cards" reference)
     return (
-      <div className={`absolute inset-0 pointer-events-none ${className}`}>
+      <div className={`absolute inset-0 pointer-events-none ${className}`} style={layerStyle}>
         {/* Right rail */}
         <div className="absolute top-0 right-0 bottom-0 w-[28%] min-w-[200px] max-w-[320px] flex flex-col gap-1.5 p-2 bg-black/10 backdrop-blur-sm">
           {/* Header card */}
@@ -222,7 +224,7 @@ export default function LowerThird({ branding, style, className = "" }: Props) {
 
   // broadcast (default) — full style with proper marquee ticker
   return (
-    <div className={`absolute bottom-0 left-0 right-0 ${className}`}>
+    <div className={`absolute bottom-0 left-0 right-0 ${className}`} style={layerStyle}>
       {marqueeText && (
         <div className="overflow-hidden text-sm font-medium" style={{ background: `${primary}DD`, color: text }}>
           <div className="whitespace-nowrap inline-block animate-lt-marquee py-2"
