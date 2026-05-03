@@ -41,8 +41,9 @@ export const LOWER_THIRD_STYLES: { value: LowerThirdStyle; label: string; descri
   { value: "sidebar",   label: "Sidebar",   description: "Right-rail info column + bottom-left logo" },
 ];
 
-export default function LowerThird({ branding, style, className = "" }: Props) {
+export default function LowerThird({ branding, style, className = "", opacity }: Props) {
   const variant: LowerThirdStyle = style || branding?.lower_third_style || "broadcast";
+  const layerStyle = typeof opacity === "number" ? { opacity: Math.max(0, Math.min(1, opacity)) } : undefined;
   const primary = branding?.primary_color || "#5BADE6";
   const text = branding?.text_color || "#FFFFFF";
   const messages = (branding?.ticker_messages || []).filter(Boolean);
