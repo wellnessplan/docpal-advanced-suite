@@ -267,6 +267,7 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     hide_at_sec: typeof hideAt === "number" ? hideAt : null,
     ticker_messages: tickerLines,
     opacity: opacity / 100,
+    banner_image_url: bannerImageUrl || null,
     branding_overrides: {},
   });
 
@@ -321,12 +322,87 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     setHideAt(p.hide_at_sec ?? "");
     setTickerText(((p.ticker_messages as string[]) || []).join("\n"));
     setOpacity(typeof p.opacity === "number" ? Math.round(p.opacity * 100) : 100);
+    setBannerImageUrl(p.banner_image_url || "");
     const ids: string[] = (p.video_ids && p.video_ids.length ? p.video_ids : (p.video_id ? [p.video_id] : []));
     setVideoQueue(ids);
     setQueueIdx(0);
     if (ids.length) setBgMode("video");
     toast.success(`Loaded "${p.name}"`);
   };
+
+  // ---------- Banner image upload ----------
+  const uploadBanner = async (file: File) => {
+    if (!clinicId) return;
+    setUploadingBanner(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${clinicId}/banner-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("education-videos").upload(path, file);
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("education-videos").getPublicUrl(path);
+      setBannerImageUrl(pub.publicUrl);
+      toast.success("Banner uploaded");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  // ---------- Export / Import presets ----------
+  const exportPresets = () => {
+    if (!presets.length) return toast.error("No presets to export");
+    const payload = {
+      version: 1,
+      exported_at: new Date().toISOString(),
+      presets: presets.map((p: any) => {
+        const { id, clinic_id, created_at, updated_at, video_id, ...rest } = p;
+        return rest;
+      }),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lower-third-presets-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${presets.length} preset${presets.length === 1 ? "" : "s"}`);
+  };
+
+  const importPresets = useMutation({
+    mutationFn: async (file: File) => {
+      if (!clinicId) throw new Error("No clinic");
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const list: any[] = Array.isArray(parsed) ? parsed : parsed.presets || [];
+      if (!list.length) throw new Error("No presets found in file");
+      // Strip ids/clinic and remap video_id/video_ids (may not exist in this clinic)
+      const rows = list.map((p) => ({
+        clinic_id: clinicId,
+        name: p.name || "Imported preset",
+        style: p.style || "broadcast",
+        show_at_sec: p.show_at_sec || 0,
+        hide_at_sec: p.hide_at_sec ?? null,
+        ticker_messages: p.ticker_messages || [],
+        opacity: typeof p.opacity === "number" ? p.opacity : 1,
+        banner_image_url: p.banner_image_url || null,
+        sort_order: p.sort_order || 0,
+        branding_overrides: p.branding_overrides || {},
+        // Skip foreign-keyed video refs since they belong to the source clinic
+        video_id: null,
+        video_ids: [],
+      }));
+      const { error } = await supabase.from("lower_third_presets" as any).insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`Imported ${n} preset${n === 1 ? "" : "s"}. Re-attach videos as needed.`);
+      queryClient.invalidateQueries({ queryKey: ["lt-presets"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   // ---------- Presenter Mode ----------
   const openFullscreen = () => {
