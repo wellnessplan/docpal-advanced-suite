@@ -678,6 +678,36 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
           </div>
         </div>
 
+        {/* Banner image (used when style = Image, otherwise saved with preset) */}
+        <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-semibold flex items-center gap-1.5">
+              <ImageIcon className="h-3.5 w-3.5 text-primary" /> Lower-Third Banner Image
+              {active === "image" && <Badge variant="default" className="text-[8px] h-3.5 px-1">Active style</Badge>}
+            </Label>
+            {bannerImageUrl && (
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] text-destructive" onClick={() => setBannerImageUrl("")}>
+                Remove
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2 items-center">
+            <Input
+              type="file"
+              accept="image/*"
+              disabled={uploadingBanner}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBanner(f); }}
+              className="h-8 text-xs flex-1"
+            />
+            {bannerImageUrl && (
+              <img src={bannerImageUrl} alt="banner" className="h-10 rounded border object-contain bg-black" />
+            )}
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Upload a wide PNG/JPG banner (e.g. 1920×360). Saved with the preset; switch style to <b>Image Banner</b> to display it.
+          </p>
+        </div>
+
         {/* Timing controls */}
         <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
           <div className="flex items-center gap-2 text-xs font-semibold">
