@@ -224,6 +224,14 @@ export default function LowerThird({ branding, style, className = "", opacity }:
     );
   }
 
+  if (variant === "image" && branding?.banner_image_url) {
+    return (
+      <div className={`absolute bottom-0 left-0 right-0 ${className}`} style={layerStyle}>
+        <img src={branding.banner_image_url} alt="" className="w-full h-auto max-h-[35%] object-contain object-bottom" />
+      </div>
+    );
+  }
+
   // broadcast (default) — full style with proper marquee ticker
   return (
     <div className={`absolute bottom-0 left-0 right-0 ${className}`} style={layerStyle}>
