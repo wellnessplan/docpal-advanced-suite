@@ -29,6 +29,7 @@ interface Props {
   branding: LowerThirdBranding | null | undefined;
   style?: LowerThirdStyle;          // override the saved style (used by preview)
   className?: string;
+  opacity?: number;                 // 0..1 — overall layer transparency
 }
 
 export const LOWER_THIRD_STYLES: { value: LowerThirdStyle; label: string; description: string }[] = [
