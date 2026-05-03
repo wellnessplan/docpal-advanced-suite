@@ -771,8 +771,29 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
 
         {/* Presets */}
         <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-semibold">
-            <Bookmark className="h-3.5 w-3.5 text-primary" /> Saved Presets ({presets.length})
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <Bookmark className="h-3.5 w-3.5 text-primary" /> Saved Presets ({presets.length})
+            </div>
+            <div className="flex gap-1">
+              <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1" onClick={exportPresets} disabled={!presets.length}>
+                <Download className="h-3 w-3" /> Export
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1" onClick={() => importInputRef.current?.click()}>
+                <UploadIcon className="h-3 w-3" /> Import
+              </Button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) importPresets.mutate(f);
+                  if (e.target) e.target.value = "";
+                }}
+              />
+            </div>
           </div>
           <div className="flex gap-2">
             <Input
