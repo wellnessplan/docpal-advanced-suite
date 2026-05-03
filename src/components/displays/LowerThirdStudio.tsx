@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Maximize2, Radio, Save, Image as ImageIcon, Video, Play, Pause,
   Volume2, VolumeX, Send, Bookmark, Trash2, Plus, Clock, Copy,
-  SkipBack, SkipForward, X, ListVideo, Eye,
+  SkipBack, SkipForward, X, ListVideo, Eye, Download, Upload as UploadIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -72,9 +72,12 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
   // Per-preset overrides
   const [tickerText, setTickerText] = useState(""); // newline separated
   const [opacity, setOpacity] = useState(100);
+  const [bannerImageUrl, setBannerImageUrl] = useState<string>("");
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   // Preset name (for save)
   const [presetName, setPresetName] = useState("");
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const { data: videos = [] } = useQuery({
     queryKey: ["education-videos-studio", clinicId],
