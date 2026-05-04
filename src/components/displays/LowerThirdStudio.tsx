@@ -342,6 +342,11 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     setTickerText(((p.ticker_messages as string[]) || []).join("\n"));
     setOpacity(typeof p.opacity === "number" ? Math.round(p.opacity * 100) : 100);
     setBannerImageUrl(p.banner_image_url || "");
+    setBannerX(typeof p.banner_x === "number" ? p.banner_x : 50);
+    setBannerY(typeof p.banner_y === "number" ? p.banner_y : 100);
+    setBannerScale(typeof p.banner_scale === "number" ? Math.round(p.banner_scale * 100) : 100);
+    setBannerFit((p.banner_fit as any) || "contain");
+    setBannerOpacity(typeof p.banner_opacity === "number" ? Math.round(p.banner_opacity * 100) : 100);
     const ids: string[] = (p.video_ids && p.video_ids.length ? p.video_ids : (p.video_id ? [p.video_id] : []));
     setVideoQueue(ids);
     setQueueIdx(0);
