@@ -74,6 +74,15 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
   const [opacity, setOpacity] = useState(100);
   const [bannerImageUrl, setBannerImageUrl] = useState<string>("");
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  // Banner positioning
+  const [bannerX, setBannerX] = useState(50);     // 0..100
+  const [bannerY, setBannerY] = useState(100);    // 0..100
+  const [bannerScale, setBannerScale] = useState(100); // 10..300 (%)
+  const [bannerFit, setBannerFit] = useState<"contain" | "cover" | "stretch">("contain");
+  const [bannerOpacity, setBannerOpacity] = useState(100); // 0..100
+  // Safe-zone + grid guides
+  const [showGuides, setShowGuides] = useState(false);
+  const [snapGrid, setSnapGrid] = useState(true);
 
   // Preset name (for save)
   const [presetName, setPresetName] = useState("");
