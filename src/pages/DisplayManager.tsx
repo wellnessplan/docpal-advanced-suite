@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tv, Plus, Play, Pause, SkipForward, Volume2, Trash2, Copy, Settings as SettingsIcon, Wifi, WifiOff, Palette } from "lucide-react";
+import { Tv, Plus, Play, Pause, SkipForward, Volume2, Trash2, Copy, Settings as SettingsIcon, Wifi, WifiOff, Palette, RefreshCw, Power, AlertTriangle, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { generatePairCode } from "@/lib/video-utils";
 import LowerThirdStudio from "@/components/displays/LowerThirdStudio";
