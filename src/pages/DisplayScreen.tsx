@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { buildEmbedUrl, isDirectVideo } from "@/lib/video-utils";
-import { Tv } from "lucide-react";
+import { Tv, WifiOff } from "lucide-react";
 import LowerThird from "@/components/displays/LowerThird";
+
+const APP_VERSION = "1.1.0";
 
 // Public TV display screen — no auth. Reads by pair_code, listens to realtime updates.
 export default function DisplayScreen() {
@@ -12,10 +14,40 @@ export default function DisplayScreen() {
   const [video, setVideo] = useState<any>(null);
   const [branding, setBranding] = useState<any>(null);
   const [queue, setQueue] = useState<any[]>([]);
-  const [tickerIdx, setTickerIdx] = useState(0);
   const [now, setNow] = useState(new Date());
   const [videoTime, setVideoTime] = useState(0);
-  const tickRef = useRef<any>(null);
+  const [online, setOnline] = useState(navigator.onLine);
+  const lastCmdAtRef = useRef<string | null>(null);
+
+  // Register service worker for offline cache (display only)
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("/display-sw.js").catch(() => {});
+  }, []);
+
+  // Online/offline listener
+  useEffect(() => {
+    const onOn = () => setOnline(true);
+    const onOff = () => setOnline(false);
+    window.addEventListener("online", onOn);
+    window.addEventListener("offline", onOff);
+    return () => { window.removeEventListener("online", onOn); window.removeEventListener("offline", onOff); };
+  }, []);
+
+  // Surface uncaught errors back to the dashboard via last_error
+  useEffect(() => {
+    const onErr = async (e: ErrorEvent) => {
+      if (!screen?.id) return;
+      try {
+        await supabase.from("display_screens" as any).update({
+          last_error: String(e.message || e.error || "unknown").slice(0, 500),
+          last_error_at: new Date().toISOString(),
+        }).eq("id", screen.id);
+      } catch {}
+    };
+    window.addEventListener("error", onErr);
+    return () => window.removeEventListener("error", onErr);
+  }, [screen?.id]);
 
   // Initial load + heartbeat
   useEffect(() => {
@@ -30,13 +62,13 @@ export default function DisplayScreen() {
         .maybeSingle();
       if (!s || !mounted) return;
       setScreen(s);
-      // Mark paired + heartbeat
+      lastCmdAtRef.current = (s as any).command_at || null;
       await supabase.from("display_screens" as any).update({
         is_paired: true,
         last_seen_at: new Date().toISOString(),
+        app_version: APP_VERSION,
       }).eq("id", (s as any).id);
 
-      // Branding
       const { data: br } = await supabase
         .from("display_branding" as any)
         .select("*")
@@ -44,7 +76,6 @@ export default function DisplayScreen() {
         .maybeSingle();
       setBranding(br);
 
-      // Initial video
       if ((s as any).current_video_id) {
         const { data: v } = await supabase
           .from("education_videos" as any)
@@ -54,7 +85,6 @@ export default function DisplayScreen() {
         setVideo(v);
       }
 
-      // Queue (today's checked-in patients waiting)
       loadQueue((s as any).clinic_id);
     };
 
@@ -71,23 +101,44 @@ export default function DisplayScreen() {
 
     loadAll();
 
-    // Heartbeat every 15s
     const heartbeat = setInterval(async () => {
-      const { data: s } = await supabase
-        .from("display_screens" as any)
-        .select("*")
-        .eq("pair_code", code.toUpperCase())
-        .maybeSingle();
-      if (s) {
-        await supabase.from("display_screens" as any)
-          .update({ last_seen_at: new Date().toISOString() })
-          .eq("id", (s as any).id);
-        loadQueue((s as any).clinic_id);
-      }
+      try {
+        const { data: s } = await supabase
+          .from("display_screens" as any)
+          .select("*")
+          .eq("pair_code", code.toUpperCase())
+          .maybeSingle();
+        if (s) {
+          await supabase.from("display_screens" as any)
+            .update({ last_seen_at: new Date().toISOString(), app_version: APP_VERSION })
+            .eq("id", (s as any).id);
+          loadQueue((s as any).clinic_id);
+          // Detect & handle remote commands posted while we were offline
+          const cmdAt = (s as any).command_at;
+          if (cmdAt && cmdAt !== lastCmdAtRef.current) {
+            lastCmdAtRef.current = cmdAt;
+            handleCommand((s as any).command);
+          }
+        }
+      } catch {}
     }, 15000);
 
     return () => { mounted = false; clearInterval(heartbeat); };
   }, [code]);
+
+  // Handle remote commands (reload / clear cache / refresh)
+  const handleCommand = (cmd: any) => {
+    if (!cmd || typeof cmd !== "object") return;
+    if (cmd.type === "reload" || cmd.type === "restart") {
+      setTimeout(() => window.location.reload(), 500);
+    } else if (cmd.type === "clear_cache") {
+      navigator.serviceWorker?.controller?.postMessage("clear-cache");
+      setTimeout(() => window.location.reload(), 800);
+    } else if (cmd.type === "update") {
+      navigator.serviceWorker?.getRegistrations().then((rs) => rs.forEach((r) => r.update()));
+      setTimeout(() => window.location.reload(), 800);
+    }
+  };
 
   // Realtime subscription for screen updates
   useEffect(() => {
@@ -103,6 +154,11 @@ export default function DisplayScreen() {
             const { data: v } = await supabase.from("education_videos" as any).select("*").eq("id", newS.current_video_id).maybeSingle();
             setVideo(v);
           }
+          // Process new command
+          if (newS.command_at && newS.command_at !== lastCmdAtRef.current) {
+            lastCmdAtRef.current = newS.command_at;
+            handleCommand(newS.command);
+          }
         })
       .on("postgres_changes",
         { event: "UPDATE", schema: "public", table: "display_branding", filter: `clinic_id=eq.${screen.clinic_id}` },
@@ -110,15 +166,6 @@ export default function DisplayScreen() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [screen?.id]);
-
-  // Ticker rotation
-  useEffect(() => {
-    const messages = branding?.ticker_messages || [];
-    if (messages.length === 0) return;
-    const speed = (branding?.ticker_speed_sec || 5) * 1000;
-    tickRef.current = setInterval(() => setTickerIdx((i) => (i + 1) % messages.length), speed);
-    return () => clearInterval(tickRef.current);
-  }, [branding?.ticker_messages, branding?.ticker_speed_sec]);
 
   // Clock
   useEffect(() => {
@@ -142,8 +189,6 @@ export default function DisplayScreen() {
 
   const primary = branding?.primary_color || "#5BADE6";
   const textColor = branding?.text_color || "#FFFFFF";
-  const tickerMessages = branding?.ticker_messages || [];
-  const currentTicker = tickerMessages[tickerIdx];
   const inProgressToken = queue.find((q) => q.status === "in_progress");
   const waitingTokens = queue.filter((q) => q.status === "waiting").slice(0, 5);
 
@@ -180,7 +225,7 @@ export default function DisplayScreen() {
         )}
       </div>
 
-      {/* Top bar — Now Serving / Doctor on Duty / Clock */}
+      {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 p-4 flex items-start justify-between gap-3 bg-gradient-to-b from-black/70 to-transparent">
         {branding?.show_now_serving && inProgressToken && (
           <div className="rounded-xl px-5 py-2 backdrop-blur-md" style={{ background: primary, color: textColor }}>
@@ -202,7 +247,12 @@ export default function DisplayScreen() {
         </div>
       </div>
 
-      {/* Right side queue panel */}
+      {!online && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-amber-500/90 text-black text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-50">
+          <WifiOff className="h-3.5 w-3.5" /> Offline — playing cached content
+        </div>
+      )}
+
       {branding?.show_queue_panel && waitingTokens.length > 0 && (
         <div className="absolute top-24 right-4 w-64 bg-black/60 backdrop-blur-md rounded-xl p-3 text-white">
           <p className="text-xs uppercase opacity-70 mb-2">Up Next</p>
@@ -217,11 +267,9 @@ export default function DisplayScreen() {
         </div>
       )}
 
-      {/* Lower-third — honors per-screen show_at/hide_at timing during education videos */}
       {screen.show_lower_third && (() => {
         const showAt = screen.lower_third_show_at_sec || 0;
         const hideAt = screen.lower_third_hide_at_sec;
-        // Timing only applies when a direct video with timeupdate is playing
         const timingActive = video && (video.source_type === "upload" || video.source_type === "url");
         if (timingActive) {
           if (videoTime < showAt) return null;
