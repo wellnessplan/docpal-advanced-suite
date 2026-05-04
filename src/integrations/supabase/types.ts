@@ -847,7 +847,12 @@ export type Database = {
       }
       display_branding: {
         Row: {
+          banner_fit: string | null
           banner_image_url: string | null
+          banner_opacity: number | null
+          banner_scale: number | null
+          banner_x: number | null
+          banner_y: number | null
           clinic_id: string
           clinic_name: string | null
           doctor_on_duty: string | null
@@ -865,7 +870,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          banner_fit?: string | null
           banner_image_url?: string | null
+          banner_opacity?: number | null
+          banner_scale?: number | null
+          banner_x?: number | null
+          banner_y?: number | null
           clinic_id: string
           clinic_name?: string | null
           doctor_on_duty?: string | null
@@ -883,7 +893,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          banner_fit?: string | null
           banner_image_url?: string | null
+          banner_opacity?: number | null
+          banner_scale?: number | null
+          banner_x?: number | null
+          banner_y?: number | null
           clinic_id?: string
           clinic_name?: string | null
           doctor_on_duty?: string | null
