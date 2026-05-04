@@ -282,6 +282,11 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     ticker_messages: tickerLines,
     opacity: opacity / 100,
     banner_image_url: bannerImageUrl || null,
+    banner_x: bannerX,
+    banner_y: bannerY,
+    banner_scale: bannerScale / 100,
+    banner_fit: bannerFit,
+    banner_opacity: bannerOpacity / 100,
     branding_overrides: {},
   });
 
