@@ -596,6 +596,11 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
           </div>
         )}
 
+        <div className="flex items-center justify-end gap-1 -mb-2">
+          <Button size="sm" variant={showGuides ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => setShowGuides((s) => !s)}>
+            {showGuides ? "Hide" : "Show"} Safe Zones & Grid
+          </Button>
+        </div>
         {/* Live preview — 16:9 */}
         <div className="relative w-full rounded-xl overflow-hidden border bg-black aspect-video">
           {bgMode === "video" && selectedVideo ? (
