@@ -627,6 +627,25 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
             </>
           )}
           {lowerThirdVisible && <LowerThird branding={previewBranding} style={active} opacity={opacity / 100} />}
+          {showGuides && (
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute border-2 border-yellow-400/70 border-dashed" style={{ top: "5%", left: "5%", right: "5%", bottom: "5%" }}>
+                <span className="absolute -top-4 left-0 text-[9px] font-mono text-yellow-300 bg-black/70 px-1">TITLE-SAFE 90%</span>
+              </div>
+              <div className="absolute border border-cyan-400/60 border-dashed" style={{ top: "10%", left: "10%", right: "10%", bottom: "10%" }}>
+                <span className="absolute -top-3 left-0 text-[9px] font-mono text-cyan-300 bg-black/70 px-1">ACTION-SAFE 80%</span>
+              </div>
+              <div className="absolute inset-0">
+                {[1, 2].map((i) => (
+                  <div key={`v${i}`} className="absolute top-0 bottom-0 border-l border-white/20" style={{ left: `${(i * 100) / 3}%` }} />
+                ))}
+                {[1, 2].map((i) => (
+                  <div key={`h${i}`} className="absolute left-0 right-0 border-t border-white/20" style={{ top: `${(i * 100) / 3}%` }} />
+                ))}
+              </div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 border border-white/50 rounded-full" />
+            </div>
+          )}
           {!lowerThirdVisible && (
             <div className="absolute top-3 left-3 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-mono">
               LT hidden ({fmtTime(currentTime)})
