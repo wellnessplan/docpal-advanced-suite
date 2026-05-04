@@ -411,6 +411,11 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
         ticker_messages: p.ticker_messages || [],
         opacity: typeof p.opacity === "number" ? p.opacity : 1,
         banner_image_url: p.banner_image_url || null,
+        banner_x: typeof p.banner_x === "number" ? p.banner_x : 50,
+        banner_y: typeof p.banner_y === "number" ? p.banner_y : 100,
+        banner_scale: typeof p.banner_scale === "number" ? p.banner_scale : 1,
+        banner_fit: p.banner_fit || "contain",
+        banner_opacity: typeof p.banner_opacity === "number" ? p.banner_opacity : 1,
         sort_order: p.sort_order || 0,
         branding_overrides: p.branding_overrides || {},
         // Skip foreign-keyed video refs since they belong to the source clinic
