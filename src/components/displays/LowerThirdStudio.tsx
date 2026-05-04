@@ -754,6 +754,58 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
           <p className="text-[10px] text-muted-foreground">
             Upload a wide PNG/JPG banner (e.g. 1920×360). Saved with the preset; switch style to <b>Image Banner</b> to display it.
           </p>
+
+          {/* Banner positioning */}
+          {(bannerImageUrl || branding?.banner_image_url) && (
+            <div className="mt-3 pt-3 border-t space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Banner Position & Scale</Label>
+                <div className="flex gap-1">
+                  <Button size="sm" variant={showGuides ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => setShowGuides((s) => !s)}>
+                    Safe Zones
+                  </Button>
+                  <Button size="sm" variant={snapGrid ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => setSnapGrid((s) => !s)}>
+                    Snap 5%
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={() => { setBannerX(50); setBannerY(100); setBannerScale(100); setBannerFit("contain"); setBannerOpacity(100); }}>
+                    Reset
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="flex justify-between"><Label className="text-[11px]">X (horizontal)</Label><span className="text-[10px] font-mono">{bannerX}%</span></div>
+                  <Slider value={[bannerX]} min={0} max={100} step={snapGrid ? 5 : 1} onValueChange={([v]) => setBannerX(v)} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between"><Label className="text-[11px]">Y (vertical)</Label><span className="text-[10px] font-mono">{bannerY}%</span></div>
+                  <Slider value={[bannerY]} min={0} max={100} step={snapGrid ? 5 : 1} onValueChange={([v]) => setBannerY(v)} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between"><Label className="text-[11px]">Scale</Label><span className="text-[10px] font-mono">{bannerScale}%</span></div>
+                  <Slider value={[bannerScale]} min={20} max={200} step={5} onValueChange={([v]) => setBannerScale(v)} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between"><Label className="text-[11px]">Banner Opacity</Label><span className="text-[10px] font-mono">{bannerOpacity}%</span></div>
+                  <Slider value={[bannerOpacity]} min={10} max={100} step={5} onValueChange={([v]) => setBannerOpacity(v)} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px]">Fit Mode</Label>
+                <Select value={bannerFit} onValueChange={(v: any) => setBannerFit(v)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="contain" className="text-xs">Contain — keep aspect ratio</SelectItem>
+                    <SelectItem value="cover" className="text-xs">Cover — fill area, may crop</SelectItem>
+                    <SelectItem value="stretch" className="text-xs">Stretch — full width</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                X/Y is the bottom-center anchor of the banner. Toggle <b>Safe Zones</b> to keep critical content inside title-safe areas; <b>Snap 5%</b> aligns to a coarse grid.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Timing controls */}
