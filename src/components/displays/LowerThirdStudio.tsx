@@ -129,8 +129,13 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
       lower_third_style: active,
       ticker_messages: tickerLines.length ? tickerLines : branding?.ticker_messages || [],
       banner_image_url: bannerImageUrl || branding?.banner_image_url || null,
+      banner_x: bannerX,
+      banner_y: bannerY,
+      banner_scale: bannerScale / 100,
+      banner_fit: bannerFit,
+      banner_opacity: bannerOpacity / 100,
     };
-  }, [branding, active, tickerText, bannerImageUrl]);
+  }, [branding, active, tickerText, bannerImageUrl, bannerX, bannerY, bannerScale, bannerFit, bannerOpacity]);
 
   const lowerThirdVisible = useMemo(() => {
     if (!isPlayable) return true;
