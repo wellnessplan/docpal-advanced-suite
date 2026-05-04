@@ -24,6 +24,12 @@ export interface LowerThirdBranding {
   cta_text?: string | null;            // e.g. "Scan Here! Make an appointment"
   qr_url?: string | null;              // image URL for QR code
   banner_image_url?: string | null;    // full-width image banner overlay
+  // Banner positioning (for variant="image")
+  banner_x?: number | null;            // 0..100 horizontal anchor (%)
+  banner_y?: number | null;            // 0..100 vertical anchor (%)
+  banner_scale?: number | null;        // 0.1..3 scale multiplier
+  banner_fit?: "contain" | "cover" | "stretch" | null;
+  banner_opacity?: number | null;      // 0..1 — image-only opacity
 }
 
 interface Props {
