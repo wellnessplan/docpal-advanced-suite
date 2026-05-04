@@ -145,8 +145,14 @@ export default function DisplayManager() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {screens.map((s: any) => {
-              const isOnline = s.last_seen_at && (Date.now() - new Date(s.last_seen_at).getTime() < 30000);
+              const lastSeen = s.last_seen_at ? new Date(s.last_seen_at).getTime() : 0;
+              const ageSec = lastSeen ? Math.round((Date.now() - lastSeen) / 1000) : Infinity;
+              // Health: live <30s, idle 30-120s, offline >120s
+              const health = ageSec < 30 ? "live" : ageSec < 120 ? "idle" : "offline";
+              const recentError = s.last_error_at && (Date.now() - new Date(s.last_error_at).getTime() < 5 * 60 * 1000);
               const currentVideo = videos.find((v: any) => v.id === s.current_video_id);
+              const sendCmd = (type: string) =>
+                updateScreen.mutate({ id: s.id, patch: { command: { type }, command_at: new Date().toISOString() } });
               return (
                 <Card key={s.id} className="overflow-hidden">
                   <CardHeader className="pb-3">
@@ -155,10 +161,26 @@ export default function DisplayManager() {
                         <CardTitle className="text-base truncate">{s.name}</CardTitle>
                         <p className="text-xs text-muted-foreground capitalize">{s.zone.replace("_", " ")}</p>
                       </div>
-                      <Badge variant={isOnline ? "default" : "secondary"} className="text-[10px] gap-1 shrink-0">
-                        {isOnline ? <><Wifi className="h-3 w-3" /> Live</> : <><WifiOff className="h-3 w-3" /> Offline</>}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <Badge
+                          variant={health === "live" ? "default" : health === "idle" ? "secondary" : "destructive"}
+                          className="text-[10px] gap-1"
+                        >
+                          {health === "live" ? <><Wifi className="h-3 w-3" /> Live</> :
+                           health === "idle" ? <><Activity className="h-3 w-3" /> Idle {ageSec}s</> :
+                           <><WifiOff className="h-3 w-3" /> Offline</>}
+                        </Badge>
+                        {s.app_version && (
+                          <span className="text-[9px] font-mono text-muted-foreground">v{s.app_version}</span>
+                        )}
+                      </div>
                     </div>
+                    {recentError && (
+                      <div className="mt-2 flex items-start gap-1.5 rounded-md bg-destructive/10 text-destructive text-[10px] p-1.5">
+                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+                        <p className="truncate" title={s.last_error}>{s.last_error}</p>
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {/* Pair code */}
@@ -217,6 +239,22 @@ export default function DisplayManager() {
                     <div className="flex items-center justify-between text-xs">
                       <span>Show queue panel</span>
                       <Switch checked={s.show_queue} onCheckedChange={(c) => updateScreen.mutate({ id: s.id, patch: { show_queue: c } })} />
+                    </div>
+
+                    {/* Remote control */}
+                    <div className="pt-2 border-t space-y-1.5">
+                      <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide">Remote Control</p>
+                      <div className="grid grid-cols-3 gap-1">
+                        <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => sendCmd("reload")} title="Reload the TV browser">
+                          <RefreshCw className="h-3 w-3" /> Reload
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => sendCmd("clear_cache")} title="Clear cached media on TV">
+                          <Power className="h-3 w-3" /> Clear
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => sendCmd("update")} title="Force-update to newest version">
+                          <Activity className="h-3 w-3" /> Update
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="flex gap-1 pt-2 border-t">
