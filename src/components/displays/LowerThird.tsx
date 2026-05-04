@@ -24,6 +24,12 @@ export interface LowerThirdBranding {
   cta_text?: string | null;            // e.g. "Scan Here! Make an appointment"
   qr_url?: string | null;              // image URL for QR code
   banner_image_url?: string | null;    // full-width image banner overlay
+  // Banner positioning (for variant="image")
+  banner_x?: number | null;            // 0..100 horizontal anchor (%)
+  banner_y?: number | null;            // 0..100 vertical anchor (%)
+  banner_scale?: number | null;        // 0.1..3 scale multiplier
+  banner_fit?: "contain" | "cover" | "stretch" | null;
+  banner_opacity?: number | null;      // 0..1 — image-only opacity
 }
 
 interface Props {
@@ -225,9 +231,33 @@ export default function LowerThird({ branding, style, className = "", opacity }:
   }
 
   if (variant === "image" && branding?.banner_image_url) {
+    const bx = typeof branding.banner_x === "number" ? branding.banner_x : 50;
+    const by = typeof branding.banner_y === "number" ? branding.banner_y : 100;
+    const bs = typeof branding.banner_scale === "number" ? branding.banner_scale : 1;
+    const bfit = branding.banner_fit || "contain";
+    const bop = typeof branding.banner_opacity === "number" ? branding.banner_opacity : 1;
+    // Combine layer opacity * banner-specific opacity
+    const combinedOp = (typeof opacity === "number" ? opacity : 1) * bop;
+    const imgClass = bfit === "cover"
+      ? "w-full h-full object-cover"
+      : bfit === "stretch"
+        ? "w-full h-full"
+        : "max-w-full max-h-full object-contain";
     return (
-      <div className={`absolute bottom-0 left-0 right-0 ${className}`} style={layerStyle}>
-        <img src={branding.banner_image_url} alt="" className="w-full h-auto max-h-[35%] object-contain object-bottom" />
+      <div className={`absolute inset-0 pointer-events-none ${className}`} style={{ opacity: Math.max(0, Math.min(1, combinedOp)) }}>
+        <div
+          className="absolute"
+          style={{
+            left: `${bx}%`,
+            top: `${by}%`,
+            transform: `translate(-50%, -100%) scale(${bs})`,
+            transformOrigin: "center bottom",
+            width: bfit === "stretch" ? "100%" : "auto",
+            maxWidth: "100%",
+          }}
+        >
+          <img src={branding.banner_image_url} alt="" className={imgClass} style={{ display: "block" }} />
+        </div>
       </div>
     );
   }

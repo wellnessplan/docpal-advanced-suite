@@ -847,7 +847,12 @@ export type Database = {
       }
       display_branding: {
         Row: {
+          banner_fit: string | null
           banner_image_url: string | null
+          banner_opacity: number | null
+          banner_scale: number | null
+          banner_x: number | null
+          banner_y: number | null
           clinic_id: string
           clinic_name: string | null
           doctor_on_duty: string | null
@@ -865,7 +870,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          banner_fit?: string | null
           banner_image_url?: string | null
+          banner_opacity?: number | null
+          banner_scale?: number | null
+          banner_x?: number | null
+          banner_y?: number | null
           clinic_id: string
           clinic_name?: string | null
           doctor_on_duty?: string | null
@@ -883,7 +893,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          banner_fit?: string | null
           banner_image_url?: string | null
+          banner_opacity?: number | null
+          banner_scale?: number | null
+          banner_x?: number | null
+          banner_y?: number | null
           clinic_id?: string
           clinic_name?: string | null
           doctor_on_duty?: string | null
@@ -989,6 +1004,7 @@ export type Database = {
       }
       display_screens: {
         Row: {
+          app_version: string | null
           clinic_id: string
           command: Json | null
           command_at: string | null
@@ -998,6 +1014,8 @@ export type Database = {
           id: string
           is_paired: boolean
           is_playing: boolean
+          last_error: string | null
+          last_error_at: string | null
           last_seen_at: string | null
           lower_third_hide_at_sec: number | null
           lower_third_show_at_sec: number
@@ -1010,6 +1028,7 @@ export type Database = {
           zone: string
         }
         Insert: {
+          app_version?: string | null
           clinic_id: string
           command?: Json | null
           command_at?: string | null
@@ -1019,6 +1038,8 @@ export type Database = {
           id?: string
           is_paired?: boolean
           is_playing?: boolean
+          last_error?: string | null
+          last_error_at?: string | null
           last_seen_at?: string | null
           lower_third_hide_at_sec?: number | null
           lower_third_show_at_sec?: number
@@ -1031,6 +1052,7 @@ export type Database = {
           zone?: string
         }
         Update: {
+          app_version?: string | null
           clinic_id?: string
           command?: Json | null
           command_at?: string | null
@@ -1040,6 +1062,8 @@ export type Database = {
           id?: string
           is_paired?: boolean
           is_playing?: boolean
+          last_error?: string | null
+          last_error_at?: string | null
           last_seen_at?: string | null
           lower_third_hide_at_sec?: number | null
           lower_third_show_at_sec?: number
@@ -1862,7 +1886,12 @@ export type Database = {
       }
       lower_third_presets: {
         Row: {
+          banner_fit: string | null
           banner_image_url: string | null
+          banner_opacity: number | null
+          banner_scale: number | null
+          banner_x: number | null
+          banner_y: number | null
           branding_overrides: Json
           clinic_id: string
           created_at: string
@@ -1879,7 +1908,12 @@ export type Database = {
           video_ids: string[]
         }
         Insert: {
+          banner_fit?: string | null
           banner_image_url?: string | null
+          banner_opacity?: number | null
+          banner_scale?: number | null
+          banner_x?: number | null
+          banner_y?: number | null
           branding_overrides?: Json
           clinic_id: string
           created_at?: string
@@ -1896,7 +1930,12 @@ export type Database = {
           video_ids?: string[]
         }
         Update: {
+          banner_fit?: string | null
           banner_image_url?: string | null
+          banner_opacity?: number | null
+          banner_scale?: number | null
+          banner_x?: number | null
+          banner_y?: number | null
           branding_overrides?: Json
           clinic_id?: string
           created_at?: string

@@ -74,6 +74,15 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
   const [opacity, setOpacity] = useState(100);
   const [bannerImageUrl, setBannerImageUrl] = useState<string>("");
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  // Banner positioning
+  const [bannerX, setBannerX] = useState(50);     // 0..100
+  const [bannerY, setBannerY] = useState(100);    // 0..100
+  const [bannerScale, setBannerScale] = useState(100); // 10..300 (%)
+  const [bannerFit, setBannerFit] = useState<"contain" | "cover" | "stretch">("contain");
+  const [bannerOpacity, setBannerOpacity] = useState(100); // 0..100
+  // Safe-zone + grid guides
+  const [showGuides, setShowGuides] = useState(false);
+  const [snapGrid, setSnapGrid] = useState(true);
 
   // Preset name (for save)
   const [presetName, setPresetName] = useState("");
@@ -120,8 +129,13 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
       lower_third_style: active,
       ticker_messages: tickerLines.length ? tickerLines : branding?.ticker_messages || [],
       banner_image_url: bannerImageUrl || branding?.banner_image_url || null,
+      banner_x: bannerX,
+      banner_y: bannerY,
+      banner_scale: bannerScale / 100,
+      banner_fit: bannerFit,
+      banner_opacity: bannerOpacity / 100,
     };
-  }, [branding, active, tickerText, bannerImageUrl]);
+  }, [branding, active, tickerText, bannerImageUrl, bannerX, bannerY, bannerScale, bannerFit, bannerOpacity]);
 
   const lowerThirdVisible = useMemo(() => {
     if (!isPlayable) return true;
@@ -268,6 +282,11 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     ticker_messages: tickerLines,
     opacity: opacity / 100,
     banner_image_url: bannerImageUrl || null,
+    banner_x: bannerX,
+    banner_y: bannerY,
+    banner_scale: bannerScale / 100,
+    banner_fit: bannerFit,
+    banner_opacity: bannerOpacity / 100,
     branding_overrides: {},
   });
 
@@ -323,6 +342,11 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
     setTickerText(((p.ticker_messages as string[]) || []).join("\n"));
     setOpacity(typeof p.opacity === "number" ? Math.round(p.opacity * 100) : 100);
     setBannerImageUrl(p.banner_image_url || "");
+    setBannerX(typeof p.banner_x === "number" ? p.banner_x : 50);
+    setBannerY(typeof p.banner_y === "number" ? p.banner_y : 100);
+    setBannerScale(typeof p.banner_scale === "number" ? Math.round(p.banner_scale * 100) : 100);
+    setBannerFit((p.banner_fit as any) || "contain");
+    setBannerOpacity(typeof p.banner_opacity === "number" ? Math.round(p.banner_opacity * 100) : 100);
     const ids: string[] = (p.video_ids && p.video_ids.length ? p.video_ids : (p.video_id ? [p.video_id] : []));
     setVideoQueue(ids);
     setQueueIdx(0);
@@ -387,6 +411,11 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
         ticker_messages: p.ticker_messages || [],
         opacity: typeof p.opacity === "number" ? p.opacity : 1,
         banner_image_url: p.banner_image_url || null,
+        banner_x: typeof p.banner_x === "number" ? p.banner_x : 50,
+        banner_y: typeof p.banner_y === "number" ? p.banner_y : 100,
+        banner_scale: typeof p.banner_scale === "number" ? p.banner_scale : 1,
+        banner_fit: p.banner_fit || "contain",
+        banner_opacity: typeof p.banner_opacity === "number" ? p.banner_opacity : 1,
         sort_order: p.sort_order || 0,
         branding_overrides: p.branding_overrides || {},
         // Skip foreign-keyed video refs since they belong to the source clinic
@@ -567,6 +596,11 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
           </div>
         )}
 
+        <div className="flex items-center justify-end gap-1 -mb-2">
+          <Button size="sm" variant={showGuides ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => setShowGuides((s) => !s)}>
+            {showGuides ? "Hide" : "Show"} Safe Zones & Grid
+          </Button>
+        </div>
         {/* Live preview — 16:9 */}
         <div className="relative w-full rounded-xl overflow-hidden border bg-black aspect-video">
           {bgMode === "video" && selectedVideo ? (
@@ -598,6 +632,25 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
             </>
           )}
           {lowerThirdVisible && <LowerThird branding={previewBranding} style={active} opacity={opacity / 100} />}
+          {showGuides && (
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute border-2 border-yellow-400/70 border-dashed" style={{ top: "5%", left: "5%", right: "5%", bottom: "5%" }}>
+                <span className="absolute -top-4 left-0 text-[9px] font-mono text-yellow-300 bg-black/70 px-1">TITLE-SAFE 90%</span>
+              </div>
+              <div className="absolute border border-cyan-400/60 border-dashed" style={{ top: "10%", left: "10%", right: "10%", bottom: "10%" }}>
+                <span className="absolute -top-3 left-0 text-[9px] font-mono text-cyan-300 bg-black/70 px-1">ACTION-SAFE 80%</span>
+              </div>
+              <div className="absolute inset-0">
+                {[1, 2].map((i) => (
+                  <div key={`v${i}`} className="absolute top-0 bottom-0 border-l border-white/20" style={{ left: `${(i * 100) / 3}%` }} />
+                ))}
+                {[1, 2].map((i) => (
+                  <div key={`h${i}`} className="absolute left-0 right-0 border-t border-white/20" style={{ top: `${(i * 100) / 3}%` }} />
+                ))}
+              </div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 border border-white/50 rounded-full" />
+            </div>
+          )}
           {!lowerThirdVisible && (
             <div className="absolute top-3 left-3 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-mono">
               LT hidden ({fmtTime(currentTime)})
@@ -706,6 +759,58 @@ export default function LowerThirdStudio({ branding, clinicId, screens }: Props)
           <p className="text-[10px] text-muted-foreground">
             Upload a wide PNG/JPG banner (e.g. 1920×360). Saved with the preset; switch style to <b>Image Banner</b> to display it.
           </p>
+
+          {/* Banner positioning */}
+          {(bannerImageUrl || branding?.banner_image_url) && (
+            <div className="mt-3 pt-3 border-t space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Banner Position & Scale</Label>
+                <div className="flex gap-1">
+                  <Button size="sm" variant={showGuides ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => setShowGuides((s) => !s)}>
+                    Safe Zones
+                  </Button>
+                  <Button size="sm" variant={snapGrid ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => setSnapGrid((s) => !s)}>
+                    Snap 5%
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={() => { setBannerX(50); setBannerY(100); setBannerScale(100); setBannerFit("contain"); setBannerOpacity(100); }}>
+                    Reset
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="flex justify-between"><Label className="text-[11px]">X (horizontal)</Label><span className="text-[10px] font-mono">{bannerX}%</span></div>
+                  <Slider value={[bannerX]} min={0} max={100} step={snapGrid ? 5 : 1} onValueChange={([v]) => setBannerX(v)} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between"><Label className="text-[11px]">Y (vertical)</Label><span className="text-[10px] font-mono">{bannerY}%</span></div>
+                  <Slider value={[bannerY]} min={0} max={100} step={snapGrid ? 5 : 1} onValueChange={([v]) => setBannerY(v)} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between"><Label className="text-[11px]">Scale</Label><span className="text-[10px] font-mono">{bannerScale}%</span></div>
+                  <Slider value={[bannerScale]} min={20} max={200} step={5} onValueChange={([v]) => setBannerScale(v)} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between"><Label className="text-[11px]">Banner Opacity</Label><span className="text-[10px] font-mono">{bannerOpacity}%</span></div>
+                  <Slider value={[bannerOpacity]} min={10} max={100} step={5} onValueChange={([v]) => setBannerOpacity(v)} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px]">Fit Mode</Label>
+                <Select value={bannerFit} onValueChange={(v: any) => setBannerFit(v)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="contain" className="text-xs">Contain — keep aspect ratio</SelectItem>
+                    <SelectItem value="cover" className="text-xs">Cover — fill area, may crop</SelectItem>
+                    <SelectItem value="stretch" className="text-xs">Stretch — full width</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                X/Y is the bottom-center anchor of the banner. Toggle <b>Safe Zones</b> to keep critical content inside title-safe areas; <b>Snap 5%</b> aligns to a coarse grid.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Timing controls */}
