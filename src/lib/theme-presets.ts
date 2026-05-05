@@ -85,23 +85,48 @@ const repL = (hsl: string, l: number) => {
 };
 
 export function applyTheme(p: ThemePreset) {
+  const lP = lOf(p.primary);
+  const sidebarAccent = repL(p.sidebarBg, lOf(p.sidebarBg) + 8);
+  const sidebarBorder = repL(p.sidebarBg, lOf(p.sidebarBg) + 6);
+  const accentFg = repL(p.primary, Math.max(lP - 31, 20));
+  const gradientPrimary = `linear-gradient(135deg, hsl(${p.primary}), hsl(${repL(p.primary, Math.min(lP + 10, 90))}))`;
+  const gradientHero = `linear-gradient(135deg, hsl(${p.sidebarBg}), hsl(${repL(p.primary, Math.max(lP - 25, 25))}))`;
+
+  // Vars that should override BOTH :root and .dark consistently across all components.
+  const vars: Record<string, string> = {
+    "--primary": p.primary,
+    "--primary-foreground": "0 0% 100%",
+    "--accent": p.accent,
+    "--accent-foreground": accentFg,
+    "--ring": p.ring,
+    "--sidebar-primary": p.sidebarPrimary,
+    "--sidebar-primary-foreground": "0 0% 100%",
+    "--sidebar-background": p.sidebarBg,
+    "--sidebar-foreground": p.sidebarFg,
+    "--sidebar-accent": sidebarAccent,
+    "--sidebar-accent-foreground": "0 0% 100%",
+    "--sidebar-border": sidebarBorder,
+    "--sidebar-ring": p.sidebarPrimary,
+    "--gradient-primary": gradientPrimary,
+    "--gradient-hero": gradientHero,
+  };
+
+  // 1) Apply inline on :root for highest specificity in light mode.
   const root = document.documentElement;
-  root.style.setProperty("--primary", p.primary);
-  root.style.setProperty("--accent", p.accent);
-  root.style.setProperty("--ring", p.ring);
-  root.style.setProperty("--accent-foreground", repL(p.primary, Math.max(lOf(p.primary) - 31, 20)));
-  root.style.setProperty("--sidebar-primary", p.sidebarPrimary);
-  root.style.setProperty("--sidebar-primary-foreground", "0 0% 100%");
-  root.style.setProperty("--sidebar-background", p.sidebarBg);
-  root.style.setProperty("--sidebar-foreground", p.sidebarFg);
-  root.style.setProperty("--sidebar-accent", repL(p.sidebarBg, lOf(p.sidebarBg) + 8));
-  root.style.setProperty("--sidebar-accent-foreground", "0 0% 100%");
-  root.style.setProperty("--sidebar-border", repL(p.sidebarBg, lOf(p.sidebarBg) + 6));
-  root.style.setProperty("--sidebar-ring", p.sidebarPrimary);
-  root.style.setProperty(
-    "--gradient-primary",
-    `linear-gradient(135deg, hsl(${p.primary}), hsl(${repL(p.primary, Math.min(lOf(p.primary) + 10, 90))}))`
-  );
+  Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+  // 2) Inject a <style> tag so `.dark` rules also pick up brand vars
+  //    (inline styles on :root would otherwise lose to `.dark` selector).
+  const STYLE_ID = "db-theme-override";
+  let tag = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+  if (!tag) {
+    tag = document.createElement("style");
+    tag.id = STYLE_ID;
+    document.head.appendChild(tag);
+  }
+  const decls = Object.entries(vars).map(([k, v]) => `${k}: ${v};`).join("");
+  tag.innerHTML = `:root, .dark { ${decls} }`;
+
   if (p.font) applyFont(p.font);
 }
 
