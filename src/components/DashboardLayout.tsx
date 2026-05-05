@@ -194,8 +194,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {!isMobile && (
         <div className="p-2 pr-0 h-screen flex">
           <aside
+            style={{ background: "var(--gradient-hero, hsl(var(--sidebar-background)))" }}
             className={cn(
-              "flex flex-col bg-gradient-to-b from-[hsl(210,80%,32%)] via-[hsl(205,75%,38%)] to-[hsl(200,70%,28%)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] rounded-2xl shadow-[0_8px_32px_rgba(15,76,129,0.35)] border border-white/[0.12]",
+              "flex flex-col text-sidebar-foreground backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] border border-white/[0.12]",
               collapsed ? "w-[60px]" : "w-[240px]"
             )}
           >
