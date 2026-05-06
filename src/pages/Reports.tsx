@@ -48,51 +48,46 @@ export default function ReportsPage() {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ["report-invoices", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("amount, status, paid_at, created_at, payment_method")
-        .eq("clinic_id", clinicId!);
-      return data ?? [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("invoices").select("amount, status, paid_at, created_at, payment_method")
+        .eq("clinic_id", clinicId!).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ["report-expenses", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase.from("expenses").select("amount, category, expense_date")
-        .eq("clinic_id", clinicId!);
-      return data ?? [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("expenses").select("amount, category, expense_date")
+        .eq("clinic_id", clinicId!).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   const { data: appointments = [] } = useQuery({
     queryKey: ["report-appointments", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase.from("appointments").select("status, appointment_date, type, provider_id, doctor_id")
-        .eq("clinic_id", clinicId!);
-      return data ?? [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("appointments").select("status, appointment_date, type, provider_id, doctor_id")
+        .eq("clinic_id", clinicId!).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   const { data: patients = [] } = useQuery({
     queryKey: ["report-patients", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase.from("patients").select("id, gender, date_of_birth, created_at")
-        .eq("clinic_id", clinicId!);
-      return data ?? [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("patients").select("id, gender, date_of_birth, created_at")
+        .eq("clinic_id", clinicId!).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   const { data: treatments = [] } = useQuery({
     queryKey: ["report-treatments", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase.from("tooth_treatments")
-        .select("treatment_name, cost, status, created_at, performed_by");
-      return data ?? [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("tooth_treatments")
+        .select("treatment_name, cost, status, created_at, performed_by").range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
