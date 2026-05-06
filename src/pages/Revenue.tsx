@@ -19,30 +19,27 @@ export default function Revenue() {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ["rev-invoices", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("amount, total, status, paid_at, created_at, payment_method, balance")
-        .eq("clinic_id", clinicId!);
-      return data ?? [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("invoices").select("amount, total, status, paid_at, created_at, payment_method, balance")
+        .eq("clinic_id", clinicId!).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   const { data: treatments = [] } = useQuery({
     queryKey: ["rev-treatments", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase.from("tooth_treatments")
-        .select("treatment_name, cost, status, created_at");
-      return data ?? [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("tooth_treatments")
+        .select("treatment_name, cost, status, created_at").range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   const { data: patients = [] } = useQuery({
     queryKey: ["rev-patients", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase.from("patients").select("id").eq("clinic_id", clinicId!);
-      return data ?? [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("patients").select("id").eq("clinic_id", clinicId!).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
