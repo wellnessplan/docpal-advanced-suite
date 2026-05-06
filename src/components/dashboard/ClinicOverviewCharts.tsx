@@ -15,9 +15,11 @@ export function AppointmentHeatmap() {
     queryKey: ["heatmap-hourly", clinicId],
     queryFn: async () => {
       const thirtyDaysAgo = subDays(new Date(), 30).toISOString().split("T")[0];
-      const { data } = await supabase.from("appointments").select("appointment_time")
-        .eq("clinic_id", clinicId!)
-        .gte("appointment_date", thirtyDaysAgo);
+      const data = await fetchAllPaged<{ appointment_time: string | null }>((from, to) =>
+        supabase.from("appointments").select("appointment_time")
+          .eq("clinic_id", clinicId!)
+          .gte("appointment_date", thirtyDaysAgo).range(from, to)
+      );
       const hourMap: Record<number, number> = {};
       data?.forEach(a => {
         if (a.appointment_time) {
