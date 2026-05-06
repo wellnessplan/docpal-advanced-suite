@@ -6,6 +6,7 @@ import { Plus, ClipboardCheck, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -16,14 +17,13 @@ export default function TreatmentPlans() {
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ["treatment-plans", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase
         .from("treatment_plans")
         .select("*, patients(full_name, phone)")
         .eq("clinic_id", clinicId!)
-        .order("created_at", { ascending: false });
-      return data || [];
-    },
+        .order("created_at", { ascending: false }).range(from, to)
+    , { maxRows: 5000 }),
     enabled: !!clinicId,
   });
 

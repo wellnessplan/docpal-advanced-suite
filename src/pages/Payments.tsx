@@ -6,6 +6,7 @@ import { Plus, Wallet, Search, IndianRupee } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -16,14 +17,13 @@ export default function Payments() {
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ["payments", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase
         .from("payments")
         .select("*, patients(full_name, phone)")
         .eq("clinic_id", clinicId!)
-        .order("created_at", { ascending: false });
-      return data || [];
-    },
+        .order("created_at", { ascending: false }).range(from, to)
+    , { maxRows: 10000 }),
     enabled: !!clinicId,
   });
 
