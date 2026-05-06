@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -65,74 +66,56 @@ export default function Performance() {
   // Fetch appointments for the period
   const { data: appointments = [] } = useQuery({
     queryKey: ["perf-appointments", clinicId, startISO, endISO],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("appointments")
-        .select("*")
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("appointments").select("*")
         .eq("clinic_id", clinicId!)
         .gte("appointment_date", startDate.toISOString().split("T")[0])
-        .lte("appointment_date", new Date().toISOString().split("T")[0]);
-      return data || [];
-    },
+        .lte("appointment_date", new Date().toISOString().split("T")[0])
+        .range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   // Fetch invoices for revenue
   const { data: invoices = [] } = useQuery({
     queryKey: ["perf-invoices", clinicId, startISO, endISO],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("invoices")
-        .select("*")
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("invoices").select("*")
         .eq("clinic_id", clinicId!)
-        .gte("created_at", startISO)
-        .lte("created_at", endISO);
-      return data || [];
-    },
+        .gte("created_at", startISO).lte("created_at", endISO).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   // Fetch treatments
   const { data: treatments = [] } = useQuery({
     queryKey: ["perf-treatments", clinicId, startISO, endISO],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("tooth_treatments")
-        .select("*")
-        .gte("created_at", startISO)
-        .lte("created_at", endISO);
-      return data || [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("tooth_treatments").select("*")
+        .gte("created_at", startISO).lte("created_at", endISO).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   // Queue tokens for timing
   const { data: queueTokens = [] } = useQuery({
     queryKey: ["perf-queue", clinicId, startISO, endISO],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("queue_tokens")
-        .select("*")
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("queue_tokens").select("*")
         .eq("clinic_id", clinicId!)
-        .gte("created_at", startISO)
-        .lte("created_at", endISO);
-      return data || [];
-    },
+        .gte("created_at", startISO).lte("created_at", endISO).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   // Consultation logs
   const { data: consultationLogs = [] } = useQuery({
     queryKey: ["perf-consultation-logs", clinicId, startISO, endISO],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("consultation_logs")
-        .select("*")
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("consultation_logs").select("*")
         .eq("clinic_id", clinicId!)
-        .gte("created_at", startISO)
-        .lte("created_at", endISO);
-      return data || [];
-    },
+        .gte("created_at", startISO).lte("created_at", endISO).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 

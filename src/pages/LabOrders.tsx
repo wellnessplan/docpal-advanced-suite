@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,27 +50,24 @@ export default function LabOrdersPage() {
   // Fetch lab orders
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["lab-orders-all", clinicId, statusFilter],
-    queryFn: async () => {
+    queryFn: async () => fetchAllPaged((from, to) => {
       let q = supabase.from("lab_orders")
         .select("*, patients(full_name, phone)")
         .eq("clinic_id", clinicId!)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }).range(from, to);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data ?? [];
-    },
+      return q;
+    }, { maxRows: 5000 }),
     enabled: !!clinicId,
   });
 
   // Fetch patients for dropdown
   const { data: patients = [] } = useQuery({
     queryKey: ["patients-list", clinicId],
-    queryFn: async () => {
-      const { data } = await supabase.from("patients").select("id, full_name, phone")
-        .eq("clinic_id", clinicId!).order("full_name");
-      return data ?? [];
-    },
+    queryFn: async () => fetchAllPaged((from, to) =>
+      supabase.from("patients").select("id, full_name, phone")
+        .eq("clinic_id", clinicId!).order("full_name").range(from, to)
+    , { maxRows: 10000 }),
     enabled: !!clinicId,
   });
 

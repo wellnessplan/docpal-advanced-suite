@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,9 +35,10 @@ export default function FinancePage() {
     queryKey: ["expenses", clinicId],
     queryFn: async () => {
       if (!clinicId) return [];
-      const { data, error } = await supabase.from("expenses").select("*").eq("clinic_id", clinicId).order("expense_date", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+      return fetchAllPaged((from, to) =>
+        supabase.from("expenses").select("*").eq("clinic_id", clinicId)
+          .order("expense_date", { ascending: false }).range(from, to)
+      , { maxRows: 10000 });
     },
     enabled: !!clinicId,
   });
@@ -45,9 +47,10 @@ export default function FinancePage() {
     queryKey: ["invoices-finance", clinicId],
     queryFn: async () => {
       if (!clinicId) return [];
-      const { data, error } = await supabase.from("invoices").select("*").eq("clinic_id", clinicId).eq("status", "paid");
-      if (error) throw error;
-      return data ?? [];
+      return fetchAllPaged((from, to) =>
+        supabase.from("invoices").select("*").eq("clinic_id", clinicId)
+          .eq("status", "paid").range(from, to)
+      , { maxRows: 20000 });
     },
     enabled: !!clinicId,
   });

@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, IndianRupee, AlertTriangle, TrendingDown, Package, TrendingUp, MessageSquare, TestTubes } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -38,9 +39,12 @@ export default function KPICards() {
   const { data: todayRevenue = 0 } = useQuery({
     queryKey: ["kpi-today-revenue", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("amount")
-        .eq("clinic_id", clinicId!).eq("status", "paid").gte("paid_at", today + "T00:00:00");
-      return data?.reduce((s, i) => s + Number(i.amount), 0) ?? 0;
+      const rows = await fetchAllPaged<{ amount: number | string }>((from, to) =>
+        supabase.from("invoices").select("amount")
+          .eq("clinic_id", clinicId!).eq("status", "paid")
+          .gte("paid_at", today + "T00:00:00").range(from, to)
+      );
+      return rows.reduce((s, i) => s + Number(i.amount), 0);
     },
     enabled: !!clinicId,
   });
@@ -48,9 +52,11 @@ export default function KPICards() {
   const { data: pendingCollections = 0 } = useQuery({
     queryKey: ["kpi-pending-collections", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("amount")
-        .eq("clinic_id", clinicId!).in("status", ["sent", "draft", "overdue"]);
-      return data?.reduce((s, i) => s + Number(i.amount), 0) ?? 0;
+      const rows = await fetchAllPaged<{ amount: number | string }>((from, to) =>
+        supabase.from("invoices").select("amount")
+          .eq("clinic_id", clinicId!).in("status", ["sent", "draft", "overdue"]).range(from, to)
+      );
+      return rows.reduce((s, i) => s + Number(i.amount), 0);
     },
     enabled: !!clinicId,
   });
@@ -60,11 +66,14 @@ export default function KPICards() {
     queryFn: async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const { data } = await supabase.from("appointments").select("status")
-        .eq("clinic_id", clinicId!).gte("appointment_date", thirtyDaysAgo.toISOString().split("T")[0]);
-      if (!data?.length) return 0;
-      const noShows = data.filter(a => a.status === "no_show").length;
-      return Math.round((noShows / data.length) * 100);
+      const rows = await fetchAllPaged<{ status: string }>((from, to) =>
+        supabase.from("appointments").select("status")
+          .eq("clinic_id", clinicId!)
+          .gte("appointment_date", thirtyDaysAgo.toISOString().split("T")[0]).range(from, to)
+      );
+      if (!rows.length) return 0;
+      const noShows = rows.filter(a => a.status === "no_show").length;
+      return Math.round((noShows / rows.length) * 100);
     },
     enabled: !!clinicId,
   });
@@ -72,9 +81,11 @@ export default function KPICards() {
   const { data: lowStockCount = 0 } = useQuery({
     queryKey: ["kpi-low-stock", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("inventory_items").select("quantity, min_stock_level")
-        .eq("clinic_id", clinicId!);
-      return data?.filter(i => i.quantity <= i.min_stock_level).length ?? 0;
+      const rows = await fetchAllPaged<{ quantity: number; min_stock_level: number }>((from, to) =>
+        supabase.from("inventory_items").select("quantity, min_stock_level")
+          .eq("clinic_id", clinicId!).range(from, to)
+      );
+      return rows.filter(i => i.quantity <= i.min_stock_level).length;
     },
     enabled: !!clinicId,
   });
@@ -88,10 +99,12 @@ export default function KPICards() {
         d.setMonth(d.getMonth() - i);
         const start = new Date(d.getFullYear(), d.getMonth(), 1);
         const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-        const { data } = await supabase.from("invoices").select("amount")
-          .eq("clinic_id", clinicId!).eq("status", "paid")
-          .gte("paid_at", start.toISOString()).lte("paid_at", end.toISOString());
-        trend.push(data?.reduce((s, i) => s + Number(i.amount), 0) ?? 0);
+        const rows = await fetchAllPaged<{ amount: number | string }>((f, t) =>
+          supabase.from("invoices").select("amount")
+            .eq("clinic_id", clinicId!).eq("status", "paid")
+            .gte("paid_at", start.toISOString()).lte("paid_at", end.toISOString()).range(f, t)
+        );
+        trend.push(rows.reduce((s, i) => s + Number(i.amount), 0));
       }
       return trend;
     },

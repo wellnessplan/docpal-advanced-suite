@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -37,9 +38,9 @@ export default function Inventory() {
     queryKey: ["inventory", clinicId],
     queryFn: async () => {
       if (!clinicId) return [];
-      const { data, error } = await supabase.from("inventory_items").select("*").eq("clinic_id", clinicId).order("name");
-      if (error) throw error;
-      return data;
+      return fetchAllPaged((from, to) =>
+        supabase.from("inventory_items").select("*").eq("clinic_id", clinicId).order("name").range(from, to)
+      , { maxRows: 5000 });
     },
     enabled: !!clinicId,
   });
