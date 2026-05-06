@@ -60,7 +60,7 @@ export default function AppointmentsPage() {
     queryKey: ["patients-list", clinicId],
     queryFn: async () => {
       if (!clinicId) return [];
-      const { data } = await supabase.from("patients").select("id, full_name, phone").eq("clinic_id", clinicId).order("full_name");
+      const data = await fetchAllPaged((from, to) => supabase.from("patients").select("id, full_name, phone").eq("clinic_id", clinicId).order("full_name").range(from, to), { maxRows: 10000 });
       return data ?? [];
     },
     enabled: !!clinicId,
