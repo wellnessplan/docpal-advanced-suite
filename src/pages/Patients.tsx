@@ -52,12 +52,14 @@ export default function PatientsPage() {
     queryKey: ["patients", clinicId, search],
     queryFn: async () => {
       if (!clinicId) return [];
-      let q = supabase.from("patients").select("*").eq("clinic_id", clinicId).order("created_at", { ascending: false });
-      if (search) {
-        q = q.or(`full_name.ilike.%${search}%,op_number.ilike.%${search}%,phone.ilike.%${search}%`);
-      }
-      const { data } = await q;
-      return data ?? [];
+      return fetchAllPaged((from, to) => {
+        let q = supabase.from("patients").select("*").eq("clinic_id", clinicId)
+          .order("created_at", { ascending: false }).range(from, to);
+        if (search) {
+          q = q.or(`full_name.ilike.%${search}%,op_number.ilike.%${search}%,phone.ilike.%${search}%`);
+        }
+        return q;
+      }, { maxRows: 5000 });
     },
     enabled: !!clinicId,
   });
