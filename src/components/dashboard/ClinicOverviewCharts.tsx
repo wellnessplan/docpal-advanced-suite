@@ -65,13 +65,15 @@ export function RevenueTrendMini() {
       for (let i = 13; i >= 0; i--) {
         const d = subDays(new Date(), i);
         const dayStr = format(d, "yyyy-MM-dd");
-        const { data } = await supabase.from("invoices").select("amount")
-          .eq("clinic_id", clinicId!).eq("status", "paid")
-          .gte("paid_at", dayStr + "T00:00:00")
-          .lt("paid_at", dayStr + "T23:59:59");
+        const data = await fetchAllPaged<{ amount: number | string }>((from, to) =>
+          supabase.from("invoices").select("amount")
+            .eq("clinic_id", clinicId!).eq("status", "paid")
+            .gte("paid_at", dayStr + "T00:00:00")
+            .lt("paid_at", dayStr + "T23:59:59").range(from, to)
+        );
         trend.push({
           day: format(d, "dd"),
-          revenue: data?.reduce((s, i) => s + Number(i.amount), 0) ?? 0,
+          revenue: data.reduce((s, i) => s + Number(i.amount), 0),
         });
       }
       return trend;
@@ -106,11 +108,13 @@ export function WalkinVsBookedChart() {
     queryKey: ["walkin-vs-booked", clinicId],
     queryFn: async () => {
       const monthAgo = subDays(new Date(), 30).toISOString().split("T")[0];
-      const { data } = await supabase.from("appointments").select("type")
-        .eq("clinic_id", clinicId!)
-        .gte("appointment_date", monthAgo);
-      const walkin = data?.filter(a => a.type === "walk-in" || a.type === "walkin").length ?? 0;
-      const booked = (data?.length ?? 0) - walkin;
+      const data = await fetchAllPaged<{ type: string | null }>((from, to) =>
+        supabase.from("appointments").select("type")
+          .eq("clinic_id", clinicId!)
+          .gte("appointment_date", monthAgo).range(from, to)
+      );
+      const walkin = data.filter(a => a.type === "walk-in" || a.type === "walkin").length;
+      const booked = data.length - walkin;
       return [
         { name: "Walk-in", value: walkin },
         { name: "Booked", value: booked },
