@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, IndianRupee, AlertTriangle, TrendingDown, Package, TrendingUp, MessageSquare, TestTubes } from "lucide-react";
 import { useNavigate } from "react-router-dom";

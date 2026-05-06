@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -15,9 +16,12 @@ export default function FinancialSummary() {
   const { data: monthRevenue = 0 } = useQuery({
     queryKey: ["dash-month-revenue", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("amount")
-        .eq("clinic_id", clinicId!).eq("status", "paid").gte("paid_at", firstDay.toISOString());
-      return data?.reduce((s, i) => s + Number(i.amount), 0) ?? 0;
+      const rows = await fetchAllPaged<{ amount: number | string }>((from, to) =>
+        supabase.from("invoices").select("amount")
+          .eq("clinic_id", clinicId!).eq("status", "paid")
+          .gte("paid_at", firstDay.toISOString()).range(from, to)
+      );
+      return rows.reduce((s, i) => s + Number(i.amount), 0);
     },
     enabled: !!clinicId,
   });
@@ -25,9 +29,12 @@ export default function FinancialSummary() {
   const { data: monthExpenses = 0 } = useQuery({
     queryKey: ["dash-month-expenses", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("expenses").select("amount")
-        .eq("clinic_id", clinicId!).gte("expense_date", firstDay.toISOString().split("T")[0]);
-      return data?.reduce((s, e) => s + Number(e.amount), 0) ?? 0;
+      const rows = await fetchAllPaged<{ amount: number | string }>((from, to) =>
+        supabase.from("expenses").select("amount")
+          .eq("clinic_id", clinicId!)
+          .gte("expense_date", firstDay.toISOString().split("T")[0]).range(from, to)
+      );
+      return rows.reduce((s, e) => s + Number(e.amount), 0);
     },
     enabled: !!clinicId,
   });
