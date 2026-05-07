@@ -888,6 +888,9 @@ export default function SettingsPage() {
            <TabsContent value="compliance">
              <CompliancePrivacyTab />
            </TabsContent>
+           <TabsContent value="branches"><BranchesTab /></TabsContent>
+           <TabsContent value="suppliers"><SuppliersTab /></TabsContent>
+           <TabsContent value="tpa"><TpaProvidersTab /></TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
