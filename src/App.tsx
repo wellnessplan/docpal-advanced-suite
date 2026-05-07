@@ -62,6 +62,7 @@ const PatientEducation = lazy(() => import("./pages/PatientEducation"));
 const DisplayManager = lazy(() => import("./pages/DisplayManager"));
 const DisplayPair = lazy(() => import("./pages/DisplayPair"));
 const DisplayScreen = lazy(() => import("./pages/DisplayScreen"));
+const PurchaseOrders = lazy(() => import("./pages/PurchaseOrders"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
