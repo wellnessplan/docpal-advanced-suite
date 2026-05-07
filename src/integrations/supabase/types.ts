@@ -279,6 +279,30 @@ export type Database = {
           },
         ]
       }
+      clinic_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clinic_onboarding: {
         Row: {
           checklist_dismissed: boolean
@@ -530,6 +554,7 @@ export type Database = {
           email: string | null
           facebook_url: string | null
           google_maps_url: string | null
+          group_id: string | null
           id: string
           instagram_url: string | null
           logo_url: string | null
@@ -547,6 +572,7 @@ export type Database = {
           email?: string | null
           facebook_url?: string | null
           google_maps_url?: string | null
+          group_id?: string | null
           id?: string
           instagram_url?: string | null
           logo_url?: string | null
@@ -564,6 +590,7 @@ export type Database = {
           email?: string | null
           facebook_url?: string | null
           google_maps_url?: string | null
+          group_id?: string | null
           id?: string
           instagram_url?: string | null
           logo_url?: string | null
@@ -575,7 +602,15 @@ export type Database = {
           updated_at?: string
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clinics_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consent_forms: {
         Row: {
@@ -1447,6 +1482,7 @@ export type Database = {
           clinic_id: string
           created_at: string
           expiry_date: string | null
+          group_id: string | null
           id: string
           min_stock_level: number | null
           name: string
@@ -1461,6 +1497,7 @@ export type Database = {
           clinic_id: string
           created_at?: string
           expiry_date?: string | null
+          group_id?: string | null
           id?: string
           min_stock_level?: number | null
           name: string
@@ -1475,6 +1512,7 @@ export type Database = {
           clinic_id?: string
           created_at?: string
           expiry_date?: string | null
+          group_id?: string | null
           id?: string
           min_stock_level?: number | null
           name?: string
@@ -3004,6 +3042,7 @@ export type Database = {
           email: string | null
           full_name: string
           gender: string | null
+          group_id: string | null
           id: string
           marketing_consent_at: string | null
           medical_history: string | null
@@ -3026,6 +3065,7 @@ export type Database = {
           email?: string | null
           full_name: string
           gender?: string | null
+          group_id?: string | null
           id?: string
           marketing_consent_at?: string | null
           medical_history?: string | null
@@ -3048,6 +3088,7 @@ export type Database = {
           email?: string | null
           full_name?: string
           gender?: string | null
+          group_id?: string | null
           id?: string
           marketing_consent_at?: string | null
           medical_history?: string | null
@@ -3360,6 +3401,7 @@ export type Database = {
           clinic_id: string | null
           created_at: string
           full_name: string | null
+          group_id: string | null
           id: string
           phone: string | null
           role: string | null
@@ -3372,6 +3414,7 @@ export type Database = {
           clinic_id?: string | null
           created_at?: string
           full_name?: string | null
+          group_id?: string | null
           id?: string
           phone?: string | null
           role?: string | null
@@ -3384,6 +3427,7 @@ export type Database = {
           clinic_id?: string | null
           created_at?: string
           full_name?: string | null
+          group_id?: string | null
           id?: string
           phone?: string | null
           role?: string | null
@@ -4622,6 +4666,16 @@ export type Database = {
     Functions: {
       accept_staff_invitation: { Args: { p_token: string }; Returns: Json }
       clear_demo_data: { Args: never; Returns: Json }
+      create_branch_in_group: {
+        Args: {
+          p_address?: string
+          p_email?: string
+          p_group_id: string
+          p_name: string
+          p_phone?: string
+        }
+        Returns: string
+      }
       create_clinic_for_user: {
         Args: {
           p_address?: string
@@ -4648,6 +4702,7 @@ export type Database = {
         Returns: number
       }
       get_user_clinic_id: { Args: never; Returns: string }
+      get_user_group_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -4655,8 +4710,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_group_owner: { Args: { _group_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       load_demo_data: { Args: never; Returns: Json }
+      switch_active_branch: {
+        Args: { p_clinic_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
