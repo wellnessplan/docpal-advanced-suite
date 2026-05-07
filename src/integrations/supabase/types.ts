@@ -1476,65 +1476,95 @@ export type Database = {
       insurance_claims: {
         Row: {
           approved_amount: number | null
+          approved_at: string | null
           claim_amount: number | null
           claim_number: string | null
           clinic_id: string
           created_at: string
+          created_by: string | null
+          diagnosis_codes: string[] | null
           id: string
           insurer_name: string
           invoice_id: string | null
+          member_id: string | null
           notes: string | null
+          paid_amount: number | null
+          paid_at: string | null
           patient_id: string
           policy_number: string | null
           pre_auth_amount: number | null
+          pre_auth_required: boolean | null
           pre_auth_status: string | null
+          procedure_codes: string[] | null
           rejection_reason: string | null
           settled_at: string | null
           settlement_amount: number | null
           status: string
           submitted_at: string | null
+          tpa_id: string | null
+          treatment_summary: string | null
           updated_at: string
         }
         Insert: {
           approved_amount?: number | null
+          approved_at?: string | null
           claim_amount?: number | null
           claim_number?: string | null
           clinic_id: string
           created_at?: string
+          created_by?: string | null
+          diagnosis_codes?: string[] | null
           id?: string
           insurer_name: string
           invoice_id?: string | null
+          member_id?: string | null
           notes?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
           patient_id: string
           policy_number?: string | null
           pre_auth_amount?: number | null
+          pre_auth_required?: boolean | null
           pre_auth_status?: string | null
+          procedure_codes?: string[] | null
           rejection_reason?: string | null
           settled_at?: string | null
           settlement_amount?: number | null
           status?: string
           submitted_at?: string | null
+          tpa_id?: string | null
+          treatment_summary?: string | null
           updated_at?: string
         }
         Update: {
           approved_amount?: number | null
+          approved_at?: string | null
           claim_amount?: number | null
           claim_number?: string | null
           clinic_id?: string
           created_at?: string
+          created_by?: string | null
+          diagnosis_codes?: string[] | null
           id?: string
           insurer_name?: string
           invoice_id?: string | null
+          member_id?: string | null
           notes?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
           patient_id?: string
           policy_number?: string | null
           pre_auth_amount?: number | null
+          pre_auth_required?: boolean | null
           pre_auth_status?: string | null
+          procedure_codes?: string[] | null
           rejection_reason?: string | null
           settled_at?: string | null
           settlement_amount?: number | null
           status?: string
           submitted_at?: string | null
+          tpa_id?: string | null
+          treatment_summary?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1557,6 +1587,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_tpa_id_fkey"
+            columns: ["tpa_id"]
+            isOneToOne: false
+            referencedRelation: "tpa_providers"
             referencedColumns: ["id"]
           },
         ]
