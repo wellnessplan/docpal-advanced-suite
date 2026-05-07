@@ -144,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       profile,
       clinicId: profile?.clinic_id ?? null,
+      groupId: (profile as any)?.group_id ?? null,
       loading, signOut, refreshProfile,
     }}>
       {children}
