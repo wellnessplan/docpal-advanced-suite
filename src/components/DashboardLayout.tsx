@@ -12,6 +12,7 @@ import MobileQuickFab from "./MobileQuickFab";
 import InstallPromptBanner from "./InstallPromptBanner";
 import GlobalSearchDialog from "./GlobalSearchDialog";
 import UserMenuDropdown from "./UserMenuDropdown";
+import BranchSwitcher from "./BranchSwitcher";
 import { prefetchRoute } from "@/lib/route-prefetch";
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
@@ -376,6 +377,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <Focus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline text-xs font-bold">Focus Mode</span>
               </Button>
+              <BranchSwitcher />
               <GlobalSearchDialog />
               <UserMenuDropdown />
             </div>

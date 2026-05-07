@@ -32,6 +32,9 @@ import AutomationRulesTab from "@/components/settings/AutomationRulesTab";
 import PdfTemplateDefaultsTab from "@/components/settings/PdfTemplateDefaultsTab";
 import CompliancePrivacyTab from "@/components/settings/CompliancePrivacyTab";
 import SystemEmailsTab from "@/components/settings/SystemEmailsTab";
+import BranchesTab from "@/components/settings/BranchesTab";
+import SuppliersTab from "@/components/settings/SuppliersTab";
+import TpaProvidersTab from "@/components/settings/TpaProvidersTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
@@ -819,6 +822,9 @@ export default function SettingsPage() {
              <TabsTrigger value="import">Data Import</TabsTrigger>
              <TabsTrigger value="emails">System Emails</TabsTrigger>
              <TabsTrigger value="compliance">Compliance</TabsTrigger>
+             <TabsTrigger value="branches">Branches</TabsTrigger>
+             <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
+             <TabsTrigger value="tpa">TPAs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="clinic">
@@ -882,6 +888,9 @@ export default function SettingsPage() {
            <TabsContent value="compliance">
              <CompliancePrivacyTab />
            </TabsContent>
+           <TabsContent value="branches"><BranchesTab /></TabsContent>
+           <TabsContent value="suppliers"><SuppliersTab /></TabsContent>
+           <TabsContent value="tpa"><TpaProvidersTab /></TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>

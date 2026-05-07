@@ -62,6 +62,7 @@ const PatientEducation = lazy(() => import("./pages/PatientEducation"));
 const DisplayManager = lazy(() => import("./pages/DisplayManager"));
 const DisplayPair = lazy(() => import("./pages/DisplayPair"));
 const DisplayScreen = lazy(() => import("./pages/DisplayScreen"));
+const PurchaseOrders = lazy(() => import("./pages/PurchaseOrders"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -149,6 +150,7 @@ const App = () => (
                 <Route path="/lab-orders" element={<ProtectedRoute><LabOrders /></ProtectedRoute>} />
                 <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
                 <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+                <Route path="/purchase-orders" element={<ProtectedRoute><PurchaseOrders /></ProtectedRoute>} />
                 <Route path="/treatment-costing" element={<ProtectedRoute><TreatmentCosting /></ProtectedRoute>} />
                 <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />

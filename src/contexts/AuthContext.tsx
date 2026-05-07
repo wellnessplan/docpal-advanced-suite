@@ -8,8 +8,9 @@ type Profile = Tables<"profiles">;
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: Profile | null;
+  profile: (Profile & { group_id?: string | null }) | null;
   clinicId: string | null;
+  groupId: string | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -21,7 +22,7 @@ const DEMO_EMAIL = "demo@doctorsbuddy.app";
 const DEMO_PASSWORD = "DemoPass2026!";
 
 const AuthContext = createContext<AuthContextType>({
-  session: null, user: null, profile: null, clinicId: null,
+  session: null, user: null, profile: null, clinicId: null, groupId: null,
   loading: true, signOut: async () => {}, refreshProfile: async () => {},
 });
 
@@ -143,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       profile,
       clinicId: profile?.clinic_id ?? null,
+      groupId: (profile as any)?.group_id ?? null,
       loading, signOut, refreshProfile,
     }}>
       {children}
