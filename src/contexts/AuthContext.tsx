@@ -22,7 +22,7 @@ const DEMO_EMAIL = "demo@doctorsbuddy.app";
 const DEMO_PASSWORD = "DemoPass2026!";
 
 const AuthContext = createContext<AuthContextType>({
-  session: null, user: null, profile: null, clinicId: null,
+  session: null, user: null, profile: null, clinicId: null, groupId: null,
   loading: true, signOut: async () => {}, refreshProfile: async () => {},
 });
 
