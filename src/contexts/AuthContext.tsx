@@ -8,8 +8,9 @@ type Profile = Tables<"profiles">;
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: Profile | null;
+  profile: (Profile & { group_id?: string | null }) | null;
   clinicId: string | null;
+  groupId: string | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
