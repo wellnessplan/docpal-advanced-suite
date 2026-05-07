@@ -377,6 +377,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <Focus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline text-xs font-bold">Focus Mode</span>
               </Button>
+              <BranchSwitcher />
               <GlobalSearchDialog />
               <UserMenuDropdown />
             </div>
