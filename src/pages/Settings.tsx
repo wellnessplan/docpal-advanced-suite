@@ -822,6 +822,9 @@ export default function SettingsPage() {
              <TabsTrigger value="import">Data Import</TabsTrigger>
              <TabsTrigger value="emails">System Emails</TabsTrigger>
              <TabsTrigger value="compliance">Compliance</TabsTrigger>
+             <TabsTrigger value="branches">Branches</TabsTrigger>
+             <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
+             <TabsTrigger value="tpa">TPAs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="clinic">
