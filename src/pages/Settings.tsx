@@ -32,6 +32,9 @@ import AutomationRulesTab from "@/components/settings/AutomationRulesTab";
 import PdfTemplateDefaultsTab from "@/components/settings/PdfTemplateDefaultsTab";
 import CompliancePrivacyTab from "@/components/settings/CompliancePrivacyTab";
 import SystemEmailsTab from "@/components/settings/SystemEmailsTab";
+import BranchesTab from "@/components/settings/BranchesTab";
+import SuppliersTab from "@/components/settings/SuppliersTab";
+import TpaProvidersTab from "@/components/settings/TpaProvidersTab";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─── Clinic Info Tab ────────────────────────────────────────────────
