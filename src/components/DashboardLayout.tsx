@@ -12,6 +12,7 @@ import MobileQuickFab from "./MobileQuickFab";
 import InstallPromptBanner from "./InstallPromptBanner";
 import GlobalSearchDialog from "./GlobalSearchDialog";
 import UserMenuDropdown from "./UserMenuDropdown";
+import BranchSwitcher from "./BranchSwitcher";
 import { prefetchRoute } from "@/lib/route-prefetch";
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
