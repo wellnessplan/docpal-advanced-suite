@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,7 @@ const statusColors: Record<string, string> = {
 export default function BillingPage() {
   const { clinicId } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [receiptInvoice, setReceiptInvoice] = useState<any>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -58,7 +60,7 @@ export default function BillingPage() {
   });
 
   const { data: completedTreatments = [] } = useQuery({
-    queryKey: ["completed-treatments", form.patient_id],
+    queryKey: ["completed-unbilled-treatments", form.patient_id],
     queryFn: async () => {
       if (!form.patient_id) return [];
       const { data: records } = await supabase.from("tooth_records")
@@ -69,14 +71,38 @@ export default function BillingPage() {
         .in("tooth_record_id", records.map(r => r.id))
         .eq("status", "completed" as any)
         .order("performed_at", { ascending: false });
+      if (!treatments?.length) return [];
+      const { data: billed } = await supabase.from("invoice_items")
+        .select("tooth_treatment_id")
+        .in("tooth_treatment_id", treatments.map(t => t.id));
+      const billedSet = new Set((billed ?? []).map((b: any) => b.tooth_treatment_id).filter(Boolean));
       const toothMap = Object.fromEntries(records.map(r => [r.id, r.tooth_number]));
-      return (treatments ?? []).map(t => ({
+      return treatments.filter(t => !billedSet.has(t.id)).map(t => ({
         ...t,
         tooth_number: toothMap[t.tooth_record_id],
       }));
     },
     enabled: !!form.patient_id,
   });
+
+  // Open dialog from ?patient=ID and pre-select patient
+  useEffect(() => {
+    const pid = searchParams.get("patient");
+    if (pid) {
+      setForm(f => ({ ...f, patient_id: pid }));
+      setOpen(true);
+      searchParams.delete("patient");
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-select all unbilled treatments whenever the list updates
+  useEffect(() => {
+    if (completedTreatments.length) {
+      setSelectedTreatments(completedTreatments.map((t: any) => t.id));
+    }
+  }, [completedTreatments]);
 
   useEffect(() => {
     setSelectedTreatments([]);
@@ -236,6 +262,7 @@ export default function BillingPage() {
           const t = completedTreatments.find((ct: any) => ct.id === tId);
           return {
             invoice_id: inv.id,
+            tooth_treatment_id: tId,
             description: `${t?.treatment_name} (Tooth #${t?.tooth_number})`,
             quantity: 1,
             unit_price: Number(t?.cost || 0),
@@ -277,6 +304,8 @@ export default function BillingPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["completed-unbilled-treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
       setOpen(false);
       setForm({ patient_id: "", due_date: "", notes: "", discount_amount: "0", discount_percent: "0", coupon_code: "", tax_rate: "0" });
       setSelectedTreatments([]);

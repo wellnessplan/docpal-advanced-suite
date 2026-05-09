@@ -53,8 +53,6 @@ export default function PatientProfilePage() {
   const { names: catalogNames } = useTreatmentCatalog();
   const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [showAddTreatment, setShowAddTreatment] = useState(false);
-  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
-  const [invoiceData, setInvoiceData] = useState<{ treatmentId: string; name: string; cost: number; discount: number } | null>(null);
   const [newTx, setNewTx] = useState({ tooth_number: "", treatment_name: "", cost: "", notes: "", shade: "", material: "", lab_name: "" });
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentInvoice, setPaymentInvoice] = useState<any>(null);
@@ -99,6 +97,30 @@ export default function PatientProfilePage() {
       const { data } = await supabase.from("invoices").select("*")
         .eq("patient_id", id!).order("created_at", { ascending: false }).limit(10);
       return data ?? [];
+    },
+    enabled: !!id,
+  });
+
+  // Completed treatments that have NOT yet been put on any invoice
+  const { data: unbilledTreatments = [] } = useQuery({
+    queryKey: ["patient-unbilled-treatments", id],
+    queryFn: async () => {
+      const { data: records } = await supabase.from("tooth_records")
+        .select("id, tooth_number").eq("patient_id", id!);
+      if (!records?.length) return [];
+      const recIds = records.map(r => r.id);
+      const { data: txs } = await supabase.from("tooth_treatments")
+        .select("id, treatment_name, cost, tooth_record_id, performed_at")
+        .in("tooth_record_id", recIds)
+        .eq("status", "completed" as any);
+      if (!txs?.length) return [];
+      const { data: billed } = await supabase.from("invoice_items")
+        .select("tooth_treatment_id")
+        .in("tooth_treatment_id", txs.map(t => t.id));
+      const billedSet = new Set((billed ?? []).map((b: any) => b.tooth_treatment_id).filter(Boolean));
+      const toothMap = Object.fromEntries(records.map(r => [r.id, r.tooth_number]));
+      return txs.filter(t => !billedSet.has(t.id))
+        .map(t => ({ ...t, tooth_number: toothMap[t.tooth_record_id] }));
     },
     enabled: !!id,
   });
@@ -188,93 +210,20 @@ export default function PatientProfilePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Update treatment status + auto-invoice on completion
+  // Update treatment status — no auto-popup. Completed unbilled treatments
+  // surface in the Billing tab and on the /billing Create Invoice screen.
   const updateTreatmentStatus = useMutation({
-    mutationFn: async ({ treatmentId, status, treatmentName, cost }: { treatmentId: string; status: string; treatmentName: string; cost: number }) => {
+    mutationFn: async ({ treatmentId, status }: { treatmentId: string; status: string; treatmentName?: string; cost?: number }) => {
       const update: any = { status: status as any };
       if (status === "completed") update.performed_at = new Date().toISOString();
       const { error } = await supabase.from("tooth_treatments").update(update).eq("id", treatmentId);
       if (error) throw error;
-
-      // Auto-create invoice on completion
-      if (status === "completed" && cost > 0) {
-        setInvoiceData({ treatmentId, name: treatmentName, cost, discount: 0 });
-        setShowInvoiceDialog(true);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["patient-treatments"] });
-      toast.success("Status updated!");
+      queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
+      toast.success("Status updated");
     },
-  });
-
-  const createInvoice = useMutation({
-    mutationFn: async () => {
-      if (!invoiceData) return;
-      const finalAmount = invoiceData.cost - invoiceData.discount;
-
-      // Check for existing open invoice for this patient (any non-paid, non-cancelled)
-      const { data: existingInvoice } = await supabase
-        .from("invoices")
-        .select("id, amount, total, subtotal, discount")
-        .eq("clinic_id", clinicId!)
-        .eq("patient_id", id!)
-        .in("status", ["draft", "pending", "unpaid", "partial"])
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (existingInvoice) {
-        // Add item to existing invoice and update totals
-        await supabase.from("invoice_items").insert({
-          invoice_id: existingInvoice.id,
-          description: invoiceData.name,
-          unit_price: invoiceData.cost,
-          quantity: 1,
-          total: invoiceData.cost,
-        });
-
-        const newSubtotal = Number(existingInvoice.subtotal || existingInvoice.amount) + invoiceData.cost;
-        const newDiscount = Number(existingInvoice.discount || 0) + invoiceData.discount;
-        const newTotal = newSubtotal - newDiscount;
-
-        await supabase.from("invoices").update({
-          subtotal: newSubtotal,
-          amount: newTotal,
-          total: newTotal,
-          discount: newDiscount,
-        }).eq("id", existingInvoice.id);
-      } else {
-        // Create new invoice
-        const today = new Date().toISOString().split("T")[0];
-        const { data: inv, error: invErr } = await supabase.from("invoices").insert({
-          clinic_id: clinicId!,
-          patient_id: id!,
-          amount: finalAmount,
-          total: finalAmount,
-          subtotal: invoiceData.cost,
-          discount: invoiceData.discount,
-          status: "pending",
-          invoice_date: today,
-        }).select("id").single();
-        if (invErr) throw invErr;
-
-        await supabase.from("invoice_items").insert({
-          invoice_id: inv!.id,
-          description: invoiceData.name,
-          unit_price: invoiceData.cost,
-          quantity: 1,
-          total: invoiceData.cost,
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
-      setShowInvoiceDialog(false);
-      setInvoiceData(null);
-      toast.success("Invoice created!");
-    },
-    onError: (e: any) => toast.error(e.message),
   });
 
   // Record partial/full payment
@@ -536,6 +485,25 @@ export default function PatientProfilePage() {
 
           {/* Billing */}
           <TabsContent value="billing" className="mt-4 space-y-4">
+            {unbilledTreatments.length > 0 && (
+              <Card className="border-warning/40 bg-warning/5">
+                <CardContent className="p-4 flex flex-wrap items-center gap-3">
+                  <div className="flex-1 min-w-[220px]">
+                    <p className="text-sm font-semibold">
+                      {unbilledTreatments.length} completed treatment{unbilledTreatments.length > 1 ? "s" : ""} not yet billed
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Total: Rs {unbilledTreatments.reduce((s: number, t: any) => s + Number(t.cost || 0), 0).toLocaleString()}
+                      {" · "}{unbilledTreatments.slice(0, 3).map((t: any) => `${t.treatment_name} #${t.tooth_number}`).join(", ")}
+                      {unbilledTreatments.length > 3 ? ` +${unbilledTreatments.length - 3} more` : ""}
+                    </p>
+                  </div>
+                  <Button size="sm" onClick={() => navigate(`/billing?patient=${id}`)}>
+                    <IndianRupee className="h-3.5 w-3.5 mr-1" /> Create Invoice
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
             <Card className="shadow-card border-0">
               <CardContent className="p-0">
                 <Table>
@@ -627,45 +595,6 @@ export default function PatientProfilePage() {
           </TabsContent>
         </Tabs>
 
-        {/* Invoice creation dialog on treatment completion */}
-        <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="text-base">Generate Invoice</DialogTitle>
-            </DialogHeader>
-            {invoiceData && (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Treatment <strong>{invoiceData.name}</strong> marked as completed. Create invoice?
-                </p>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-xs">Amount (Rs )</Label>
-                    <Input type="number" className="h-9" value={invoiceData.cost}
-                      onChange={e => setInvoiceData(d => d ? { ...d, cost: Number(e.target.value) } : null)} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Discount (Rs )</Label>
-                    <Input type="number" className="h-9" value={invoiceData.discount}
-                      onChange={e => setInvoiceData(d => d ? { ...d, discount: Number(e.target.value) } : null)} />
-                  </div>
-                  <div className="bg-muted/50 rounded-md p-3 text-sm">
-                    <span className="text-muted-foreground">Final Amount:</span>
-                    <span className="font-bold ml-2">Rs {((invoiceData.cost || 0) - (invoiceData.discount || 0)).toLocaleString()}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => { setShowInvoiceDialog(false); setInvoiceData(null); }}>
-                    Skip
-                  </Button>
-                  <Button className="flex-1" onClick={() => createInvoice.mutate()} disabled={createInvoice.isPending}>
-                    Create Invoice
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
 
         {/* Partial Payment Dialog */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
