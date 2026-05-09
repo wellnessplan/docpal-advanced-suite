@@ -53,8 +53,6 @@ export default function PatientProfilePage() {
   const { names: catalogNames } = useTreatmentCatalog();
   const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [showAddTreatment, setShowAddTreatment] = useState(false);
-  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
-  const [invoiceData, setInvoiceData] = useState<{ treatmentId: string; name: string; cost: number; discount: number } | null>(null);
   const [newTx, setNewTx] = useState({ tooth_number: "", treatment_name: "", cost: "", notes: "", shade: "", material: "", lab_name: "" });
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentInvoice, setPaymentInvoice] = useState<any>(null);
