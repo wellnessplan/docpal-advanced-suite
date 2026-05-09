@@ -1,0 +1,2 @@
+ALTER TABLE public.invoice_items ADD COLUMN IF NOT EXISTS tooth_treatment_id uuid REFERENCES public.tooth_treatments(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_invoice_items_tooth_treatment ON public.invoice_items(tooth_treatment_id);

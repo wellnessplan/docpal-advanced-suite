@@ -1709,6 +1709,7 @@ export type Database = {
           id: string
           invoice_id: string
           quantity: number | null
+          tooth_treatment_id: string | null
           total: number
           unit_price: number
         }
@@ -1718,6 +1719,7 @@ export type Database = {
           id?: string
           invoice_id: string
           quantity?: number | null
+          tooth_treatment_id?: string | null
           total?: number
           unit_price: number
         }
@@ -1727,6 +1729,7 @@ export type Database = {
           id?: string
           invoice_id?: string
           quantity?: number | null
+          tooth_treatment_id?: string | null
           total?: number
           unit_price?: number
         }
@@ -1736,6 +1739,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_tooth_treatment_id_fkey"
+            columns: ["tooth_treatment_id"]
+            isOneToOne: false
+            referencedRelation: "tooth_treatments"
             referencedColumns: ["id"]
           },
         ]
