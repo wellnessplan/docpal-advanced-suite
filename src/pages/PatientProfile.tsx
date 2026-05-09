@@ -556,9 +556,26 @@ export default function PatientProfilePage() {
 
           {/* Billing */}
           <TabsContent value="billing" className="mt-4 space-y-4">
+            {unbilledTreatments.length > 0 && (
+              <Card className="border-warning/40 bg-warning/5">
+                <CardContent className="p-4 flex flex-wrap items-center gap-3">
+                  <div className="flex-1 min-w-[220px]">
+                    <p className="text-sm font-semibold">
+                      {unbilledTreatments.length} completed treatment{unbilledTreatments.length > 1 ? "s" : ""} not yet billed
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Total: Rs {unbilledTreatments.reduce((s: number, t: any) => s + Number(t.cost || 0), 0).toLocaleString()}
+                      {" · "}{unbilledTreatments.slice(0, 3).map((t: any) => `${t.treatment_name} #${t.tooth_number}`).join(", ")}
+                      {unbilledTreatments.length > 3 ? ` +${unbilledTreatments.length - 3} more` : ""}
+                    </p>
+                  </div>
+                  <Button size="sm" onClick={() => navigate(`/billing?patient=${id}`)}>
+                    <IndianRupee className="h-3.5 w-3.5 mr-1" /> Create Invoice
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
             <Card className="shadow-card border-0">
-              <CardContent className="p-0">
-                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
