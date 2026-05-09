@@ -60,7 +60,7 @@ export default function BillingPage() {
   });
 
   const { data: completedTreatments = [] } = useQuery({
-    queryKey: ["completed-treatments", form.patient_id],
+    queryKey: ["completed-unbilled-treatments", form.patient_id],
     queryFn: async () => {
       if (!form.patient_id) return [];
       const { data: records } = await supabase.from("tooth_records")
@@ -71,14 +71,38 @@ export default function BillingPage() {
         .in("tooth_record_id", records.map(r => r.id))
         .eq("status", "completed" as any)
         .order("performed_at", { ascending: false });
+      if (!treatments?.length) return [];
+      const { data: billed } = await supabase.from("invoice_items")
+        .select("tooth_treatment_id")
+        .in("tooth_treatment_id", treatments.map(t => t.id));
+      const billedSet = new Set((billed ?? []).map((b: any) => b.tooth_treatment_id).filter(Boolean));
       const toothMap = Object.fromEntries(records.map(r => [r.id, r.tooth_number]));
-      return (treatments ?? []).map(t => ({
+      return treatments.filter(t => !billedSet.has(t.id)).map(t => ({
         ...t,
         tooth_number: toothMap[t.tooth_record_id],
       }));
     },
     enabled: !!form.patient_id,
   });
+
+  // Open dialog from ?patient=ID and pre-select patient
+  useEffect(() => {
+    const pid = searchParams.get("patient");
+    if (pid) {
+      setForm(f => ({ ...f, patient_id: pid }));
+      setOpen(true);
+      searchParams.delete("patient");
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-select all unbilled treatments whenever the list updates
+  useEffect(() => {
+    if (completedTreatments.length) {
+      setSelectedTreatments(completedTreatments.map((t: any) => t.id));
+    }
+  }, [completedTreatments]);
 
   useEffect(() => {
     setSelectedTreatments([]);
