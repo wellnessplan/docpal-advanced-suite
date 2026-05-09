@@ -103,6 +103,30 @@ export default function PatientProfilePage() {
     enabled: !!id,
   });
 
+  // Completed treatments that have NOT yet been put on any invoice
+  const { data: unbilledTreatments = [] } = useQuery({
+    queryKey: ["patient-unbilled-treatments", id],
+    queryFn: async () => {
+      const { data: records } = await supabase.from("tooth_records")
+        .select("id, tooth_number").eq("patient_id", id!);
+      if (!records?.length) return [];
+      const recIds = records.map(r => r.id);
+      const { data: txs } = await supabase.from("tooth_treatments")
+        .select("id, treatment_name, cost, tooth_record_id, performed_at")
+        .in("tooth_record_id", recIds)
+        .eq("status", "completed" as any);
+      if (!txs?.length) return [];
+      const { data: billed } = await supabase.from("invoice_items")
+        .select("tooth_treatment_id")
+        .in("tooth_treatment_id", txs.map(t => t.id));
+      const billedSet = new Set((billed ?? []).map((b: any) => b.tooth_treatment_id).filter(Boolean));
+      const toothMap = Object.fromEntries(records.map(r => [r.id, r.tooth_number]));
+      return txs.filter(t => !billedSet.has(t.id))
+        .map(t => ({ ...t, tooth_number: toothMap[t.tooth_record_id] }));
+    },
+    enabled: !!id,
+  });
+
   const { data: clinic } = useQuery({
     queryKey: ["clinic", clinicId],
     queryFn: async () => {
