@@ -330,6 +330,12 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
         <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1">
           <Printer className="h-3.5 w-3.5" /> Print
         </Button>
+        <Button size="sm" variant="outline" onClick={handleWhatsApp} className="gap-1" disabled={!patient?.phone} title={patient?.phone ? "Send via WhatsApp" : "No phone number"}>
+          <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+        </Button>
+        <Button size="sm" variant="outline" onClick={handleEmail} className="gap-1" disabled={!patient?.email} title={patient?.email ? "Send via email" : "No email on file"}>
+          <Mail className="h-3.5 w-3.5" /> Email
+        </Button>
         <Button size="sm" onClick={handleDownloadPDF} className="gap-1">
           <FileDown className="h-3.5 w-3.5" /> Download PDF
         </Button>
