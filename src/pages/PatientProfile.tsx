@@ -188,23 +188,19 @@ export default function PatientProfilePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Update treatment status + auto-invoice on completion
+  // Update treatment status — no auto-popup. Completed unbilled treatments
+  // surface in the Billing tab and on the /billing Create Invoice screen.
   const updateTreatmentStatus = useMutation({
-    mutationFn: async ({ treatmentId, status, treatmentName, cost }: { treatmentId: string; status: string; treatmentName: string; cost: number }) => {
+    mutationFn: async ({ treatmentId, status }: { treatmentId: string; status: string; treatmentName?: string; cost?: number }) => {
       const update: any = { status: status as any };
       if (status === "completed") update.performed_at = new Date().toISOString();
       const { error } = await supabase.from("tooth_treatments").update(update).eq("id", treatmentId);
       if (error) throw error;
-
-      // Auto-create invoice on completion
-      if (status === "completed" && cost > 0) {
-        setInvoiceData({ treatmentId, name: treatmentName, cost, discount: 0 });
-        setShowInvoiceDialog(true);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["patient-treatments"] });
-      toast.success("Status updated!");
+      queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
+      toast.success("Status updated");
     },
   });
 
