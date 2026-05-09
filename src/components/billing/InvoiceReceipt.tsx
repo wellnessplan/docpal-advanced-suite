@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer, FileDown, Palette, Eye } from "lucide-react";
+import { Printer, FileDown, Palette, Eye, MessageCircle, Mail } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
