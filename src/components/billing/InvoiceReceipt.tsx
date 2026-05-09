@@ -258,6 +258,50 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
     toast.success("PDF receipt downloaded!");
   };
 
+  const buildShareText = () => {
+    const lines = [
+      `*Receipt #${receiptNo}* — ${clinic?.name || "Dental Clinic"}`,
+      `Patient: ${patient?.full_name || "—"}`,
+      `Date: ${new Date(invoice.created_at).toLocaleDateString("en-IN")}`,
+      ``,
+      `Total: Rs ${totalAmount.toLocaleString("en-IN")}`,
+      `Paid:  Rs ${paidAmount.toLocaleString("en-IN")}`,
+      balance > 0 ? `Balance Due: Rs ${balance.toLocaleString("en-IN")}` : `Status: PAID`,
+      ``,
+      `Thank you for choosing ${clinic?.name || "us"}.`,
+    ];
+    return lines.join("\n");
+  };
+
+  const handleWhatsApp = async () => {
+    const phone = (patient?.phone || "").replace(/\D/g, "");
+    if (!phone) { toast.error("Patient has no phone number"); return; }
+    // Try to share PDF natively (mobile); fall back to wa.me with text.
+    try {
+      const doc = await buildPDF();
+      const blob = doc.output("blob");
+      const file = new File([blob], `Receipt_${receiptNo}.pdf`, { type: "application/pdf" });
+      const nav: any = navigator;
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({ files: [file], title: `Receipt #${receiptNo}`, text: buildShareText() });
+        return;
+      }
+    } catch { /* fall through */ }
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(buildShareText())}`;
+    window.open(url, "_blank");
+    toast.success("Opened WhatsApp — attach the downloaded PDF if needed");
+  };
+
+  const handleEmail = async () => {
+    const email = patient?.email;
+    if (!email) { toast.error("Patient has no email on file"); return; }
+    // Download the PDF so user can attach; open mail client with body.
+    await handleDownloadPDF();
+    const subject = `Receipt #${receiptNo} from ${clinic?.name || "your clinic"}`;
+    const body = buildShareText();
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 items-end justify-end">
