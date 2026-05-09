@@ -576,6 +576,8 @@ export default function PatientProfilePage() {
               </Card>
             )}
             <Card className="shadow-card border-0">
+              <CardContent className="p-0">
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
