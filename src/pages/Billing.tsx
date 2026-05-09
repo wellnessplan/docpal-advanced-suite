@@ -262,6 +262,7 @@ export default function BillingPage() {
           const t = completedTreatments.find((ct: any) => ct.id === tId);
           return {
             invoice_id: inv.id,
+            tooth_treatment_id: tId,
             description: `${t?.treatment_name} (Tooth #${t?.tooth_number})`,
             quantity: 1,
             unit_price: Number(t?.cost || 0),
