@@ -34,6 +34,7 @@ const statusColors: Record<string, string> = {
 export default function BillingPage() {
   const { clinicId } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [receiptInvoice, setReceiptInvoice] = useState<any>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
