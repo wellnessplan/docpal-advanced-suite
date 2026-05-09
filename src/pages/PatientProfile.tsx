@@ -666,45 +666,6 @@ export default function PatientProfilePage() {
           </TabsContent>
         </Tabs>
 
-        {/* Invoice creation dialog on treatment completion */}
-        <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="text-base">Generate Invoice</DialogTitle>
-            </DialogHeader>
-            {invoiceData && (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Treatment <strong>{invoiceData.name}</strong> marked as completed. Create invoice?
-                </p>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-xs">Amount (Rs )</Label>
-                    <Input type="number" className="h-9" value={invoiceData.cost}
-                      onChange={e => setInvoiceData(d => d ? { ...d, cost: Number(e.target.value) } : null)} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Discount (Rs )</Label>
-                    <Input type="number" className="h-9" value={invoiceData.discount}
-                      onChange={e => setInvoiceData(d => d ? { ...d, discount: Number(e.target.value) } : null)} />
-                  </div>
-                  <div className="bg-muted/50 rounded-md p-3 text-sm">
-                    <span className="text-muted-foreground">Final Amount:</span>
-                    <span className="font-bold ml-2">Rs {((invoiceData.cost || 0) - (invoiceData.discount || 0)).toLocaleString()}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => { setShowInvoiceDialog(false); setInvoiceData(null); }}>
-                    Skip
-                  </Button>
-                  <Button className="flex-1" onClick={() => createInvoice.mutate()} disabled={createInvoice.isPending}>
-                    Create Invoice
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
 
         {/* Partial Payment Dialog */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
