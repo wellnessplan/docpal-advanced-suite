@@ -304,6 +304,8 @@ export default function BillingPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["completed-unbilled-treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
       setOpen(false);
       setForm({ patient_id: "", due_date: "", notes: "", discount_amount: "0", discount_percent: "0", coupon_code: "", tax_rate: "0" });
       setSelectedTreatments([]);
