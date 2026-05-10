@@ -1,6 +1,7 @@
 // Runs the 4 customizable WhatsApp automations per clinic.
 // Triggered daily by pg_cron AND on-demand from app (event="post_treatment_instant").
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { recordFailure } from "../_shared/dlq.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -278,8 +279,9 @@ async function processReviewReferral(clinicId: string, waba: WABA, clinicName: s
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  let body: any = {};
   try {
-    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
     const event = body.event as string | undefined; // optional
     const treatmentId = body.treatment_id as string | undefined;
     const clinicIdParam = body.clinic_id as string | undefined;
@@ -311,6 +313,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("automation engine error:", msg);
+    await recordFailure(supabase, "run-automation-rules", body, err, body?.clinic_id ?? null);
     return new Response(JSON.stringify({ success: false, error: msg }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
