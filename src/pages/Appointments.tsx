@@ -151,7 +151,13 @@ export default function AppointmentsPage() {
         type: form.type, notes: form.notes || null,
         provider_id: form.provider_id || null,
       });
-      if (error) throw error;
+      if (error) {
+        // Postgres unique_violation from appointments_no_double_book index
+        if ((error as any).code === "23505") {
+          throw new Error("That slot was just booked by someone else — please pick another time.");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
