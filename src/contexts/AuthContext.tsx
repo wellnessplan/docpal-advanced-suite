@@ -16,8 +16,11 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-const DEV_BYPASS_AUTH = false;
-const DEMO_MODE = true;
+// Dev-only auth bypass. Never ships to prod: vite.config.ts throws if VITE_ALLOW_AUTH_BYPASS is
+// set during a production build, and import.meta.env.DEV is statically false in prod bundles.
+const DEV_BYPASS_AUTH =
+  import.meta.env.DEV && import.meta.env.VITE_ALLOW_AUTH_BYPASS === "1";
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "1";
 const DEMO_EMAIL = "demo@doctorsbuddy.app";
 const DEMO_PASSWORD = "DemoPass2026!";
 
