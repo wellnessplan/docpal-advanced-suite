@@ -1,113 +1,124 @@
-# Multi-Branch + Insurance/TPA + Auto-PO — Phased Plan
+# Production Hardening Plan — 10 Critical Issues
 
-You picked the heaviest scope in every category. Shipping all of it in one go would mean a 3-4 week patch with high regression risk on existing clinics. I'm proposing **3 phases**, each independently shippable and testable.
-
----
-
-## Phase 1 — Multi-Branch (Full Shared Catalog)  *~Week 1*
-
-This is the riskiest piece because it touches RLS on **every table**. Doing it first unblocks the other two (auto-PO needs to know "which branch", claims need to know "which branch billed").
-
-### Schema changes
-- New table `clinic_groups` (id, owner_user_id, name, subscription_id) — one group per owner.
-- Add `group_id uuid` to `clinics` (nullable; backfill = self-group for existing single-clinic owners).
-- Add `group_id uuid` to: `patients`, `treatment_catalog`, `staff/profiles`, `inventory_items`, `lab_directory`, `suppliers`.
-  - Patient/catalog/staff/inventory become **group-scoped** (visible across all branches in the group).
-  - Appointments, invoices, treatments, queue tokens, audit_log stay **clinic-scoped** (per-branch).
-- New SECURITY DEFINER function `get_user_group_id()` mirroring `get_user_clinic_id()`.
-- Move `clinic_subscriptions` → `group_subscriptions` (one sub covers all branches).
-
-### RLS rewrite (per-table)
-Two patterns:
-- Group-scoped tables: `using (group_id = get_user_group_id())`
-- Branch-scoped tables: keep `clinic_id = get_user_clinic_id()` BUT also allow if `clinic_id IN (select id from clinics where group_id = get_user_group_id())` for owner role.
-
-### UI changes
-- **Branch switcher** in header (next to user menu) — sets active `clinic_id` in `AuthContext`, persists to localStorage.
-- **Branches settings tab** (Settings → Branches) — add/rename/archive branches. Owner-only.
-- **Cross-branch dashboard toggle** ("This branch" / "All branches") on Dashboard, Revenue, Reports, Patients.
-- Patient profile shows `Visited at: Branch A, Branch B` chips.
-
-### Migration safety
-- Backfill script: every existing clinic becomes its own group (`group_id = clinic.id`), zero behaviour change for current users.
-- Existing RLS continues working because `get_user_clinic_id()` still returns the active branch.
+Goal: ship a stable, leak-proof, test-covered build before launch. Sequenced so each step unblocks the next; total effort ~4–5 days.
 
 ---
 
-## Phase 2 — Insurance/TPA Workflow + PDF + Email Submit  *~Week 2*
+## Phase 1 — Safety Rails (Day 1, blocks launch)
 
-### Schema
-- New table `insurance_claims`:
-  - `clinic_id`, `patient_id`, `tpa_id`, `policy_number`, `claim_amount`, `pre_auth_required`, `pre_auth_status`, `pre_auth_amount`, `status` (draft / pre_auth_pending / pre_auth_approved / submitted / under_review / approved / partially_approved / rejected / paid / appealed), `submitted_at`, `approved_amount`, `paid_amount`, `rejection_reason`, `notes`.
-- New table `insurance_claim_documents` (claim_id, file_url, doc_type, uploaded_at).
-- New table `insurance_claim_history` (claim_id, action, actor_user_id, from_status, to_status, note, created_at) — audit trail.
-- New table `tpa_providers` (clinic_id/group_id, name, email, phone, contact_person, claim_form_template, payment_terms_days).
+### 1. Kill `DEV_BYPASS_AUTH` leak risk
+- Remove the constant from `src/contexts/AuthContext.tsx`; replace with `import.meta.env.DEV && import.meta.env.VITE_ALLOW_AUTH_BYPASS === "1"`.
+- Add a build-time guard in `vite.config.ts` that throws if `VITE_ALLOW_AUTH_BYPASS` is set during `vite build`.
+- Same treatment for `DEMO_MODE` — gate behind `VITE_DEMO_MODE` env, default off in prod.
 
-### UI — `/insurance`
-- **Claims pipeline board** (Kanban: Draft → Pre-Auth → Submitted → Under Review → Approved → Paid + Rejected lane).
-- **Claim detail drawer**:
-  - Patient info (auto-pulled), linked treatments + invoice (pulls cost), TPA dropdown, policy info.
-  - Document attachments (X-rays, treatment notes, consent forms, prescription).
-  - Status timeline.
-  - Actions: "Generate Claim PDF", "Submit to TPA", "Mark Approved/Rejected", "Record Payment".
-- **TPA Directory tab** in Settings — manage TPA list, claim form templates, payment terms.
-- **Reports tab**: aging report, approval rate by TPA, average days-to-payment.
+### 2. Concurrent-booking race
+- Migration: partial unique index
+  `CREATE UNIQUE INDEX appointments_no_double_book ON appointments (clinic_id, doctor_id, appointment_date, appointment_time) WHERE status NOT IN ('cancelled','no_show');`
+- Surface the `23505` error in `Appointments.tsx` / `AppointmentSlotPicker.tsx` as "Slot just got taken — pick another".
 
-### Generated PDF claim form (jsPDF)
-- A4: clinic header + logo, patient block, treatment + costs table, TPA block, declarations, doctor signature line.
-- Configurable per-TPA template (uses `tpa_providers.claim_form_template`).
-
-### Email submission
-- New edge function `submit-insurance-claim` — generates PDF, attaches all documents, sends via Lovable Email to `tpa.email`, logs to `insurance_claim_history`, updates status → `submitted`.
-- Requires email infrastructure (will check + scaffold if not set up).
+### 3. 1000-row truncation sweep (round 2)
+Hot pages still using bare `.select()` without `fetchAllPaged`:
+- `src/pages/AuditLog.tsx`
+- `src/pages/Staff.tsx`, `Leads.tsx`, `Referrals.tsx`, `Memberships.tsx`
+- `src/components/dashboard/SmartInsights.tsx`, `DailyActionCenter.tsx`
+- Pure count queries → switch to `.select('id', { count: 'exact', head: true })`.
 
 ---
 
-## Phase 3 — Inventory Auto-PO  *~Week 3*
+## Phase 2 — Reliability (Day 2)
 
-### Schema
-- New table `purchase_orders`:
-  - `clinic_id`, `supplier_id`, `po_number` (auto via sequence), `status` (draft / sent / partially_received / received / cancelled), `total_amount`, `created_by`, `sent_at`, `received_at`, `auto_generated` (bool), `notes`.
-- New table `purchase_order_items` (po_id, inventory_item_id, quantity, unit_cost, line_total).
-- New table `suppliers` (or extend existing — name, email, phone, whatsapp_number, address, payment_terms, lead_time_days).
-- Add `preferred_supplier_id`, `reorder_quantity` to `inventory_items`.
+### 4. Realtime subscription leaks
+- Audit every `supabase.channel(...)` for a matching `removeChannel` in cleanup.
+- Suspect files: `LiveQueueWidget.tsx` (OK), `Queue.tsx`, `TodaySchedule.tsx`, `DisplayScreen.tsx`, `FocusToday.tsx`, `Dashboard.tsx`.
+- Add a tiny `useRealtimeChannel(name, handlers, deps)` hook that handles cleanup uniformly; migrate widgets to it.
 
-### Logic — both modes
-- **Mode A (default): Draft PO + notify**
-  - Cron creates draft POs grouped by supplier, posts a Task ("3 POs awaiting review") to owner.
-  - Owner reviews on `/purchase-orders`, edits qty/cost, clicks "Send" → WhatsApp/email to supplier.
-- **Mode B (per-supplier setting): Auto-send**
-  - Supplier has `auto_send_enabled = true` → cron creates PO and immediately sends, logs to audit. Owner can still cancel within X hours.
+### 5. Edge function retry + DLQ
+- New table `edge_function_failures` (function_name, payload, error, attempts, next_retry_at, status).
+- Wrap `send-whatsapp-automated`, `run-automation-rules`, `generate-daily-todos` with try/catch → on failure insert into table.
+- New `retry-failed-jobs` edge function + pg_cron every 10 min: pick rows where `next_retry_at <= now()` and `attempts < 5`, exponential backoff.
 
-### Trigger — both
-- **Daily cron at 7:00 AM IST** (catches everything overnight) — primary mechanism.
-- **Real-time on deduction** — only fires if item crosses threshold AND no draft PO exists for that item in last 24h (prevents duplicates). Useful for fast-moving consumables.
-- **Manual button** "Generate POs from low stock" on Inventory page — for on-demand.
-
-### UI — `/purchase-orders`
-- Table view with status filter, supplier filter.
-- PO detail drawer: line items (editable in draft), cost calculation, "Send via WhatsApp" / "Send via Email" / "Mark Received" actions.
-- Receive flow: tick items received, qty received, auto-restocks inventory + creates `inventory_transactions` rows.
-- Suppliers tab in Settings.
-
-### Edge functions
-- `auto-generate-purchase-orders` (cron) — scans low-stock items across all clinics, groups by supplier, creates draft POs, sends if auto-mode enabled.
-- `send-purchase-order` — invoked when owner clicks Send; posts to WhatsApp API + email.
+### 6. WhatsApp delivery receipts
+- New edge function `whatsapp-delivery-webhook` (no JWT) accepting Meta/Gupshup callbacks.
+- New table `whatsapp_delivery_status` (message_id, status: sent/delivered/read/failed, ts).
+- Update `whatsapp_messages` table with `provider_message_id` + `delivery_status` columns; UI badge in WhatsApp page.
 
 ---
 
-## Recommendation
+## Phase 3 — Cost & Performance (Day 3)
 
-**Ship Phase 1 first, validate, then Phase 2, then Phase 3.** Each phase is ~5-7 days of work with proper testing.
+### 7. Image/X-ray compression pipeline
+- Client-side pre-upload: use `browser-image-compression` (target 1600px max, 80% quality, WebP if supported) in `XRayVault.tsx`, `IntraOralVault.tsx`, `MediaUploader.tsx`, `clinic-logos` upload.
+- Keep original toggle ("preserve original") only for diagnostic X-rays where doctor opts in.
+- Add storage quota meter on Settings → Billing tab.
 
-If you want to compress: I can skip the "All branches" cross-aggregation view in Phase 1 (just ship branch switcher + shared catalog) — saves ~2 days but you lose the consolidated revenue view until later.
-
-### Technical notes
-- All new tables get RLS scoped to either `group_id` or `clinic_id` per the rules above.
-- Invoice numbers, PO numbers, claim numbers all use per-clinic sequences (already pattern in `generate_op_number`).
-- Realtime channels for PO board and Claims board so multi-user clinics stay in sync.
-- All edge functions get retry/DLQ via the same pattern as `send-whatsapp-automated`.
+### 8. PDF generation offload
+- Move heavy PDFs (invoice receipts, treatment plans, claim forms) to a `generate-pdf` edge function using Puppeteer or pdf-lib server-side.
+- Client gets a signed URL from `patient-files` bucket.
+- Keep jsPDF as fallback for tiny prescriptions (<2 pages) so offline still works.
 
 ---
 
-**Question before I start:** Confirm "ship Phase 1 first" or tell me to do all three in one giant push (will take longer and be harder to debug). Also confirm: should branch switching be **owner-only**, or should branch staff also be able to switch (e.g. a hygienist who works across 2 branches)?
+## Phase 4 — Theme Regressions (Day 3, parallel)
+
+### 9. Theme audit
+Sweep for hardcoded colors and replace with semantic tokens:
+- Charts: `ClinicOverviewCharts.tsx`, `FinancialSummary.tsx`, `SocialAnalyticsDashboard.tsx` — use `hsl(var(--primary))` etc. instead of literals.
+- Badges: grep `bg-(green|red|yellow|blue|purple)-` and migrate to `bg-success/bg-warning/bg-destructive`.
+- `src/pages/Auth.tsx` — confirm dark-mode contrast.
+- Focus Mode (`FocusLayout.tsx`, `FocusToday.tsx`, `FocusPatient.tsx`) — remove inline whites/blacks.
+- PDF receipts (`InvoiceReceipt.tsx`, `VisitSummaryPDF.tsx`, `PrescriptionDownload.tsx`) — read clinic primary color from settings, fall back to `#5BADE6`.
+
+---
+
+## Phase 5 — Test Coverage (Day 4–5)
+
+### 10. Automated tests
+Target the highest-blast-radius logic first:
+- **Billing math** (`src/lib/billing-math.ts` extracted from `Billing.tsx`): subtotal, tax, discount, EMI splits, partial-payment ledger.
+- **Unbilled-treatment filter** (the recent fix).
+- **`fetchAllPaged`**: pagination boundary, max-rows cap.
+- **Automation rules** (Deno tests): post_treatment, birthday, follow-up triggers with mocked Supabase client.
+- **Edge functions**: `generate-daily-todos`, `run-automation-rules` happy-path + failure-path → asserts row in `edge_function_failures`.
+- **RLS smoke tests**: a Deno script that signs in as clinic-A user and asserts zero rows visible from clinic-B (run nightly).
+
+Target: 60% coverage on `src/lib/**` and 100% on billing + RLS smoke.
+
+---
+
+## Technical Details
+
+### Files created
+- `src/hooks/useRealtimeChannel.ts`
+- `src/lib/billing-math.ts` (extracted)
+- `src/lib/image-compression.ts`
+- `supabase/functions/retry-failed-jobs/index.ts`
+- `supabase/functions/whatsapp-delivery-webhook/index.ts`
+- `supabase/functions/generate-pdf/index.ts`
+- `src/lib/__tests__/*.test.ts` (billing-math, supabase-paged)
+- `supabase/functions/*/index.test.ts` (Deno)
+
+### Migrations
+1. Unique appointment slot index.
+2. `edge_function_failures` table + RLS.
+3. `whatsapp_delivery_status` table + columns on `whatsapp_messages`.
+4. pg_cron schedule for `retry-failed-jobs` every 10 min.
+
+### Env vars
+- `VITE_ALLOW_AUTH_BYPASS` (dev only, throws at build if set)
+- `VITE_DEMO_MODE` (default off)
+- `WHATSAPP_WEBHOOK_VERIFY_TOKEN` (secret)
+
+---
+
+## Sequencing & Risk
+
+```text
+Day 1: Phase 1 (auth guard, slot index, paged sweep)   ← prevents catastrophe
+Day 2: Phase 2 (realtime, retries, delivery receipts)  ← prevents silent failure
+Day 3: Phase 3 + 4 in parallel (perf + theme)          ← prevents user pain
+Day 4-5: Phase 5 (tests)                               ← prevents regression
+```
+
+Out of scope (deferred): Sentry SDK (use existing `error_logs` table for now), backend rate limiting (per platform policy).
+
+Reply **approve** to start Phase 1, or tell me which phase to prioritize / skip.
