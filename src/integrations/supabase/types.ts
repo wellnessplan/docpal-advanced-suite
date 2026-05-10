@@ -1169,6 +1169,45 @@ export type Database = {
           },
         ]
       }
+      edge_function_failures: {
+        Row: {
+          attempts: number
+          clinic_id: string | null
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          next_retry_at: string
+          payload: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          clinic_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          next_retry_at?: string
+          payload?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          clinic_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          next_retry_at?: string
+          payload?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       education_videos: {
         Row: {
           category: string
@@ -4926,6 +4965,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_delivery_status: {
+        Row: {
+          id: string
+          provider_message_id: string
+          raw: Json | null
+          received_at: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          provider_message_id: string
+          raw?: Json | null
+          received_at?: string
+          status: string
+        }
+        Update: {
+          id?: string
+          provider_message_id?: string
+          raw?: Json | null
+          received_at?: string
+          status?: string
+        }
+        Relationships: []
       }
       whatsapp_logs: {
         Row: {
