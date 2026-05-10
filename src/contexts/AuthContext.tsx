@@ -20,7 +20,11 @@ interface AuthContextType {
 // set during a production build, and import.meta.env.DEV is statically false in prod bundles.
 const DEV_BYPASS_AUTH =
   import.meta.env.DEV && import.meta.env.VITE_ALLOW_AUTH_BYPASS === "1";
-const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "1";
+// DEMO_MODE auto-logs into a shared demo account. ON by default in dev (so previews "just work"),
+// must be explicitly enabled in prod via VITE_DEMO_MODE=1.
+const DEMO_MODE = import.meta.env.DEV
+  ? import.meta.env.VITE_DEMO_MODE !== "0"
+  : import.meta.env.VITE_DEMO_MODE === "1";
 const DEMO_EMAIL = "demo@doctorsbuddy.app";
 const DEMO_PASSWORD = "DemoPass2026!";
 
