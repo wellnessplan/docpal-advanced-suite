@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+import { recordFailure } from "../_shared/dlq.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -335,6 +336,10 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error generating daily todos:", error);
     const message = error instanceof Error ? error.message : String(error);
+    try {
+      const sb = createClient(supabaseUrl, serviceKey);
+      await recordFailure(sb, "generate-daily-todos", {}, error);
+    } catch { /* swallow */ }
     return new Response(
       JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

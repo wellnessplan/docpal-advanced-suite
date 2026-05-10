@@ -1,1 +1,4 @@
 project_id = "nzfeoecmuhoblndzalll"
+
+[functions.whatsapp-delivery-webhook]
+verify_jwt = false

@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Brain, TrendingDown, TrendingUp, Users, AlertTriangle, Star, Zap, Clock } from "lucide-react";
@@ -23,10 +24,11 @@ export default function SmartInsights() {
   const { data: thisWeekRevenue = 0 } = useQuery({
     queryKey: ["insight-this-week-rev", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("amount")
-        .eq("clinic_id", clinicId!).eq("status", "paid")
-        .gte("paid_at", weekAgo + "T00:00:00");
-      return data?.reduce((s, i) => s + Number(i.amount), 0) ?? 0;
+      const data = await fetchAllPaged<{ amount: number | null }>((from, to) =>
+        supabase.from("invoices").select("amount")
+          .eq("clinic_id", clinicId!).eq("status", "paid")
+          .gte("paid_at", weekAgo + "T00:00:00").range(from, to));
+      return data.reduce((s, i) => s + Number(i.amount), 0);
     },
     enabled: !!clinicId,
   });
@@ -34,11 +36,12 @@ export default function SmartInsights() {
   const { data: lastWeekRevenue = 0 } = useQuery({
     queryKey: ["insight-last-week-rev", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("amount")
-        .eq("clinic_id", clinicId!).eq("status", "paid")
-        .gte("paid_at", twoWeeksAgo + "T00:00:00")
-        .lt("paid_at", weekAgo + "T00:00:00");
-      return data?.reduce((s, i) => s + Number(i.amount), 0) ?? 0;
+      const data = await fetchAllPaged<{ amount: number | null }>((from, to) =>
+        supabase.from("invoices").select("amount")
+          .eq("clinic_id", clinicId!).eq("status", "paid")
+          .gte("paid_at", twoWeeksAgo + "T00:00:00")
+          .lt("paid_at", weekAgo + "T00:00:00").range(from, to));
+      return data.reduce((s, i) => s + Number(i.amount), 0);
     },
     enabled: !!clinicId,
   });
@@ -57,9 +60,10 @@ export default function SmartInsights() {
   const { data: pendingPayments = 0 } = useQuery({
     queryKey: ["insight-pending-payments", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("balance, amount")
-        .eq("clinic_id", clinicId!).in("status", ["sent", "draft", "overdue"]);
-      return data?.reduce((s, i) => s + Number(i.balance || i.amount || 0), 0) ?? 0;
+      const data = await fetchAllPaged<{ balance: number | null; amount: number | null }>((from, to) =>
+        supabase.from("invoices").select("balance, amount")
+          .eq("clinic_id", clinicId!).in("status", ["sent", "draft", "overdue"]).range(from, to));
+      return data.reduce((s, i) => s + Number(i.balance || i.amount || 0), 0);
     },
     enabled: !!clinicId,
   });
@@ -67,9 +71,10 @@ export default function SmartInsights() {
   const { data: lowStockItems = 0 } = useQuery({
     queryKey: ["insight-low-stock", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("inventory_items").select("quantity, min_stock_level")
-        .eq("clinic_id", clinicId!);
-      return data?.filter(i => (i.quantity ?? 0) <= (i.min_stock_level ?? 0)).length ?? 0;
+      const data = await fetchAllPaged<{ quantity: number | null; min_stock_level: number | null }>((from, to) =>
+        supabase.from("inventory_items").select("quantity, min_stock_level")
+          .eq("clinic_id", clinicId!).range(from, to));
+      return data.filter(i => (i.quantity ?? 0) <= (i.min_stock_level ?? 0)).length;
     },
     enabled: !!clinicId,
   });
@@ -77,10 +82,11 @@ export default function SmartInsights() {
   const { data: topDoctor } = useQuery({
     queryKey: ["insight-top-doctor", clinicId],
     queryFn: async () => {
-      const { data: appts } = await supabase.from("appointments").select("doctor_id, provider_id")
-        .eq("clinic_id", clinicId!).eq("status", "completed")
-        .gte("appointment_date", monthAgo);
-      if (!appts?.length) return null;
+      const appts = await fetchAllPaged<{ doctor_id: string | null; provider_id: string | null }>((from, to) =>
+        supabase.from("appointments").select("doctor_id, provider_id")
+          .eq("clinic_id", clinicId!).eq("status", "completed")
+          .gte("appointment_date", monthAgo).range(from, to));
+      if (!appts.length) return null;
       const counts: Record<string, number> = {};
       appts.forEach(a => {
         const id = a.doctor_id || a.provider_id;
