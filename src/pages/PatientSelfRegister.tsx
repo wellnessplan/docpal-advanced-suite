@@ -4,16 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Stethoscope, CheckCircle2, UserPlus, Clock, ExternalLink } from "lucide-react";
+import { CheckCircle2, UserPlus, Clock, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Lazy-load the QR library so the form opens instantly
-const QRCode = lazy(async () => {
-  const m = await import("qrcode.react");
-  return { default: m.QRCodeSVG as unknown as React.ComponentType<{ value: string; size?: number }> };
-});
+// Defer the QR generator (and qrcode.react) to its own chunk — only loaded when no clinic param
+const QRCodeGenerator = lazy(() => import("./PatientSelfRegisterQR"));
 
 // ─── Types ───────────────────────────────────────────────
 interface WorkingHour {
