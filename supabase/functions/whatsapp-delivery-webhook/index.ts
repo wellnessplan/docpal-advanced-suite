@@ -92,9 +92,9 @@ Deno.serve(async (req) => {
     events.map(e => ({ provider_message_id: e.id, status: e.status, raw: e.raw }))
   );
 
-  // Update parent whatsapp_messages.delivery_status (latest wins)
+  // Update parent whatsapp_logs.delivery_status (latest wins)
   for (const e of events) {
-    await supabase.from("whatsapp_messages")
+    await supabase.from("whatsapp_logs")
       .update({ delivery_status: e.status })
       .eq("provider_message_id", e.id);
   }

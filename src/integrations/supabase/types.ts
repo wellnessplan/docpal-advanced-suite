@@ -4994,11 +4994,13 @@ export type Database = {
         Row: {
           clinic_id: string
           created_at: string
+          delivery_status: string | null
           error_message: string | null
           id: string
           message_body: string | null
           patient_id: string
           phone: string | null
+          provider_message_id: string | null
           sent_at: string
           status: string
           template_name: string
@@ -5006,11 +5008,13 @@ export type Database = {
         Insert: {
           clinic_id: string
           created_at?: string
+          delivery_status?: string | null
           error_message?: string | null
           id?: string
           message_body?: string | null
           patient_id: string
           phone?: string | null
+          provider_message_id?: string | null
           sent_at?: string
           status?: string
           template_name: string
@@ -5018,11 +5022,13 @@ export type Database = {
         Update: {
           clinic_id?: string
           created_at?: string
+          delivery_status?: string | null
           error_message?: string | null
           id?: string
           message_body?: string | null
           patient_id?: string
           phone?: string | null
+          provider_message_id?: string | null
           sent_at?: string
           status?: string
           template_name?: string

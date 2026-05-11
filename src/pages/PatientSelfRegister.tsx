@@ -4,16 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Stethoscope, CheckCircle2, UserPlus, Clock, ExternalLink } from "lucide-react";
+import { CheckCircle2, UserPlus, Clock, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Lazy-load the QR library so the form opens instantly
-const QRCode = lazy(async () => {
-  const m = await import("qrcode.react");
-  return { default: m.QRCodeSVG as unknown as React.ComponentType<{ value: string; size?: number }> };
-});
+// Defer the QR generator (and qrcode.react) to its own chunk — only loaded when no clinic param
+const QRCodeGenerator = lazy(() => import("./PatientSelfRegisterQR"));
 
 // ─── Types ───────────────────────────────────────────────
 interface WorkingHour {
@@ -230,7 +227,11 @@ export default function PatientSelfRegister() {
     setLoading(false);
   };
 
-  if (!clinicId) return <QRCodeGenerator />;
+  if (!clinicId) return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-pulse rounded-full bg-muted" /></div>}>
+      <QRCodeGenerator />
+    </Suspense>
+  );
 
   // ── Thank-you / Token screen ────────────────────────────
   if (registered && tokenNumber !== null) {
@@ -401,33 +402,3 @@ export default function PatientSelfRegister() {
   );
 }
 
-function QRCodeGenerator() {
-  const [clinicId, setClinicId] = useState("");
-  const registrationUrl = clinicId ? `${window.location.origin}/register?clinic=${clinicId}` : "";
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-teal-50 p-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5" /> Generate Patient Registration QR
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Clinic ID</Label>
-            <Input value={clinicId} onChange={(e) => setClinicId(e.target.value)} placeholder="Enter your clinic ID" />
-          </div>
-          {registrationUrl && (
-            <div className="flex flex-col items-center gap-4 p-4 bg-card rounded-xl border">
-              <Suspense fallback={<div className="h-[200px] w-[200px] animate-pulse rounded bg-muted" />}>
-                <QRCode value={registrationUrl} size={200} />
-              </Suspense>
-              <p className="text-xs text-muted-foreground text-center break-all">{registrationUrl}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
