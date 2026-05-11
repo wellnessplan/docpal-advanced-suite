@@ -5144,6 +5144,18 @@ export type Database = {
       is_super_admin: { Args: never; Returns: boolean }
       load_demo_data: { Args: never; Returns: Json }
       receive_purchase_order: { Args: { p_po_id: string }; Returns: undefined }
+      self_register_patient: {
+        Args: {
+          p_appointment_date?: string
+          p_appointment_time?: string
+          p_clinic_id: string
+          p_dob?: string
+          p_email?: string
+          p_full_name: string
+          p_phone?: string
+        }
+        Returns: Json
+      }
       switch_active_branch: {
         Args: { p_clinic_id: string }
         Returns: undefined
