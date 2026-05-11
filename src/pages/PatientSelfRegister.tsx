@@ -198,36 +198,34 @@ export default function PatientSelfRegister() {
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email."); return; }
 
     setLoading(true);
-    const patientId = crypto.randomUUID();
 
-    const { error: patientError } = await supabase.from("patients").insert({
-      id: patientId, clinic_id: clinicId, full_name: trimmedName,
-      phone: phone || null, email: email || null, date_of_birth: dob || null,
-    });
-    if (patientError) { toast.error("Registration failed: " + patientError.message); setLoading(false); return; }
-
-    const today = new Date().toISOString().split("T")[0];
-
+    let aDate: string | null = null;
+    let aTime: string | null = null;
     if (selectedSlot && selectedSlot !== "now") {
-      const [aDate, aTime] = selectedSlot.split("|");
-      await supabase.from("appointments").insert({
-        clinic_id: clinicId, patient_id: patientId,
-        appointment_date: aDate, appointment_time: aTime,
-        status: "scheduled", type: "checkup", duration_minutes: 30,
-      });
+      const parts = selectedSlot.split("|");
+      aDate = parts[0]; aTime = parts[1];
     }
 
-    const { data: nextToken, error: tokenError } = await supabase
-      .rpc("get_next_token_number", { p_clinic_id: clinicId, p_date: today });
-    if (tokenError) { toast.error("Failed to generate token: " + tokenError.message); setLoading(false); return; }
-
-    const { error: queueError } = await supabase.from("queue_tokens").insert({
-      clinic_id: clinicId, patient_id: patientId, token_number: nextToken,
-      queue_date: today, status: "waiting", priority: "normal",
+    const { data, error } = await (supabase as any).rpc("self_register_patient", {
+      p_clinic_id: clinicId,
+      p_full_name: trimmedName,
+      p_phone: phone || null,
+      p_email: email || null,
+      p_dob: dob || null,
+      p_appointment_date: aDate,
+      p_appointment_time: aTime,
     });
-    if (queueError) { toast.error("Failed to add to queue: " + queueError.message); setLoading(false); return; }
+    if (error) {
+      toast.error("Registration failed: " + error.message);
+      setLoading(false);
+      return;
+    }
 
-    setTokenNumber(nextToken);
+    const result = data as { token_number: number; reused?: boolean; op_number?: string };
+    if (result?.reused) {
+      toast.success(`Welcome back! UHID ${result.op_number}`);
+    }
+    setTokenNumber(result.token_number);
     setRegistered(true);
     setLoading(false);
   };
