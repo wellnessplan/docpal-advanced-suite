@@ -227,7 +227,11 @@ export default function PatientSelfRegister() {
     setLoading(false);
   };
 
-  if (!clinicId) return <QRCodeGenerator />;
+  if (!clinicId) return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-pulse rounded-full bg-muted" /></div>}>
+      <QRCodeGenerator />
+    </Suspense>
+  );
 
   // ── Thank-you / Token screen ────────────────────────────
   if (registered && tokenNumber !== null) {
