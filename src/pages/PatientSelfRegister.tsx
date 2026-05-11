@@ -398,33 +398,3 @@ export default function PatientSelfRegister() {
   );
 }
 
-function QRCodeGenerator() {
-  const [clinicId, setClinicId] = useState("");
-  const registrationUrl = clinicId ? `${window.location.origin}/register?clinic=${clinicId}` : "";
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-teal-50 p-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5" /> Generate Patient Registration QR
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Clinic ID</Label>
-            <Input value={clinicId} onChange={(e) => setClinicId(e.target.value)} placeholder="Enter your clinic ID" />
-          </div>
-          {registrationUrl && (
-            <div className="flex flex-col items-center gap-4 p-4 bg-card rounded-xl border">
-              <Suspense fallback={<div className="h-[200px] w-[200px] animate-pulse rounded bg-muted" />}>
-                <QRCode value={registrationUrl} size={200} />
-              </Suspense>
-              <p className="text-xs text-muted-foreground text-center break-all">{registrationUrl}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
