@@ -5,6 +5,7 @@
  * `captureError(...)` calls into the `error_logs` table.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { captureSentry } from "./sentry";
 
 interface CaptureOptions {
   level?: "error" | "warning" | "info";
@@ -37,6 +38,9 @@ export async function captureError(error: unknown, options: CaptureOptions = {})
     const stack = error instanceof Error ? error.stack : undefined;
 
     if (!message || shouldThrottle(message)) return;
+
+    // Forward to Sentry (no-op if not initialized)
+    captureSentry(error, options.context);
 
     const { data: { user } } = await supabase.auth.getUser();
     let clinicId = options.clinicId ?? null;
