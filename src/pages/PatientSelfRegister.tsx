@@ -244,7 +244,7 @@ export default function PatientSelfRegister() {
         <Card className="w-full max-w-sm text-center shadow-lg border-0">
           <CardContent className="pt-8 pb-8 space-y-4">
             {settings.show_logo && clinic?.logo_url && (
-              <img src={clinic.logo_url} alt="Clinic logo" className="mx-auto h-14 object-contain" />
+              <img src={clinic.logo_url} alt="Clinic logo" loading="lazy" decoding="async" className="mx-auto h-14 object-contain" />
             )}
             <CheckCircle2 className="h-16 w-16 mx-auto" style={{ color: brand }} />
             <h2 className="text-2xl font-bold text-foreground">{settings.thank_you_heading}</h2>
@@ -259,6 +259,15 @@ export default function PatientSelfRegister() {
             )}
             <p className="text-sm text-muted-foreground">{settings.thank_you_message}</p>
             <p className="text-sm font-semibold">Thank you, {fullName}!</p>
+
+            {phone && (
+              <a
+                href={`/r/status?clinic=${clinicId}&phone=${encodeURIComponent(phone)}`}
+                className="inline-block text-xs text-primary underline underline-offset-2"
+              >
+                Track confirmation message status
+              </a>
+            )}
 
             {settings.action_links.length > 0 && (
               <div className="space-y-2 pt-3 border-t">
@@ -294,13 +303,21 @@ export default function PatientSelfRegister() {
           <img
             src={settings.banner_image_url}
             alt="Banner"
+            loading="lazy"
+            decoding="async"
             className="w-full h-32 object-cover rounded-xl mb-4 shadow"
           />
         )}
 
         <div className="mb-6 text-center">
           {settings.show_logo && clinic?.logo_url ? (
-            <img src={clinic.logo_url} alt="Clinic logo" className="mx-auto mb-3 h-14 object-contain" />
+            <img
+              src={clinic.logo_url}
+              alt="Clinic logo"
+              loading="lazy"
+              decoding="async"
+              className="mx-auto mb-3 h-14 object-contain"
+            />
           ) : (
             <div
               className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl"
@@ -319,15 +336,15 @@ export default function PatientSelfRegister() {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <Label>Full Name *</Label>
-                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Enter your full name" />
+                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Enter your full name" autoComplete="name" enterKeyHint="next" />
               </div>
               <div className="space-y-2">
                 <Label>Phone</Label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98765 43210" type="tel" />
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98765 43210" type="tel" inputMode="tel" autoComplete="tel" enterKeyHint="next" />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="patient@email.com" type="email" />
+                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="patient@email.com" type="email" inputMode="email" autoComplete="email" enterKeyHint="next" />
               </div>
               <div className="space-y-2">
                 <Label>Date of Birth</Label>
