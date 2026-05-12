@@ -16,10 +16,31 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-// Dev-only auth bypass. Never ships to prod: vite.config.ts throws if VITE_ALLOW_AUTH_BYPASS is
-// set during a production build, and import.meta.env.DEV is statically false in prod bundles.
+// Dev-only auth bypass. Triple-locked:
+//   1. vite.config.ts throws at build if VITE_ALLOW_AUTH_BYPASS=1 in production mode
+//   2. import.meta.env.DEV is statically false in production bundles (dead-code eliminated)
+//   3. Runtime host guard below — refuses to bypass on any non-localhost origin
+const PROD_HOSTS = /\.(lovable\.app|lovable\.dev|lovableproject\.com)$/i;
+const isLocalHost =
+  typeof window === "undefined" ||
+  ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) ||
+  window.location.hostname.endsWith(".local");
 const DEV_BYPASS_AUTH =
-  import.meta.env.DEV && import.meta.env.VITE_ALLOW_AUTH_BYPASS === "1";
+  import.meta.env.DEV &&
+  import.meta.env.VITE_ALLOW_AUTH_BYPASS === "1" &&
+  isLocalHost &&
+  (typeof window === "undefined" || !PROD_HOSTS.test(window.location.hostname));
+
+if (
+  import.meta.env.VITE_ALLOW_AUTH_BYPASS === "1" &&
+  typeof window !== "undefined" &&
+  PROD_HOSTS.test(window.location.hostname)
+) {
+  // Defensive: this should never happen because vite.config.ts blocks the build,
+  // but if a bypass build were ever served on a prod domain we crash hard rather
+  // than silently grant access.
+  throw new Error("[security] Auth bypass detected on production host. Aborting.");
+}
 const DEMO_MODE = true;
 const DEMO_EMAIL = "demo@doctorsbuddy.app";
 const DEMO_PASSWORD = "DemoPass2026!";
