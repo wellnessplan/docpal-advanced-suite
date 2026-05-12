@@ -63,6 +63,8 @@ const DisplayManager = lazy(() => import("./pages/DisplayManager"));
 const DisplayPair = lazy(() => import("./pages/DisplayPair"));
 const DisplayScreen = lazy(() => import("./pages/DisplayScreen"));
 const PurchaseOrders = lazy(() => import("./pages/PurchaseOrders"));
+const WhatsAppStatus = lazy(() => import("./pages/WhatsAppStatus"));
+const PatientStatus = lazy(() => import("./pages/PatientStatus"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -129,6 +131,7 @@ const App = () => (
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/onboarding" element={<AuthOnlyRoute><Onboarding /></AuthOnlyRoute>} />
                 <Route path="/register" element={<PatientSelfRegister />} />
+                <Route path="/r/status" element={<PatientStatus />} />
                 <Route path="/accept-invite/:token" element={<AcceptInvite />} />
                 <Route path="/display" element={<DisplayPair />} />
                 <Route path="/display/:code" element={<DisplayScreen />} />
@@ -145,6 +148,7 @@ const App = () => (
                 <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
                 <Route path="/ai-generator" element={<ProtectedRoute><AIGenerator /></ProtectedRoute>} />
                 <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
+                <Route path="/whatsapp-status" element={<ProtectedRoute><WhatsAppStatus /></ProtectedRoute>} />
                 <Route path="/dental-chart/:patientId" element={<ProtectedRoute><DentalChart /></ProtectedRoute>} />
                 <Route path="/queue" element={<ProtectedRoute><Queue /></ProtectedRoute>} />
                 <Route path="/lab-orders" element={<ProtectedRoute><LabOrders /></ProtectedRoute>} />

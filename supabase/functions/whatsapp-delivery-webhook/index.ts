@@ -1,39 +1,62 @@
-// whatsapp-delivery-webhook — accepts provider callbacks (Meta Cloud API / Gupshup).
-// Public endpoint (verify_jwt = false). Verifies a shared secret token in query string.
+// whatsapp-delivery-webhook
 //
-// Meta verification (GET): hub.mode=subscribe&hub.verify_token=...&hub.challenge=...
-// Status payload (POST):    { messages: [{ id, status, timestamp, ... }] }  (Meta)
-//                           { type: "message-event", payload: { id, type } } (Gupshup)
-// We normalize and write to whatsapp_delivery_status, plus update whatsapp_messages.delivery_status.
-
+// Accepts provider callbacks (Meta Cloud API / Gupshup), verifies the
+// signature, deduplicates by (provider_message_id, status), and updates
+// whatsapp_logs.delivery_status.
+//
+// Security:
+//   • Meta GET handshake checks WHATSAPP_WEBHOOK_VERIFY_TOKEN.
+//   • POST bodies are HMAC-SHA256 verified against WHATSAPP_APP_SECRET when
+//     a x-hub-signature-256 header is present (Meta).
+//   • Generic providers fall back to a shared `?token=` query string.
+//   • Idempotency is enforced by a UNIQUE INDEX on
+//     whatsapp_delivery_status(provider_message_id, status); duplicates are
+//     ignored via ON CONFLICT.
+//
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, content-type, apikey",
+  "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-hub-signature-256",
 };
 
 const VERIFY_TOKEN = Deno.env.get("WHATSAPP_WEBHOOK_VERIFY_TOKEN") ?? "";
+const APP_SECRET = Deno.env.get("WHATSAPP_APP_SECRET") ?? "";
+
+async function hmacHex(secret: string, data: Uint8Array): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, data);
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return mismatch === 0;
+}
 
 function normalize(body: any): Array<{ id: string; status: string; raw: any }> {
   const out: Array<{ id: string; status: string; raw: any }> = [];
-
-  // Meta Cloud API: entry[].changes[].value.statuses[]
   if (Array.isArray(body?.entry)) {
     for (const entry of body.entry) {
       for (const change of entry.changes ?? []) {
         for (const s of change?.value?.statuses ?? []) {
-          out.push({ id: s.id, status: s.status, raw: s });
+          if (s.id && s.status) out.push({ id: s.id, status: s.status, raw: s });
         }
       }
     }
   }
-  // Gupshup
   if (body?.type === "message-event" && body?.payload?.id) {
     out.push({ id: body.payload.id, status: body.payload.type ?? "unknown", raw: body.payload });
   }
-  // Generic fallback
   if (Array.isArray(body?.messages)) {
     for (const m of body.messages) {
       if (m.id && m.status) out.push({ id: m.id, status: m.status, raw: m });
@@ -52,26 +75,44 @@ Deno.serve(async (req) => {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-    if (mode === "subscribe" && token && token === VERIFY_TOKEN) {
+    if (mode === "subscribe" && token && VERIFY_TOKEN && timingSafeEqual(token, VERIFY_TOKEN)) {
       return new Response(challenge ?? "", { status: 200, headers: corsHeaders });
     }
     return new Response("forbidden", { status: 403, headers: corsHeaders });
   }
 
-  // Soft auth: query token must match (avoids open writes)
-  if (VERIFY_TOKEN && url.searchParams.get("token") !== VERIFY_TOKEN) {
-    // Meta sends X-Hub-Signature-256 instead — accept if Meta payload shape detected
-    const ct = req.headers.get("content-type") ?? "";
-    if (!ct.includes("application/json")) {
-      return new Response("forbidden", { status: 403, headers: corsHeaders });
+  // Read raw bytes once — needed for both signature verification and JSON parsing
+  const rawBytes = new Uint8Array(await req.arrayBuffer());
+  const sigHeader = req.headers.get("x-hub-signature-256");
+
+  let authed = false;
+
+  // Path A: Meta — verify HMAC signature against APP_SECRET
+  if (sigHeader && APP_SECRET) {
+    const expected = "sha256=" + (await hmacHex(APP_SECRET, rawBytes));
+    if (!timingSafeEqual(sigHeader, expected)) {
+      return new Response("invalid signature", { status: 401, headers: corsHeaders });
     }
+    authed = true;
+  }
+
+  // Path B: Generic provider — fall back to shared query token
+  if (!authed && VERIFY_TOKEN) {
+    const t = url.searchParams.get("token");
+    if (t && timingSafeEqual(t, VERIFY_TOKEN)) authed = true;
+  }
+
+  if (!authed) {
+    return new Response("forbidden", { status: 403, headers: corsHeaders });
   }
 
   let body: any;
-  try { body = await req.json(); }
-  catch {
+  try {
+    body = JSON.parse(new TextDecoder().decode(rawBytes));
+  } catch {
     return new Response(JSON.stringify({ error: "invalid json" }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -84,19 +125,25 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Insert delivery rows
-  await supabase.from("whatsapp_delivery_status").insert(
-    events.map(e => ({ provider_message_id: e.id, status: e.status, raw: e.raw }))
-  );
+  // Idempotent insert — UNIQUE(provider_message_id, status) drops duplicates
+  const { error: insertErr } = await supabase
+    .from("whatsapp_delivery_status")
+    .upsert(
+      events.map((e) => ({ provider_message_id: e.id, status: e.status, raw: e.raw })),
+      { onConflict: "provider_message_id,status", ignoreDuplicates: true },
+    );
+  if (insertErr) console.error("dlv insert", insertErr);
 
-  // Update parent whatsapp_logs.delivery_status (latest wins)
-  for (const e of events) {
-    await supabase.from("whatsapp_logs")
-      .update({ delivery_status: e.status })
-      .eq("provider_message_id", e.id);
+  // Latest status wins for the parent log row.
+  // We update once per unique provider_message_id with the *last* event in the batch
+  // (Meta callbacks arrive ordered).
+  const latest = new Map<string, string>();
+  for (const e of events) latest.set(e.id, e.status);
+  for (const [id, status] of latest) {
+    await supabase.from("whatsapp_logs").update({ delivery_status: status }).eq("provider_message_id", id);
   }
 
   return new Response(JSON.stringify({ ok: true, count: events.length }), {

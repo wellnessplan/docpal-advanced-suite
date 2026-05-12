@@ -5149,6 +5149,15 @@ export type Database = {
       is_group_owner: { Args: { _group_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       load_demo_data: { Args: never; Returns: Json }
+      lookup_registration_status: {
+        Args: { p_clinic_id: string; p_phone: string }
+        Returns: {
+          delivery_status: string
+          sent_at: string
+          status: string
+          template_name: string
+        }[]
+      }
       receive_purchase_order: { Args: { p_po_id: string }; Returns: undefined }
       self_register_patient: {
         Args: {
