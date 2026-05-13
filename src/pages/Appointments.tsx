@@ -123,15 +123,15 @@ export default function AppointmentsPage() {
     let list = appointments;
     if (doctorFilter !== "all") list = list.filter((a: any) => a.provider_id === doctorFilter);
     if (mainTab === "checkin") list = list.filter((a: any) => ["in_progress", "completed"].includes(a.status));
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       list = list.filter((a: any) =>
         a.patients?.full_name?.toLowerCase().includes(q) ||
         a.patients?.phone?.includes(q)
       );
     }
     return list;
-  }, [appointments, doctorFilter, searchQuery, mainTab]);
+  }, [appointments, doctorFilter, debouncedSearch, mainTab]);
 
   const bookedSlots = useMemo(() => {
     if (!form.appointment_date) return new Set<string>();
