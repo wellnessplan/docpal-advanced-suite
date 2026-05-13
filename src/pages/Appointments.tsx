@@ -18,6 +18,10 @@ import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, subWeeks,
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDebounce } from "@/hooks/useDebounce";
+import { SwipeableCard } from "@/components/mobile/SwipeableCard";
+import { MobileFilterSheet } from "@/components/mobile/MobileFilterSheet";
+import { WidgetCardSkeleton } from "@/components/ui/skeleton-loaders";
 import WhoChangedHover from "@/components/shared/WhoChangedHover";
 
 const statusStyle: Record<string, string> = {
@@ -54,6 +58,7 @@ export default function AppointmentsPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [doctorFilter, setDoctorFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "month">("today");
   const [form, setForm] = useState({ patient_id: "", appointment_date: "", appointment_time: "", duration_minutes: "30", type: "General Checkup", notes: "", provider_id: "" });
 
@@ -118,15 +123,15 @@ export default function AppointmentsPage() {
     let list = appointments;
     if (doctorFilter !== "all") list = list.filter((a: any) => a.provider_id === doctorFilter);
     if (mainTab === "checkin") list = list.filter((a: any) => ["in_progress", "completed"].includes(a.status));
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       list = list.filter((a: any) =>
         a.patients?.full_name?.toLowerCase().includes(q) ||
         a.patients?.phone?.includes(q)
       );
     }
     return list;
-  }, [appointments, doctorFilter, searchQuery, mainTab]);
+  }, [appointments, doctorFilter, debouncedSearch, mainTab]);
 
   const bookedSlots = useMemo(() => {
     if (!form.appointment_date) return new Set<string>();
@@ -173,6 +178,18 @@ export default function AppointmentsPage() {
       const { error } = await supabase.from("appointments").update({ status: status as any }).eq("id", id);
       if (error) throw error;
     },
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["appointments"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["appointments"] });
+      queryClient.setQueriesData({ queryKey: ["appointments"] }, (old: any) =>
+        Array.isArray(old) ? old.map((a: any) => (a.id === id ? { ...a, status } : a)) : old
+      );
+      return { snapshot };
+    },
+    onError: (_e, _v, ctx: any) => {
+      ctx?.snapshot?.forEach(([k, d]: any) => queryClient.setQueryData(k, d));
+      toast.error("Failed to update status");
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast.success("Status updated!");
@@ -216,13 +233,25 @@ export default function AppointmentsPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Delete (cancel) with 8-second undo window — soft-cancel pattern
+  // Delete (cancel) with optimistic UI + 8-second undo window
   const cancelAppointment = useMutation({
     mutationFn: async (apt: any) => {
       const prevStatus = apt.status;
       const { error } = await supabase.from("appointments").update({ status: "cancelled" as any }).eq("id", apt.id);
       if (error) throw error;
       return { id: apt.id, prevStatus };
+    },
+    onMutate: async (apt: any) => {
+      await queryClient.cancelQueries({ queryKey: ["appointments"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["appointments"] });
+      queryClient.setQueriesData({ queryKey: ["appointments"] }, (old: any) =>
+        Array.isArray(old) ? old.map((a: any) => (a.id === apt.id ? { ...a, status: "cancelled" } : a)) : old
+      );
+      return { snapshot };
+    },
+    onError: (e: any, _v, ctx: any) => {
+      ctx?.snapshot?.forEach(([k, d]: any) => queryClient.setQueryData(k, d));
+      toast.error(e.message);
     },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
@@ -242,7 +271,6 @@ export default function AppointmentsPage() {
         },
       });
     },
-    onError: (e: any) => toast.error(e.message),
   });
 
   const navigateDate = (dir: number) => {
@@ -429,19 +457,21 @@ export default function AppointmentsPage() {
         {mainTab !== "calendar" && (
           <>
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <h2 className="font-heading text-lg font-bold">Appointments</h2>
-                <div className="relative">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <h2 className="font-heading text-lg font-bold hidden sm:block">Appointments</h2>
+                <div className="relative flex-1 sm:flex-initial">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Patient name / phone"
-                    className="pl-8 h-8 w-48 md:w-64 text-xs"
+                    className="pl-8 h-9 w-full sm:w-64 text-xs"
+                    enterKeyHint="search"
                   />
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              {/* Desktop filters */}
+              <div className="hidden md:flex items-center gap-2">
                 <div className="flex rounded-lg border overflow-hidden">
                   {(["today", "yesterday", "month"] as const).map(f => (
                     <button key={f} onClick={() => setDateFilter(f)}
@@ -458,92 +488,178 @@ export default function AppointmentsPage() {
                   </SelectContent>
                 </Select>
               </div>
+              {/* Mobile bottom-sheet filters */}
+              <div className="md:hidden">
+                <MobileFilterSheet
+                  title="Filter Appointments"
+                  activeCount={(doctorFilter !== "all" ? 1 : 0) + (dateFilter !== "today" ? 1 : 0)}
+                  onReset={() => { setDoctorFilter("all"); setDateFilter("today"); }}
+                >
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Date Range</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["today", "yesterday", "month"] as const).map(f => (
+                        <button key={f} type="button" onClick={() => setDateFilter(f)}
+                          className={cn("h-11 rounded-lg border text-sm font-medium capitalize transition-colors",
+                            dateFilter === f ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"
+                          )}>{f === "month" ? "Month" : f}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Doctor</Label>
+                    <Select value={doctorFilter} onValueChange={setDoctorFilter}>
+                      <SelectTrigger className="h-11"><SelectValue placeholder="All Doctors" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Doctors</SelectItem>
+                        {doctors.map(d => <SelectItem key={d.id} value={d.id}>{d.full_name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </MobileFilterSheet>
+              </div>
             </div>
 
-            <Card className="shadow-card border-0">
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/30">
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">No.</th>
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Date/Time</th>
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Patient</th>
-                        {!isMobile && <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Phone</th>}
-                        {!isMobile && <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Gender</th>}
-                        {!isMobile && <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Age</th>}
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Complaints</th>
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Dr Name</th>
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Duration</th>
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Status</th>
-                        <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {isLoading ? (
-                        <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">Loading...</td></tr>
-                      ) : !filteredAppointments.length ? (
-                        <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">No appointments found</td></tr>
-                      ) : filteredAppointments.map((apt: any, idx: number) => (
-                        <tr key={apt.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
-                          <td className="px-4 py-3 text-xs">
-                            <div className="text-foreground">{format(new Date(apt.appointment_date + "T00:00:00"), "dd-MM-yy")}</div>
-                            <div className="text-muted-foreground">{apt.appointment_time ? format(new Date(`2000-01-01T${apt.appointment_time}`), "h:mm a") : "-"}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-full gradient-primary flex items-center justify-center text-[9px] font-bold text-primary-foreground shrink-0">
-                                {(apt.patients?.full_name || "?")[0]}
-                              </div>
-                              <span className="font-medium text-foreground">{apt.patients?.full_name}</span>
-                            </div>
-                          </td>
-                          {!isMobile && <td className="px-4 py-3 text-muted-foreground text-xs">{apt.patients?.phone || "-"}</td>}
-                          {!isMobile && <td className="px-4 py-3 text-muted-foreground capitalize text-xs">{apt.patients?.gender || "-"}</td>}
-                          {!isMobile && <td className="px-4 py-3 text-muted-foreground text-xs">{calcAge(apt.patients?.date_of_birth)}</td>}
-                          <td className="px-4 py-3 text-xs text-muted-foreground">{apt.type || "-"}</td>
-                          <td className="px-4 py-3 text-xs text-muted-foreground">{apt.provider?.full_name || "-"}</td>
-                          <td className="px-4 py-3 text-xs text-muted-foreground">{apt.duration_minutes} mins</td>
-                          <td className="px-4 py-3">
-                            <Select value={apt.status} onValueChange={v => updateStatus.mutate({ id: apt.id, status: v })}>
-                              <SelectTrigger className="h-7 w-28 text-[11px] border-0 p-0">
-                                <Badge variant="outline" className={`text-[11px] capitalize ${statusStyle[apt.status] || ""}`}>
-                                  {apt.status?.replace(/_/g, " ")}
-                                </Badge>
-                              </SelectTrigger>
-                              <SelectContent>
-                                {["scheduled", "confirmed", "in_progress", "completed", "cancelled", "no_show"].map(s =>
-                                  <SelectItem key={s} value={s} className="text-xs capitalize">{s.replace(/_/g, " ")}</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/patients/${apt.patient_id}`)} title="View patient">
-                                <Eye className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                onClick={() => cancelAppointment.mutate(apt)}
-                                title="Cancel appointment"
-                                disabled={apt.status === "cancelled"}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                              <WhoChangedHover table="appointments" recordId={apt.id} className="ml-1" />
-                            </div>
-                          </td>
+            {isMobile ? (
+              <div className="space-y-2">
+                {isLoading ? (
+                  <WidgetCardSkeleton rows={6} />
+                ) : !filteredAppointments.length ? (
+                  <p className="text-center py-12 text-muted-foreground text-sm">No appointments found</p>
+                ) : filteredAppointments.map((apt: any) => (
+                  <SwipeableCard
+                    key={apt.id}
+                    onClick={() => navigate(`/patients/${apt.patient_id}`)}
+                    leftAction={{
+                      label: "View",
+                      icon: <Eye className="h-4 w-4" />,
+                      bg: "bg-primary",
+                      fg: "text-primary-foreground",
+                      onClick: () => navigate(`/patients/${apt.patient_id}`),
+                    }}
+                    rightAction={apt.status !== "cancelled" ? {
+                      label: "Cancel",
+                      icon: <Trash2 className="h-4 w-4" />,
+                      bg: "bg-destructive",
+                      fg: "text-destructive-foreground",
+                      onClick: () => cancelAppointment.mutate(apt),
+                    } : undefined}
+                    className="shadow-card"
+                  >
+                    <div className="p-3 flex items-center gap-3 min-h-[64px] bg-card">
+                      <div className="h-10 w-10 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
+                        {(apt.patients?.full_name || "?")[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-medium text-sm truncate">{apt.patients?.full_name}</p>
+                          <Badge variant="outline" className={`text-[10px] capitalize shrink-0 ${statusStyle[apt.status] || ""}`}>
+                            {apt.status?.replace(/_/g, " ")}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                          <span>{format(new Date(apt.appointment_date + "T00:00:00"), "dd MMM")}</span>
+                          <span>·</span>
+                          <span>{apt.appointment_time ? format(new Date(`2000-01-01T${apt.appointment_time}`), "h:mm a") : "-"}</span>
+                          <span>·</span>
+                          <span className="truncate">{apt.type || "—"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </SwipeableCard>
+                ))}
+                {filteredAppointments.length > 0 && (
+                  <p className="text-[10px] text-center text-muted-foreground pt-1">
+                    Swipe right to view · swipe left to cancel
+                  </p>
+                )}
+              </div>
+            ) : (
+              <Card className="shadow-card border-0">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/30">
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">No.</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Date/Time</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Patient</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Phone</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Gender</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Age</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Complaints</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Dr Name</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Duration</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Status</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Action</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+                      </thead>
+                      <tbody>
+                        {isLoading ? (
+                          <tr><td colSpan={11} className="p-4"><WidgetCardSkeleton rows={5} /></td></tr>
+                        ) : !filteredAppointments.length ? (
+                          <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">No appointments found</td></tr>
+                        ) : filteredAppointments.map((apt: any, idx: number) => (
+                          <tr key={apt.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                            <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
+                            <td className="px-4 py-3 text-xs">
+                              <div className="text-foreground">{format(new Date(apt.appointment_date + "T00:00:00"), "dd-MM-yy")}</div>
+                              <div className="text-muted-foreground">{apt.appointment_time ? format(new Date(`2000-01-01T${apt.appointment_time}`), "h:mm a") : "-"}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full gradient-primary flex items-center justify-center text-[9px] font-bold text-primary-foreground shrink-0">
+                                  {(apt.patients?.full_name || "?")[0]}
+                                </div>
+                                <span className="font-medium text-foreground">{apt.patients?.full_name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground text-xs">{apt.patients?.phone || "-"}</td>
+                            <td className="px-4 py-3 text-muted-foreground capitalize text-xs">{apt.patients?.gender || "-"}</td>
+                            <td className="px-4 py-3 text-muted-foreground text-xs">{calcAge(apt.patients?.date_of_birth)}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">{apt.type || "-"}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">{apt.provider?.full_name || "-"}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">{apt.duration_minutes} mins</td>
+                            <td className="px-4 py-3">
+                              <Select value={apt.status} onValueChange={v => updateStatus.mutate({ id: apt.id, status: v })}>
+                                <SelectTrigger className="h-7 w-28 text-[11px] border-0 p-0">
+                                  <Badge variant="outline" className={`text-[11px] capitalize ${statusStyle[apt.status] || ""}`}>
+                                    {apt.status?.replace(/_/g, " ")}
+                                  </Badge>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {["scheduled", "confirmed", "in_progress", "completed", "cancelled", "no_show"].map(s =>
+                                    <SelectItem key={s} value={s} className="text-xs capitalize">{s.replace(/_/g, " ")}</SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/patients/${apt.patient_id}`)} title="View patient">
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                  onClick={() => cancelAppointment.mutate(apt)}
+                                  title="Cancel appointment"
+                                  disabled={apt.status === "cancelled"}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                                <WhoChangedHover table="appointments" recordId={apt.id} className="ml-1" />
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
 

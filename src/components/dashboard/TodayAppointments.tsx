@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const statusColor: Record<string, string> = {
   scheduled: "bg-accent text-accent-foreground",
@@ -20,7 +21,7 @@ export default function TodayAppointments() {
   const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
 
-  const { data: appointments = [] } = useQuery({
+  const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["dashboard-today-appts", clinicId],
     queryFn: async () => {
       const { data } = await supabase.from("appointments")
@@ -43,7 +44,20 @@ export default function TodayAppointments() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!appointments.length ? (
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-lg bg-muted/40 p-3">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-28" />
+                  <Skeleton className="h-2.5 w-20" />
+                </div>
+                <Skeleton className="h-5 w-14 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : !appointments.length ? (
           <p className="text-sm text-muted-foreground py-4">No appointments today.</p>
         ) : (
           <div className="space-y-2 max-h-72 overflow-y-auto">
