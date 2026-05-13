@@ -55,6 +55,7 @@ export default function PatientProfilePage() {
   const { clinicId } = useAuth();
   const queryClient = useQueryClient();
   const { names: catalogNames } = useTreatmentCatalog();
+  const isMobile = useIsMobile();
   const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [showAddTreatment, setShowAddTreatment] = useState(false);
   const [newTx, setNewTx] = useState({ tooth_number: "", treatment_name: "", cost: "", notes: "", shade: "", material: "", lab_name: "" });
