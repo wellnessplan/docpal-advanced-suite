@@ -18,6 +18,10 @@ import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, subWeeks,
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDebounce } from "@/hooks/useDebounce";
+import { SwipeableCard } from "@/components/mobile/SwipeableCard";
+import { MobileFilterSheet } from "@/components/mobile/MobileFilterSheet";
+import { WidgetCardSkeleton } from "@/components/ui/skeleton-loaders";
 import WhoChangedHover from "@/components/shared/WhoChangedHover";
 
 const statusStyle: Record<string, string> = {
