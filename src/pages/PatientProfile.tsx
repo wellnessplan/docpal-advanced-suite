@@ -437,47 +437,49 @@ export default function PatientProfilePage() {
               )}
 
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Treatment</TableHead>
-                      <TableHead>Tooth</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Cost</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!treatments.length ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No treatments yet</TableCell></TableRow>
-                    ) : treatments.map((t: any) => (
-                      <TableRow key={t.id}>
-                        <TableCell className="font-medium">{t.treatment_name}</TableCell>
-                        <TableCell>#{t.tooth_records?.tooth_number}</TableCell>
-                        <TableCell>
-                          <Select value={t.status} onValueChange={v => updateTreatmentStatus.mutate({
-                            treatmentId: t.id, status: v,
-                            treatmentName: t.treatment_name,
-                            cost: t.cost ? Number(t.cost) : 0,
-                          })}>
-                            <SelectTrigger className="w-28 h-7 text-xs">
-                              <Badge className={`${STATUS_COLORS[t.status] || ""} text-xs`} variant="secondary">
-                                {t.status?.replace("_", " ")}
-                              </Badge>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["planned", "in_progress", "completed", "cancelled"].map(s =>
-                                <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>{t.cost ? `Rs ${Number(t.cost).toLocaleString()}` : "—"}</TableCell>
-                        <TableCell className="text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString()}</TableCell>
+                <div className="w-full overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Treatment</TableHead>
+                        <TableHead>Tooth</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Cost</TableHead>
+                        <TableHead>Date</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {!treatments.length ? (
+                        <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No treatments yet</TableCell></TableRow>
+                      ) : treatments.map((t: any) => (
+                        <TableRow key={t.id}>
+                          <TableCell className="font-medium">{t.treatment_name}</TableCell>
+                          <TableCell>#{t.tooth_records?.tooth_number}</TableCell>
+                          <TableCell>
+                            <Select value={t.status} onValueChange={v => updateTreatmentStatus.mutate({
+                              treatmentId: t.id, status: v,
+                              treatmentName: t.treatment_name,
+                              cost: t.cost ? Number(t.cost) : 0,
+                            })}>
+                              <SelectTrigger className="w-28 h-7 text-xs">
+                                <Badge className={`${STATUS_COLORS[t.status] || ""} text-xs`} variant="secondary">
+                                  {t.status?.replace("_", " ")}
+                                </Badge>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {["planned", "in_progress", "completed", "cancelled"].map(s =>
+                                  <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>{t.cost ? `Rs ${Number(t.cost).toLocaleString()}` : "—"}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
             {clinicId && <LabWorkTracker patientId={patient.id} clinicId={clinicId} />}
