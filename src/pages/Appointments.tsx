@@ -233,13 +233,25 @@ export default function AppointmentsPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Delete (cancel) with 8-second undo window — soft-cancel pattern
+  // Delete (cancel) with optimistic UI + 8-second undo window
   const cancelAppointment = useMutation({
     mutationFn: async (apt: any) => {
       const prevStatus = apt.status;
       const { error } = await supabase.from("appointments").update({ status: "cancelled" as any }).eq("id", apt.id);
       if (error) throw error;
       return { id: apt.id, prevStatus };
+    },
+    onMutate: async (apt: any) => {
+      await queryClient.cancelQueries({ queryKey: ["appointments"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["appointments"] });
+      queryClient.setQueriesData({ queryKey: ["appointments"] }, (old: any) =>
+        Array.isArray(old) ? old.map((a: any) => (a.id === apt.id ? { ...a, status: "cancelled" } : a)) : old
+      );
+      return { snapshot };
+    },
+    onError: (e: any, _v, ctx: any) => {
+      ctx?.snapshot?.forEach(([k, d]: any) => queryClient.setQueryData(k, d));
+      toast.error(e.message);
     },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
@@ -259,7 +271,6 @@ export default function AppointmentsPage() {
         },
       });
     },
-    onError: (e: any) => toast.error(e.message),
   });
 
   const navigateDate = (dir: number) => {
