@@ -508,68 +508,70 @@ export default function PatientProfilePage() {
             )}
             <Card className="shadow-card border-0">
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Discount</TableHead>
-                      <TableHead>Paid</TableHead>
-                      <TableHead>Balance</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!invoices.length ? (
-                      <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No invoices</TableCell></TableRow>
-                    ) : invoices.map((inv: any) => {
-                      const total = Number(inv.amount || 0);
-                      const paid = Number(inv.paid_amount || 0);
-                      const balance = total - paid;
-                      const isPaid = inv.status === "paid" || balance <= 0;
-                      return (
-                        <TableRow key={inv.id}>
-                          <TableCell className="text-sm">{new Date(inv.created_at).toLocaleDateString()}</TableCell>
-                          <TableCell className="font-medium">Rs {total.toLocaleString()}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{inv.discount ? `Rs ${Number(inv.discount).toLocaleString()}` : "—"}</TableCell>
-                          <TableCell className="text-sm text-success font-medium">Rs {paid.toLocaleString()}</TableCell>
-                          <TableCell className={`font-medium ${balance > 0 ? "text-destructive" : "text-success"}`}>
-                            {balance > 0 ? `Rs ${balance.toLocaleString()}` : "Cleared"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className={`text-xs ${
-                              isPaid ? "bg-success/10 text-success" : 
-                              inv.status === "partial" ? "bg-warning/10 text-warning" : 
-                              inv.status === "overdue" ? "bg-destructive/10 text-destructive" : ""
-                            }`}>
-                              {isPaid ? "paid" : inv.status === "partial" ? "partial" : inv.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              {!isPaid && (
-                                <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                                  onClick={() => {
-                                    setPaymentInvoice(inv);
-                                    setPaymentAmount(String(balance));
-                                    setShowPaymentDialog(true);
-                                  }}>
-                                  <IndianRupee className="h-3 w-3" /> Pay
+                <div className="w-full overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Discount</TableHead>
+                        <TableHead>Paid</TableHead>
+                        <TableHead>Balance</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {!invoices.length ? (
+                        <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No invoices</TableCell></TableRow>
+                      ) : invoices.map((inv: any) => {
+                        const total = Number(inv.amount || 0);
+                        const paid = Number(inv.paid_amount || 0);
+                        const balance = total - paid;
+                        const isPaid = inv.status === "paid" || balance <= 0;
+                        return (
+                          <TableRow key={inv.id}>
+                            <TableCell className="text-sm whitespace-nowrap">{new Date(inv.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell className="font-medium whitespace-nowrap">Rs {total.toLocaleString()}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{inv.discount ? `Rs ${Number(inv.discount).toLocaleString()}` : "—"}</TableCell>
+                            <TableCell className="text-sm text-success font-medium whitespace-nowrap">Rs {paid.toLocaleString()}</TableCell>
+                            <TableCell className={`font-medium whitespace-nowrap ${balance > 0 ? "text-destructive" : "text-success"}`}>
+                              {balance > 0 ? `Rs ${balance.toLocaleString()}` : "Cleared"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className={`text-xs ${
+                                isPaid ? "bg-success/10 text-success" :
+                                inv.status === "partial" ? "bg-warning/10 text-warning" :
+                                inv.status === "overdue" ? "bg-destructive/10 text-destructive" : ""
+                              }`}>
+                                {isPaid ? "paid" : inv.status === "partial" ? "partial" : inv.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                {!isPaid && (
+                                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                                    onClick={() => {
+                                      setPaymentInvoice(inv);
+                                      setPaymentAmount(String(balance));
+                                      setShowPaymentDialog(true);
+                                    }}>
+                                    <IndianRupee className="h-3 w-3" /> Pay
+                                  </Button>
+                                )}
+                                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
+                                  onClick={() => setReceiptInvoice(inv)}
+                                  disabled={paid <= 0}>
+                                  <Printer className="h-3 w-3" /> Receipt
                                 </Button>
-                              )}
-                              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
-                                onClick={() => setReceiptInvoice(inv)}
-                                disabled={paid <= 0}>
-                                <Printer className="h-3 w-3" /> Receipt
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
 
