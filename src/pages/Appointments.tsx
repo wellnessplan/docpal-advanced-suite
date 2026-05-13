@@ -21,6 +21,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useDebounce } from "@/hooks/useDebounce";
 import { SwipeableCard } from "@/components/mobile/SwipeableCard";
 import { MobileFilterSheet } from "@/components/mobile/MobileFilterSheet";
+import { PullToRefresh } from "@/components/mobile/PullToRefresh";
+import { AppointmentDetailsSheet } from "@/components/mobile/AppointmentDetailsSheet";
+import { Loader2 } from "lucide-react";
 import { WidgetCardSkeleton } from "@/components/ui/skeleton-loaders";
 import WhoChangedHover from "@/components/shared/WhoChangedHover";
 
