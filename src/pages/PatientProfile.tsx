@@ -298,30 +298,30 @@ export default function PatientProfilePage() {
 
         {/* Profile Header */}
         <Card className="shadow-card border-0">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full gradient-primary text-lg font-bold text-primary-foreground">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                <div className="flex h-12 w-12 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-full gradient-primary text-lg font-bold text-primary-foreground">
                   {patient.full_name[0].toUpperCase()}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-heading text-xl font-bold">{patient.full_name}</h2>
+                    <h2 className="font-heading text-lg md:text-xl font-bold truncate">{patient.full_name}</h2>
                     {(patient as any).op_number && <Badge variant="outline" className="font-mono text-xs">{(patient as any).op_number}</Badge>}
                   </div>
-                  <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground flex-wrap">
+                  <div className="flex items-center gap-x-3 gap-y-1 mt-1 text-xs md:text-sm text-muted-foreground flex-wrap">
                     {age && <span className="flex items-center gap-1"><User2 className="h-3 w-3" /> {age}y</span>}
                     {patient.gender && <span className="capitalize">{patient.gender}</span>}
-                    {patient.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {patient.phone}</span>}
-                    {patient.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {patient.email}</span>}
+                    {patient.phone && <a href={`tel:${patient.phone}`} className="flex items-center gap-1 hover:text-primary"><Phone className="h-3 w-3" /> {patient.phone}</a>}
+                    {patient.email && <span className="flex items-center gap-1 truncate max-w-[180px]"><Mail className="h-3 w-3" /> {patient.email}</span>}
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => navigate(`/dental-chart/${patient.id}`)}>
+              <div className="grid grid-cols-2 md:flex gap-2 w-full md:w-auto">
+                <Button size="sm" variant="outline" className="w-full md:w-auto" onClick={() => navigate(`/dental-chart/${patient.id}`)}>
                   <Smile className="h-4 w-4 mr-1" /> Dental Chart
                 </Button>
-                <Button size="sm" onClick={() => navigate(`/appointments`)}>
+                <Button size="sm" className="w-full md:w-auto" onClick={() => navigate(`/appointments`)}>
                   <CalendarDays className="h-4 w-4 mr-1" /> Book Visit
                 </Button>
               </div>
@@ -331,11 +331,11 @@ export default function PatientProfilePage() {
 
         <Tabs defaultValue="history">
           <TabsList>
-            <TabsTrigger value="history" className="gap-1"><Clock className="h-3 w-3" /> History</TabsTrigger>
-            <TabsTrigger value="medical" className="gap-1"><HeartPulse className="h-3 w-3" /> Medical</TabsTrigger>
-            <TabsTrigger value="clinical" className="gap-1"><Smile className="h-3 w-3" /> Clinical</TabsTrigger>
-            <TabsTrigger value="billing" className="gap-1"><IndianRupee className="h-3 w-3" /> Billing</TabsTrigger>
-            <TabsTrigger value="files" className="gap-1"><FileText className="h-3 w-3" /> Files</TabsTrigger>
+            <TabsTrigger value="history" className="gap-1"><Clock className="h-3.5 w-3.5" /> <span className="hidden xs:inline sm:inline">History</span><span className="xs:hidden sm:hidden">Hist</span></TabsTrigger>
+            <TabsTrigger value="medical" className="gap-1"><HeartPulse className="h-3.5 w-3.5" /> Medical</TabsTrigger>
+            <TabsTrigger value="clinical" className="gap-1"><Smile className="h-3.5 w-3.5" /> Clinical</TabsTrigger>
+            <TabsTrigger value="billing" className="gap-1"><IndianRupee className="h-3.5 w-3.5" /> Billing</TabsTrigger>
+            <TabsTrigger value="files" className="gap-1"><FileText className="h-3.5 w-3.5" /> Files</TabsTrigger>
           </TabsList>
 
           <TabsContent value="history" className="mt-4 space-y-4">
