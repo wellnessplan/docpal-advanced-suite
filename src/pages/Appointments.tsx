@@ -899,6 +899,18 @@ export default function AppointmentsPage() {
           </>
         )}
       </div>
+      <AppointmentDetailsSheet
+        apt={detailApt}
+        open={!!detailApt}
+        onOpenChange={(v) => !v && setDetailApt(null)}
+        isMutating={
+          (updateStatus.isPending && (updateStatus.variables as any)?.id === detailApt?.id) ||
+          (cancelAppointment.isPending && (cancelAppointment.variables as any)?.id === detailApt?.id)
+        }
+        onView={(a) => { setDetailApt(null); navigate(`/patients/${a.patient_id}`); }}
+        onStatusChange={(a, status) => updateStatus.mutate({ id: a.id, status })}
+        onCancel={(a) => { cancelAppointment.mutate(a); setDetailApt(null); }}
+      />
     </DashboardLayout>
   );
 }
