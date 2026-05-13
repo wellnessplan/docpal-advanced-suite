@@ -525,59 +525,74 @@ export default function AppointmentsPage() {
             </div>
 
             {isMobile ? (
-              <div className="space-y-2">
-                {isLoading ? (
-                  <WidgetCardSkeleton rows={6} />
-                ) : !filteredAppointments.length ? (
-                  <p className="text-center py-12 text-muted-foreground text-sm">No appointments found</p>
-                ) : filteredAppointments.map((apt: any) => (
-                  <SwipeableCard
-                    key={apt.id}
-                    onClick={() => navigate(`/patients/${apt.patient_id}`)}
-                    leftAction={{
-                      label: "View",
-                      icon: <Eye className="h-4 w-4" />,
-                      bg: "bg-primary",
-                      fg: "text-primary-foreground",
-                      onClick: () => navigate(`/patients/${apt.patient_id}`),
-                    }}
-                    rightAction={apt.status !== "cancelled" ? {
-                      label: "Cancel",
-                      icon: <Trash2 className="h-4 w-4" />,
-                      bg: "bg-destructive",
-                      fg: "text-destructive-foreground",
-                      onClick: () => cancelAppointment.mutate(apt),
-                    } : undefined}
-                    className="shadow-card"
-                  >
-                    <div className="p-3 flex items-center gap-3 min-h-[64px] bg-card">
-                      <div className="h-10 w-10 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
-                        {(apt.patients?.full_name || "?")[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium text-sm truncate">{apt.patients?.full_name}</p>
-                          <Badge variant="outline" className={`text-[10px] capitalize shrink-0 ${statusStyle[apt.status] || ""}`}>
-                            {apt.status?.replace(/_/g, " ")}
-                          </Badge>
+              <PullToRefresh
+                onRefresh={async () => {
+                  await queryClient.refetchQueries({ queryKey: ["appointments"] });
+                }}
+              >
+                <div className="space-y-2">
+                  {isLoading ? (
+                    <WidgetCardSkeleton rows={6} />
+                  ) : !filteredAppointments.length ? (
+                    <p className="text-center py-12 text-muted-foreground text-sm">No appointments found</p>
+                  ) : filteredAppointments.map((apt: any) => {
+                    const pending =
+                      (updateStatus.isPending && (updateStatus.variables as any)?.id === apt.id) ||
+                      (cancelAppointment.isPending && (cancelAppointment.variables as any)?.id === apt.id);
+                    return (
+                      <SwipeableCard
+                        key={apt.id}
+                        onClick={() => setDetailApt(apt)}
+                        leftAction={{
+                          label: "View",
+                          icon: <Eye className="h-4 w-4" />,
+                          bg: "bg-primary",
+                          fg: "text-primary-foreground",
+                          onClick: () => navigate(`/patients/${apt.patient_id}`),
+                        }}
+                        rightAction={apt.status !== "cancelled" ? {
+                          label: "Cancel",
+                          icon: <Trash2 className="h-4 w-4" />,
+                          bg: "bg-destructive",
+                          fg: "text-destructive-foreground",
+                          onClick: () => cancelAppointment.mutate(apt),
+                        } : undefined}
+                        className={cn("shadow-card transition-opacity", pending && "opacity-70")}
+                      >
+                        <div className="p-3 flex items-center gap-3 min-h-[64px] bg-card">
+                          <div className="h-10 w-10 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
+                            {(apt.patients?.full_name || "?")[0]}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="font-medium text-sm truncate">{apt.patients?.full_name}</p>
+                              <Badge variant="outline" className={`text-[10px] capitalize shrink-0 ${statusStyle[apt.status] || ""}`}>
+                                {pending ? (
+                                  <span className="flex items-center gap-1"><Loader2 className="h-2.5 w-2.5 animate-spin" /> saving</span>
+                                ) : (
+                                  apt.status?.replace(/_/g, " ")
+                                )}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                              <span>{format(new Date(apt.appointment_date + "T00:00:00"), "dd MMM")}</span>
+                              <span>·</span>
+                              <span>{apt.appointment_time ? format(new Date(`2000-01-01T${apt.appointment_time}`), "h:mm a") : "-"}</span>
+                              <span>·</span>
+                              <span className="truncate">{apt.type || "—"}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                          <span>{format(new Date(apt.appointment_date + "T00:00:00"), "dd MMM")}</span>
-                          <span>·</span>
-                          <span>{apt.appointment_time ? format(new Date(`2000-01-01T${apt.appointment_time}`), "h:mm a") : "-"}</span>
-                          <span>·</span>
-                          <span className="truncate">{apt.type || "—"}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </SwipeableCard>
-                ))}
-                {filteredAppointments.length > 0 && (
-                  <p className="text-[10px] text-center text-muted-foreground pt-1">
-                    Swipe right to view · swipe left to cancel
-                  </p>
-                )}
-              </div>
+                      </SwipeableCard>
+                    );
+                  })}
+                  {filteredAppointments.length > 0 && (
+                    <p className="text-[10px] text-center text-muted-foreground pt-1">
+                      Tap for details · swipe right to view · swipe left to cancel
+                    </p>
+                  )}
+                </div>
+              </PullToRefresh>
             ) : (
               <Card className="shadow-card border-0">
                 <CardContent className="p-0">
