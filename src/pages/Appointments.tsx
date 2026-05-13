@@ -64,6 +64,7 @@ export default function AppointmentsPage() {
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "month">("today");
   const [form, setForm] = useState({ patient_id: "", appointment_date: "", appointment_time: "", duration_minutes: "30", type: "General Checkup", notes: "", provider_id: "" });
+  const [detailApt, setDetailApt] = useState<any | null>(null);
 
   const { data: patients } = useQuery({
     queryKey: ["patients-list", clinicId],
