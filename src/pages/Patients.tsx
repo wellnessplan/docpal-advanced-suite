@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import AppointmentSlotPicker from "@/components/patients/AppointmentSlotPicker";
 import { PatientListSkeleton, TableSkeleton } from "@/components/ui/skeleton-loaders";
+import { SwipeableCard } from "@/components/mobile/SwipeableCard";
 
 export default function PatientsPage() {
   const navigate = useNavigate();
@@ -298,12 +299,26 @@ export default function PatientsPage() {
             ) : !patients?.length ? (
               <p className="text-center py-8 text-muted-foreground text-sm">No patients yet. Tap + to register.</p>
             ) : patients.map(p => (
-              <Card
+              <SwipeableCard
                 key={p.id}
-                className="shadow-card border-0 cursor-pointer active:scale-[0.98] transition-transform"
                 onClick={() => navigate(`/patients/${p.id}`)}
+                leftAction={{
+                  label: "Chart",
+                  icon: <Smile className="h-4 w-4" />,
+                  bg: "bg-primary",
+                  fg: "text-primary-foreground",
+                  onClick: () => navigate(`/dental-chart/${p.id}`),
+                }}
+                rightAction={p.phone ? {
+                  label: "Call",
+                  icon: <Phone className="h-4 w-4" />,
+                  bg: "bg-success",
+                  fg: "text-success-foreground",
+                  onClick: () => { window.location.href = `tel:${p.phone}`; },
+                } : undefined}
+                className="shadow-card"
               >
-                <CardContent className="p-3 flex items-center gap-3 min-h-[56px]">
+                <div className="p-3 flex items-center gap-3 min-h-[56px] bg-card">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-sm font-bold text-primary-foreground shrink-0">
                     {p.full_name[0].toUpperCase()}
                   </div>
@@ -321,9 +336,14 @@ export default function PatientsPage() {
                   <Badge variant="outline" className="text-[10px] shrink-0">
                     {(p as any).op_number || "—"}
                   </Badge>
-                </CardContent>
-              </Card>
+                </div>
+              </SwipeableCard>
             ))}
+            {patients?.length ? (
+              <p className="text-[10px] text-center text-muted-foreground pt-1">
+                Swipe right for chart · swipe left to call
+              </p>
+            ) : null}
           </div>
         ) : (
           /* Desktop: Table */
