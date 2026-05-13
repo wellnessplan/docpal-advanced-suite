@@ -224,10 +224,31 @@ export default function PatientProfilePage() {
       const { error } = await supabase.from("tooth_treatments").update(update).eq("id", treatmentId);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async ({ treatmentId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["patient-treatments"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["patient-treatments"] });
+      queryClient.setQueriesData({ queryKey: ["patient-treatments"] }, (old: any) =>
+        Array.isArray(old) ? old.map((t: any) => (t.id === treatmentId ? { ...t, status } : t)) : old
+      );
+      return { snapshot };
+    },
+    onError: (e: any, _v, ctx: any) => {
+      ctx?.snapshot?.forEach(([k, d]: any) => queryClient.setQueryData(k, d));
+      toast.error(e?.message || "Failed to update");
+    },
+    onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["patient-treatments"] });
       queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
-      toast.success("Status updated");
+      const prev = vars as any;
+      toast.success("Status updated", {
+        action: prev?.previousStatus ? {
+          label: "Undo",
+          onClick: async () => {
+            await supabase.from("tooth_treatments").update({ status: prev.previousStatus as any }).eq("id", prev.treatmentId);
+            queryClient.invalidateQueries({ queryKey: ["patient-treatments"] });
+          },
+        } : undefined,
+      });
     },
   });
 
