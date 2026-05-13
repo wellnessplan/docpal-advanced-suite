@@ -28,6 +28,11 @@ import ConsentForms from "@/components/patients/ConsentForms";
 import LabWorkTracker from "@/components/patients/LabWorkTracker";
 import RecallReminders from "@/components/patients/RecallReminders";
 import { useTreatmentCatalog } from "@/hooks/useTreatmentCatalog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { SwipeableCard } from "@/components/mobile/SwipeableCard";
+import { PullToRefresh } from "@/components/mobile/PullToRefresh";
+import { Eye, CheckCircle2, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
   planned: "bg-primary/10 text-primary border-primary/30",
@@ -51,6 +56,7 @@ export default function PatientProfilePage() {
   const { clinicId } = useAuth();
   const queryClient = useQueryClient();
   const { names: catalogNames } = useTreatmentCatalog();
+  const isMobile = useIsMobile();
   const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [showAddTreatment, setShowAddTreatment] = useState(false);
   const [newTx, setNewTx] = useState({ tooth_number: "", treatment_name: "", cost: "", notes: "", shade: "", material: "", lab_name: "" });
@@ -219,10 +225,31 @@ export default function PatientProfilePage() {
       const { error } = await supabase.from("tooth_treatments").update(update).eq("id", treatmentId);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async ({ treatmentId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["patient-treatments"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["patient-treatments"] });
+      queryClient.setQueriesData({ queryKey: ["patient-treatments"] }, (old: any) =>
+        Array.isArray(old) ? old.map((t: any) => (t.id === treatmentId ? { ...t, status } : t)) : old
+      );
+      return { snapshot };
+    },
+    onError: (e: any, _v, ctx: any) => {
+      ctx?.snapshot?.forEach(([k, d]: any) => queryClient.setQueryData(k, d));
+      toast.error(e?.message || "Failed to update");
+    },
+    onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["patient-treatments"] });
       queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
-      toast.success("Status updated");
+      const prev = vars as any;
+      toast.success("Status updated", {
+        action: prev?.previousStatus ? {
+          label: "Undo",
+          onClick: async () => {
+            await supabase.from("tooth_treatments").update({ status: prev.previousStatus as any }).eq("id", prev.treatmentId);
+            queryClient.invalidateQueries({ queryKey: ["patient-treatments"] });
+          },
+        } : undefined,
+      });
     },
   });
 
@@ -437,49 +464,131 @@ export default function PatientProfilePage() {
               )}
 
               <CardContent className="p-0">
-                <div className="w-full overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Treatment</TableHead>
-                        <TableHead>Tooth</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Cost</TableHead>
-                        <TableHead>Date</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                {isMobile ? (
+                  <PullToRefresh
+                    onRefresh={async () => {
+                      await queryClient.refetchQueries({ queryKey: ["patient-treatments"] });
+                    }}
+                  >
+                    <div className="space-y-2 p-3">
                       {!treatments.length ? (
-                        <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No treatments yet</TableCell></TableRow>
-                      ) : treatments.map((t: any) => (
-                        <TableRow key={t.id}>
-                          <TableCell className="font-medium">{t.treatment_name}</TableCell>
-                          <TableCell>#{t.tooth_records?.tooth_number}</TableCell>
-                          <TableCell>
-                            <Select value={t.status} onValueChange={v => updateTreatmentStatus.mutate({
-                              treatmentId: t.id, status: v,
-                              treatmentName: t.treatment_name,
-                              cost: t.cost ? Number(t.cost) : 0,
-                            })}>
-                              <SelectTrigger className="w-28 h-7 text-xs">
-                                <Badge className={`${STATUS_COLORS[t.status] || ""} text-xs`} variant="secondary">
-                                  {t.status?.replace("_", " ")}
-                                </Badge>
-                              </SelectTrigger>
-                              <SelectContent>
-                                {["planned", "in_progress", "completed", "cancelled"].map(s =>
-                                  <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>{t.cost ? `Rs ${Number(t.cost).toLocaleString()}` : "—"}</TableCell>
-                          <TableCell className="text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString()}</TableCell>
+                        <p className="text-center py-6 text-muted-foreground text-sm">No treatments yet</p>
+                      ) : treatments.map((t: any) => {
+                        const pending =
+                          updateTreatmentStatus.isPending &&
+                          (updateTreatmentStatus.variables as any)?.treatmentId === t.id;
+                        const isDone = t.status === "completed" || t.status === "cancelled";
+                        return (
+                          <SwipeableCard
+                            key={t.id}
+                            onClick={() => navigate(`/dental-chart/${id}`)}
+                            leftAction={{
+                              label: "View",
+                              icon: <Eye className="h-4 w-4" />,
+                              bg: "bg-primary",
+                              fg: "text-primary-foreground",
+                              onClick: () => navigate(`/dental-chart/${id}`),
+                            }}
+                            rightAction={!isDone ? {
+                              label: "Complete",
+                              icon: <CheckCircle2 className="h-4 w-4" />,
+                              bg: "bg-success",
+                              fg: "text-success-foreground",
+                              onClick: () => updateTreatmentStatus.mutate({
+                                treatmentId: t.id, status: "completed",
+                                previousStatus: t.status,
+                                treatmentName: t.treatment_name,
+                                cost: t.cost ? Number(t.cost) : 0,
+                              } as any),
+                            } : undefined}
+                            className={cn("border rounded-xl transition-opacity", pending && "opacity-70")}
+                          >
+                            <div className="p-3 flex items-center gap-3 bg-card">
+                              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-xs font-bold shrink-0">
+                                #{t.tooth_records?.tooth_number || "—"}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="font-medium text-sm truncate">{t.treatment_name}</p>
+                                  <Badge className={`${STATUS_COLORS[t.status] || ""} text-[10px] capitalize shrink-0`} variant="secondary">
+                                    {pending ? (
+                                      <span className="flex items-center gap-1"><Loader2 className="h-2.5 w-2.5 animate-spin" /> saving</span>
+                                    ) : (
+                                      t.status?.replace("_", " ")
+                                    )}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                                  <span>{new Date(t.created_at).toLocaleDateString()}</span>
+                                  {t.cost ? <><span>·</span><span>Rs {Number(t.cost).toLocaleString()}</span></> : null}
+                                </div>
+                              </div>
+                            </div>
+                          </SwipeableCard>
+                        );
+                      })}
+                      {treatments.length > 0 && (
+                        <p className="text-[10px] text-center text-muted-foreground pt-1">
+                          Pull to refresh · swipe right to view · swipe left to complete
+                        </p>
+                      )}
+                    </div>
+                  </PullToRefresh>
+                ) : (
+                  <div className="w-full overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Treatment</TableHead>
+                          <TableHead>Tooth</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Cost</TableHead>
+                          <TableHead>Date</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {!treatments.length ? (
+                          <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No treatments yet</TableCell></TableRow>
+                        ) : treatments.map((t: any) => {
+                          const pending =
+                            updateTreatmentStatus.isPending &&
+                            (updateTreatmentStatus.variables as any)?.treatmentId === t.id;
+                          return (
+                            <TableRow key={t.id} className={cn("transition-opacity", pending && "opacity-70")}>
+                              <TableCell className="font-medium">{t.treatment_name}</TableCell>
+                              <TableCell>#{t.tooth_records?.tooth_number}</TableCell>
+                              <TableCell>
+                                <Select value={t.status} onValueChange={v => updateTreatmentStatus.mutate({
+                                  treatmentId: t.id, status: v,
+                                  previousStatus: t.status,
+                                  treatmentName: t.treatment_name,
+                                  cost: t.cost ? Number(t.cost) : 0,
+                                } as any)}>
+                                  <SelectTrigger className="w-28 h-7 text-xs">
+                                    <Badge className={`${STATUS_COLORS[t.status] || ""} text-xs`} variant="secondary">
+                                      {pending ? (
+                                        <span className="flex items-center gap-1"><Loader2 className="h-2.5 w-2.5 animate-spin" /> saving</span>
+                                      ) : (
+                                        t.status?.replace("_", " ")
+                                      )}
+                                    </Badge>
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {["planned", "in_progress", "completed", "cancelled"].map(s =>
+                                      <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>{t.cost ? `Rs ${Number(t.cost).toLocaleString()}` : "—"}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString()}</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
             {clinicId && <LabWorkTracker patientId={patient.id} clinicId={clinicId} />}
