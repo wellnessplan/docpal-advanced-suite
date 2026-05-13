@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDebounce } from "@/hooks/useDebounce";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export default function PatientsPage() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [open, setOpen] = useState(false);
 
   // Auto-open registration drawer/dialog when navigated with ?new=1 (e.g. from mobile FAB)
@@ -50,14 +52,14 @@ export default function PatientsPage() {
   });
 
   const { data: patients, isLoading } = useQuery({
-    queryKey: ["patients", clinicId, search],
+    queryKey: ["patients", clinicId, debouncedSearch],
     queryFn: async () => {
       if (!clinicId) return [];
       return fetchAllPaged((from, to) => {
         let q = supabase.from("patients").select("*").eq("clinic_id", clinicId)
           .order("created_at", { ascending: false }).range(from, to);
-        if (search) {
-          q = q.or(`full_name.ilike.%${search}%,op_number.ilike.%${search}%,phone.ilike.%${search}%`);
+        if (debouncedSearch) {
+          q = q.or(`full_name.ilike.%${debouncedSearch}%,op_number.ilike.%${debouncedSearch}%,phone.ilike.%${debouncedSearch}%`);
         }
         return q;
       }, { maxRows: 5000 });
