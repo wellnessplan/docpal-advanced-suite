@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FlaskConical } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PendingTreatments() {
   const { clinicId } = useAuth();
 
-  const { data: pendingTreatments = [] } = useQuery({
+  const { data: pendingTreatments = [], isLoading } = useQuery({
     queryKey: ["dash-pending-treatments", clinicId],
     queryFn: async () => {
       const { data } = await supabase.from("tooth_treatments")
@@ -32,7 +33,19 @@ export default function PendingTreatments() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!pendingTreatments.length ? (
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between rounded-lg bg-muted/40 p-3">
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="h-2.5 w-24" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : !pendingTreatments.length ? (
           <p className="text-sm text-muted-foreground py-4">No pending treatments.</p>
         ) : (
           <div className="space-y-2 max-h-64 overflow-y-auto">
