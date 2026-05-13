@@ -178,6 +178,18 @@ export default function AppointmentsPage() {
       const { error } = await supabase.from("appointments").update({ status: status as any }).eq("id", id);
       if (error) throw error;
     },
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["appointments"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["appointments"] });
+      queryClient.setQueriesData({ queryKey: ["appointments"] }, (old: any) =>
+        Array.isArray(old) ? old.map((a: any) => (a.id === id ? { ...a, status } : a)) : old
+      );
+      return { snapshot };
+    },
+    onError: (_e, _v, ctx: any) => {
+      ctx?.snapshot?.forEach(([k, d]: any) => queryClient.setQueryData(k, d));
+      toast.error("Failed to update status");
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast.success("Status updated!");
