@@ -363,14 +363,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       <main className="flex-1 overflow-y-auto">
         <InstallPromptBanner />
-        <div className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-md px-4 md:px-6 py-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-heading text-base md:text-lg font-semibold text-foreground">{currentPageLabel}</h2>
-            <div className="flex items-center gap-2 md:gap-3">
+        <div className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-md px-3 md:px-6 py-2.5 md:py-3 safe-area-top">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-heading text-[15px] md:text-lg font-semibold text-foreground truncate min-w-0">{currentPageLabel}</h2>
+            <div className="flex items-center gap-1 md:gap-3 shrink-0">
               <Button
                 size="sm"
                 variant="default"
-                className="gap-1.5 h-8 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg transition-all"
+                className="gap-1.5 h-8 px-2 md:px-3 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg transition-all"
                 onClick={() => window.location.assign("/focus")}
                 title="Switch to simplified 2-screen doctor flow"
               >
@@ -383,7 +383,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
-        <div className={cn("p-4 md:p-6", isMobile && "pb-20")}>{children}</div>
+        <div className={cn("p-3 md:p-6", isMobile && "pb-24")}>{children}</div>
       </main>
 
       {isMobile && <MobileBottomNav />}
