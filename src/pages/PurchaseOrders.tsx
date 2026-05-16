@@ -14,7 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
+import { loadJsPdf } from "@/lib/pdf-loader";
 
 const STATUS = {
   draft: { label: "Draft", color: "bg-muted text-muted-foreground" },
@@ -155,8 +155,9 @@ function PoDrawer({ po, onClose, clinicId, userId, onChange }: any) {
   if (!po) return null;
   const s = STATUS[po.status as keyof typeof STATUS] || { label: po.status, color: "" };
 
-  const generatePdf = () => {
-    const doc = new jsPDF();
+  const generatePdf = async () => {
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF();
     doc.setFontSize(16); doc.text("PURCHASE ORDER", 105, 18, { align: "center" });
     doc.setFontSize(11); doc.text(po.po_number, 105, 26, { align: "center" });
     doc.setFontSize(10);

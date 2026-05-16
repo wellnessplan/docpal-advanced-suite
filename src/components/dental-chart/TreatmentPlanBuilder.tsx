@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Plus, Trash2, ClipboardList, CalendarDays, IndianRupee, CheckCircle2, Send, Download, Share2, Clock, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import jsPDF from "jspdf";
+import { loadJsPdf } from "@/lib/pdf-loader";
 
 interface ExamFinding {
   tooth: number | string;
@@ -340,8 +340,9 @@ export default function TreatmentPlanBuilder({ patientId, clinicId, patient, cli
     onError: (e: any) => toast.error(e.message),
   });
 
-  const downloadPDF = () => {
-    const doc = new jsPDF();
+  const downloadPDF = async () => {
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF();
     let y = 20;
     const lm = 15;
     const pw = 180;

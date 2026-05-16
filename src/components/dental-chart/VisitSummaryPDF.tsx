@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import { loadJsPdf } from "@/lib/pdf-loader";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { FileText, Share2 } from "lucide-react";
@@ -22,7 +22,8 @@ export default function VisitSummaryPDF({
 }: VisitSummaryProps) {
 
   const buildPDF = async () => {
-    const doc = new jsPDF({ format: "a4", unit: "mm" });
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF({ format: "a4", unit: "mm" });
     const lm = 15, rm = 195, pw = rm - lm;
     let y = 15;
 

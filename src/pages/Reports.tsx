@@ -17,7 +17,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area
 } from "recharts";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
+import { loadJsPdf } from "@/lib/pdf-loader";
 import * as XLSX from "xlsx";
 
 const COLORS = ["hsl(187,72%,39%)", "hsl(152,44%,46%)", "hsl(38,92%,50%)", "hsl(0,72%,58%)", "hsl(280,60%,50%)", "hsl(199,89%,48%)"];
@@ -215,8 +215,9 @@ export default function ReportsPage() {
   const margin = totals.totalRevenue > 0 ? ((totals.profit / totals.totalRevenue) * 100).toFixed(1) : "0.0";
 
   // ===================== PDF EXPORT =====================
-  const generatePDF = () => {
-    const doc = new jsPDF("p", "mm", "a4");
+  const generatePDF = async () => {
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF("p", "mm", "a4");
     const pw = 210;
     const clinicName = clinicInfo?.name || "DoctorsBuddy Clinic";
     const reportPeriod = `Last ${period} Months`;
