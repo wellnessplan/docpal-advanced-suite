@@ -4,7 +4,8 @@ import { Printer, FileDown, Palette, Eye, MessageCircle, Mail } from "lucide-rea
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
+import { loadJsPdf } from "@/lib/pdf-loader";
+import { deriveInvoiceTotals } from "@/lib/billing-math";
 import {
   PDF_TEMPLATES, TEMPLATE_LIST, getInvoiceTemplate, setInvoiceTemplate,
   drawTemplateHeader, drawSectionTitle, drawTableHeader, type TemplateId,
@@ -25,17 +26,17 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
   const [previewOpen, setPreviewOpen] = useState(false);
   const onTemplateChange = (id: TemplateId) => { setTemplateId(id); setInvoiceTemplate(id); };
 
-  const subtotal = Number(invoice.subtotal || invoice.amount);
-  const discountAmt = Number(invoice.discount || invoice.discount_amount || 0);
-  const discountPct = Number(invoice.discount_percent || 0);
-  const discountTotal = discountAmt + (subtotal * discountPct / 100);
-  const taxRate = Number(invoice.tax_rate || 0);
-  const taxAmount = Number(invoice.tax_amount || 0);
-  const totalAmount = Number(invoice.amount || invoice.total);
-  const paidAmount = Number(invoice.paid_amount || 0);
-  const balance = totalAmount - paidAmount;
+  const totals = deriveInvoiceTotals(invoice);
+  const subtotal = totals.subtotal;
+  const discountPct = totals.discountPercent;
+  const discountTotal = totals.discountTotal;
+  const taxRate = totals.taxRate;
+  const taxAmount = totals.taxAmount;
+  const totalAmount = totals.total;
+  const paidAmount = totals.paid;
+  const balance = totals.balance;
   const receiptNo = (invoice.invoice_number || invoice.id.slice(0, 8)).toUpperCase();
-  const isPaid = balance <= 0;
+  const isPaid = totals.isPaid;
 
   const handlePrint = () => {
     const el = printRef.current;
@@ -70,7 +71,8 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
 
   const buildPDF = useCallback(async () => {
     const tpl = PDF_TEMPLATES[templateId];
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
     const lm = 15;
     const rm = w - 15;

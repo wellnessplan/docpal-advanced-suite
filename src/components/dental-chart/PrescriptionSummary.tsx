@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Printer, Download, Share2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
+import { loadJsPdf } from "@/lib/pdf-loader";
 import type { Medication } from "./MedicationPanel";
 
 interface PrescriptionSummaryProps {
@@ -69,8 +69,9 @@ export default function PrescriptionSummary({
     win.print();
   };
 
-  const handleDownloadPDF = () => {
-    const doc = new jsPDF();
+  const handleDownloadPDF = async () => {
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF();
     let y = 20;
     const lm = 20;
     const pw = 170;

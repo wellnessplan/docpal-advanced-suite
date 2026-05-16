@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Download, Printer, Share2, Palette, Eye } from "lucide-react";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
+import { loadJsPdf } from "@/lib/pdf-loader";
 import QRCode from "qrcode";
 import type { Medication } from "./MedicationPanel";
 import {
@@ -64,7 +64,8 @@ export default function PrescriptionDownload({
   const buildPDF = useCallback(async () => {
     const ps = PAPER_SIZES[paperSize];
     const tpl = PDF_TEMPLATES[templateId];
-    const doc = new jsPDF({ format: [ps.w, ps.h], unit: "mm" });
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF({ format: [ps.w, ps.h], unit: "mm" });
     const lm = 10;
     const rm = ps.w - 10;
     const pw = rm - lm;

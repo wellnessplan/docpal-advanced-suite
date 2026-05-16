@@ -16,7 +16,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
+import { loadJsPdf } from "@/lib/pdf-loader";
 
 const STATUS_FLOW = [
   { key: "draft", label: "Draft", color: "bg-muted text-muted-foreground" },
@@ -264,8 +264,9 @@ function ClaimDrawer({ claim, onClose, clinicId, userId, tpas, onChange }: any) 
     onClose();
   };
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
+  const generatePDF = async () => {
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF();
     doc.setFontSize(16); doc.text("INSURANCE CLAIM FORM", 105, 20, { align: "center" });
     doc.setFontSize(10);
     doc.text(`Claim #: ${claim.claim_number || "—"}`, 14, 35);
