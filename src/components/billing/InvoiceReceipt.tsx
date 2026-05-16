@@ -26,17 +26,17 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
   const [previewOpen, setPreviewOpen] = useState(false);
   const onTemplateChange = (id: TemplateId) => { setTemplateId(id); setInvoiceTemplate(id); };
 
-  const subtotal = Number(invoice.subtotal || invoice.amount);
-  const discountAmt = Number(invoice.discount || invoice.discount_amount || 0);
-  const discountPct = Number(invoice.discount_percent || 0);
-  const discountTotal = discountAmt + (subtotal * discountPct / 100);
-  const taxRate = Number(invoice.tax_rate || 0);
-  const taxAmount = Number(invoice.tax_amount || 0);
-  const totalAmount = Number(invoice.amount || invoice.total);
-  const paidAmount = Number(invoice.paid_amount || 0);
-  const balance = totalAmount - paidAmount;
+  const totals = deriveInvoiceTotals(invoice);
+  const subtotal = totals.subtotal;
+  const discountPct = totals.discountPercent;
+  const discountTotal = totals.discountTotal;
+  const taxRate = totals.taxRate;
+  const taxAmount = totals.taxAmount;
+  const totalAmount = totals.total;
+  const paidAmount = totals.paid;
+  const balance = totals.balance;
   const receiptNo = (invoice.invoice_number || invoice.id.slice(0, 8)).toUpperCase();
-  const isPaid = balance <= 0;
+  const isPaid = totals.isPaid;
 
   const handlePrint = () => {
     const el = printRef.current;
