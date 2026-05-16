@@ -71,7 +71,8 @@ export default function InvoiceReceipt({ invoice, clinic, patient, items = [], p
 
   const buildPDF = useCallback(async () => {
     const tpl = PDF_TEMPLATES[templateId];
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
     const lm = 15;
     const rm = w - 15;
