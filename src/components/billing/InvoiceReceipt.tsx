@@ -4,7 +4,8 @@ import { Printer, FileDown, Palette, Eye, MessageCircle, Mail } from "lucide-rea
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
+import { loadJsPdf } from "@/lib/pdf-loader";
+import { deriveInvoiceTotals } from "@/lib/billing-math";
 import {
   PDF_TEMPLATES, TEMPLATE_LIST, getInvoiceTemplate, setInvoiceTemplate,
   drawTemplateHeader, drawSectionTitle, drawTableHeader, type TemplateId,
