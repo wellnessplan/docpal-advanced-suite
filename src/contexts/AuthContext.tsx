@@ -41,9 +41,25 @@ if (
   // than silently grant access.
   throw new Error("[security] Auth bypass detected on production host. Aborting.");
 }
-const DEMO_MODE = true;
+// Demo mode: triple-locked so a real clinic never lands in the shared demo workspace.
+//   1. vite.config.ts throws at build if VITE_DEMO_MODE=1 in production mode
+//   2. import.meta.env.DEV is statically false in production bundles
+//   3. Runtime host guard refuses to enable on any prod / Lovable host
+const DEMO_MODE =
+  import.meta.env.DEV &&
+  import.meta.env.VITE_DEMO_MODE === "1" &&
+  isLocalHost &&
+  (typeof window === "undefined" || !PROD_HOSTS.test(window.location.hostname));
 const DEMO_EMAIL = "demo@doctorsbuddy.app";
 const DEMO_PASSWORD = "DemoPass2026!";
+
+if (
+  import.meta.env.VITE_DEMO_MODE === "1" &&
+  typeof window !== "undefined" &&
+  PROD_HOSTS.test(window.location.hostname)
+) {
+  throw new Error("[security] Demo mode detected on production host. Aborting.");
+}
 
 const AuthContext = createContext<AuthContextType>({
   session: null, user: null, profile: null, clinicId: null, groupId: null,
