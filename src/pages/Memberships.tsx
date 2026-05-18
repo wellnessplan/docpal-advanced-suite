@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Plus, Crown, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -25,11 +26,13 @@ export default function Memberships() {
   const { data: plans = [] } = useQuery({
     queryKey: ["membership-plans", clinicId],
     queryFn: async () => {
-      const { data } = await (supabase.from("membership_plans") as any)
-        .select("*")
-        .eq("clinic_id", clinicId!)
-        .order("created_at", { ascending: false });
-      return data || [];
+      return await fetchAllPaged<any>((from, to) =>
+        (supabase.from("membership_plans") as any)
+          .select("*")
+          .eq("clinic_id", clinicId!)
+          .order("created_at", { ascending: false })
+          .range(from, to)
+      );
     },
     enabled: !!clinicId,
   });
@@ -37,12 +40,14 @@ export default function Memberships() {
   const { data: memberships = [], isLoading } = useQuery({
     queryKey: ["memberships", clinicId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("memberships")
-        .select("*, patients(full_name, phone)")
-        .eq("clinic_id", clinicId!)
-        .order("created_at", { ascending: false });
-      return data || [];
+      return await fetchAllPaged<any>((from, to) =>
+        supabase
+          .from("memberships")
+          .select("*, patients(full_name, phone)")
+          .eq("clinic_id", clinicId!)
+          .order("created_at", { ascending: false })
+          .range(from, to)
+      );
     },
     enabled: !!clinicId,
   });
@@ -50,8 +55,9 @@ export default function Memberships() {
   const { data: patients = [] } = useQuery({
     queryKey: ["patients-list", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("patients").select("id, full_name").eq("clinic_id", clinicId!).order("full_name");
-      return data || [];
+      return await fetchAllPaged<{ id: string; full_name: string }>((from, to) =>
+        supabase.from("patients").select("id, full_name").eq("clinic_id", clinicId!).order("full_name").range(from, to)
+      );
     },
     enabled: !!clinicId,
   });

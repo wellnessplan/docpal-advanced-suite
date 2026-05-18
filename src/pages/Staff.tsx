@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, UserCog, Clock, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
@@ -14,12 +15,14 @@ export default function Staff() {
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["staff-profiles", clinicId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("clinic_id", clinicId!)
-        .order("full_name");
-      return data || [];
+      return await fetchAllPaged<any>((from, to) =>
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("clinic_id", clinicId!)
+          .order("full_name")
+          .range(from, to)
+      );
     },
     enabled: !!clinicId,
   });

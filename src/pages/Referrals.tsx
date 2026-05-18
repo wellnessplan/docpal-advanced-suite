@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Gift, Users, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -30,8 +31,9 @@ export default function Referrals() {
   const { data: patients = [] } = useQuery({
     queryKey: ["patients-list", clinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("patients").select("id, full_name").eq("clinic_id", clinicId!).order("full_name");
-      return data || [];
+      return await fetchAllPaged<{ id: string; full_name: string }>((from, to) =>
+        supabase.from("patients").select("id, full_name").eq("clinic_id", clinicId!).order("full_name").range(from, to)
+      );
     },
     enabled: !!clinicId,
   });
@@ -39,11 +41,13 @@ export default function Referrals() {
   const { data: referrals = [], isLoading } = useQuery({
     queryKey: ["referrals", clinicId],
     queryFn: async () => {
-      const { data } = await (supabase.from("referrals") as any)
-        .select("*, patients:referring_patient_id(full_name)")
-        .eq("clinic_id", clinicId!)
-        .order("created_at", { ascending: false });
-      return data || [];
+      return await fetchAllPaged<any>((from, to) =>
+        (supabase.from("referrals") as any)
+          .select("*, patients:referring_patient_id(full_name)")
+          .eq("clinic_id", clinicId!)
+          .order("created_at", { ascending: false })
+          .range(from, to)
+      );
     },
     enabled: !!clinicId,
   });

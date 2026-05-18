@@ -6,10 +6,16 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Build-time safety guard: never ship a production bundle with auth bypass enabled.
+  // Build-time safety guards: never ship a production bundle with auth bypass
+  // or demo-mode shared-login enabled.
   if (mode === "production" && process.env.VITE_ALLOW_AUTH_BYPASS === "1") {
     throw new Error(
       "[security] VITE_ALLOW_AUTH_BYPASS must NOT be set during a production build. Aborting."
+    );
+  }
+  if (mode === "production" && process.env.VITE_DEMO_MODE === "1") {
+    throw new Error(
+      "[security] VITE_DEMO_MODE must NOT be set during a production build — it shares one clinic across all visitors. Aborting."
     );
   }
   return ({
