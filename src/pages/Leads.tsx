@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -38,12 +39,14 @@ export default function Leads() {
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ["leads", clinicId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("leads")
-        .select("*")
-        .eq("clinic_id", clinicId!)
-        .order("created_at", { ascending: false });
-      return data || [];
+      return await fetchAllPaged<any>((from, to) =>
+        supabase
+          .from("leads")
+          .select("*")
+          .eq("clinic_id", clinicId!)
+          .order("created_at", { ascending: false })
+          .range(from, to)
+      );
     },
     enabled: !!clinicId,
   });
