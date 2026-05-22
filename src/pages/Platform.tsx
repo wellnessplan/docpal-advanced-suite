@@ -567,6 +567,21 @@ export default function PlatformConsole() {
                                   <CheckCircle className="h-3.5 w-3.5 mr-1" />Activate
                                 </Button>
                               )}
+                              {(status === "trial" || status === "trial_expired") && (
+                                <Select onValueChange={(v) => extendTrial.mutate({
+                                  clinicId: c.id, name: c.name, days: Number(v),
+                                  currentTrialEnd: c.subscription?.trial_ends_at ?? null,
+                                })}>
+                                  <SelectTrigger className="h-8 w-[110px] text-xs">
+                                    <SelectValue placeholder="Extend…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="7">+7 days</SelectItem>
+                                    <SelectItem value="14">+14 days</SelectItem>
+                                    <SelectItem value="30">+30 days</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
                               {status !== "suspended" && (
                                 <Button size="sm" variant="outline" className="h-8 text-xs text-destructive"
                                   onClick={() => updateStatus.mutate({ clinicId: c.id, status: "suspended", name: c.name })}>
