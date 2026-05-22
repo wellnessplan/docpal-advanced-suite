@@ -308,6 +308,33 @@ export default function PlatformConsole() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const extendTrial = useMutation({
+    mutationFn: async ({ clinicId, name, days, currentTrialEnd }: { clinicId: string; name: string; days: number; currentTrialEnd: string | null }) => {
+      const base = currentTrialEnd && new Date(currentTrialEnd) > new Date()
+        ? new Date(currentTrialEnd)
+        : new Date();
+      base.setDate(base.getDate() + days);
+      const { error } = await supabase
+        .from("clinic_subscriptions" as any)
+        .update({ trial_ends_at: base.toISOString(), status: "trial" })
+        .eq("clinic_id", clinicId);
+      if (error) throw error;
+      await logAudit({
+        action: "trial_extended",
+        target_type: "clinic",
+        target_id: clinicId,
+        target_label: name,
+        details: { days, new_trial_end: base.toISOString() },
+      });
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["platform-clinics"] });
+      qc.invalidateQueries({ queryKey: ["platform-audit"] });
+      toast.success(`Trial extended by ${v.days} days`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // ---------- Derived ----------
   const filtered = useMemo(() => clinics.filter((c: any) => {
     const s = !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase());
@@ -539,6 +566,21 @@ export default function PlatformConsole() {
                                   onClick={() => updateStatus.mutate({ clinicId: c.id, status: "active", name: c.name })}>
                                   <CheckCircle className="h-3.5 w-3.5 mr-1" />Activate
                                 </Button>
+                              )}
+                              {(status === "trial" || status === "trial_expired") && (
+                                <Select onValueChange={(v) => extendTrial.mutate({
+                                  clinicId: c.id, name: c.name, days: Number(v),
+                                  currentTrialEnd: c.subscription?.trial_ends_at ?? null,
+                                })}>
+                                  <SelectTrigger className="h-8 w-[110px] text-xs">
+                                    <SelectValue placeholder="Extend…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="7">+7 days</SelectItem>
+                                    <SelectItem value="14">+14 days</SelectItem>
+                                    <SelectItem value="30">+30 days</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               )}
                               {status !== "suspended" && (
                                 <Button size="sm" variant="outline" className="h-8 text-xs text-destructive"
