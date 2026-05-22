@@ -29,12 +29,14 @@ import { toast } from "sonner";
 import {
   Activity, Building2, Users, DollarSign, TrendingUp, Plus, Trash2, Shield,
   CheckCircle, PauseCircle, PlayCircle, UserPlus, Search, RefreshCw,
-  CalendarIcon, ScrollText, Filter,
+  CalendarIcon, ScrollText, Filter, Package, Sparkles,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { format, subDays, differenceInDays, startOfDay, endOfDay } from "date-fns";
+import PlansTab from "./platform/PlansTab";
+import AiApiTab from "./platform/AiApiTab";
 
 const STATUS_COLORS: Record<string, string> = {
   trial: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
@@ -365,9 +367,11 @@ export default function PlatformConsole() {
         </div>
 
         <Tabs defaultValue="usage" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="usage">Usage</TabsTrigger>
-            <TabsTrigger value="clinics">Clinics</TabsTrigger>
+            <TabsTrigger value="clinics"><Building2 className="h-3.5 w-3.5 mr-1" />Centers</TabsTrigger>
+            <TabsTrigger value="plans"><Package className="h-3.5 w-3.5 mr-1" />Plans</TabsTrigger>
+            <TabsTrigger value="ai"><Sparkles className="h-3.5 w-3.5 mr-1" />AI & API</TabsTrigger>
             <TabsTrigger value="admins">Super Admins</TabsTrigger>
             <TabsTrigger value="audit">Audit Log</TabsTrigger>
           </TabsList>
@@ -551,6 +555,16 @@ export default function PlatformConsole() {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* PLANS */}
+          <TabsContent value="plans" className="space-y-4">
+            <PlansTab />
+          </TabsContent>
+
+          {/* AI & API */}
+          <TabsContent value="ai" className="space-y-4">
+            <AiApiTab />
           </TabsContent>
 
           {/* SUPER ADMINS */}
