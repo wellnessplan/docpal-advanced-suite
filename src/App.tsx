@@ -172,7 +172,7 @@ const App = () => (
                 <Route path="/ortho/:caseId" element={<ProtectedRoute><OrthoCase /></ProtectedRoute>} />
                 <Route path="/social-calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/super-admin" element={<SuperAdmin />} />
+                <Route path="/super-admin" element={<Navigate to="/platform" replace />} />
                 <Route path="/platform" element={<Platform />} />
                 <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
                 <Route path="/focus" element={<ProtectedRoute><FocusToday /></ProtectedRoute>} />
