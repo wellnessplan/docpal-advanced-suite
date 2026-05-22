@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_log: {
+        Row: {
+          clinic_id: string | null
+          completion_tokens: number | null
+          cost_inr: number | null
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          model: string
+          prompt_tokens: number | null
+          status: string
+          total_tokens: number | null
+        }
+        Insert: {
+          clinic_id?: string | null
+          completion_tokens?: number | null
+          cost_inr?: number | null
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          model: string
+          prompt_tokens?: number | null
+          status?: string
+          total_tokens?: number | null
+        }
+        Update: {
+          clinic_id?: string | null
+          completion_tokens?: number | null
+          cost_inr?: number | null
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          model?: string
+          prompt_tokens?: number | null
+          status?: string
+          total_tokens?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_log_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           appointment_date: string
@@ -437,6 +487,7 @@ export type Database = {
       }
       clinic_subscriptions: {
         Row: {
+          ai_monthly_cap_inr: number | null
           amount: number | null
           approved_at: string | null
           approved_by: string | null
@@ -448,12 +499,14 @@ export type Database = {
           notes: string | null
           payment_id: string | null
           payment_provider: string | null
+          plan_id: string | null
           plan_name: string | null
           status: string
           trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
+          ai_monthly_cap_inr?: number | null
           amount?: number | null
           approved_at?: string | null
           approved_by?: string | null
@@ -465,12 +518,14 @@ export type Database = {
           notes?: string | null
           payment_id?: string | null
           payment_provider?: string | null
+          plan_id?: string | null
           plan_name?: string | null
           status?: string
           trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
+          ai_monthly_cap_inr?: number | null
           amount?: number | null
           approved_at?: string | null
           approved_by?: string | null
@@ -482,6 +537,7 @@ export type Database = {
           notes?: string | null
           payment_id?: string | null
           payment_provider?: string | null
+          plan_id?: string | null
           plan_name?: string | null
           status?: string
           trial_ends_at?: string | null
@@ -493,6 +549,13 @@ export type Database = {
             columns: ["clinic_id"]
             isOneToOne: true
             referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -4391,6 +4454,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          ai_monthly_cap_inr: number | null
+          billing_cycle: string
+          code: string
+          created_at: string
+          features: Json
+          id: string
+          is_active: boolean
+          max_branches: number | null
+          max_doctors: number | null
+          max_patients: number | null
+          name: string
+          price_inr: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          ai_monthly_cap_inr?: number | null
+          billing_cycle?: string
+          code: string
+          created_at?: string
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_branches?: number | null
+          max_doctors?: number | null
+          max_patients?: number | null
+          name: string
+          price_inr?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          ai_monthly_cap_inr?: number | null
+          billing_cycle?: string
+          code?: string
+          created_at?: string
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_branches?: number | null
+          max_doctors?: number | null
+          max_patients?: number | null
+          name?: string
+          price_inr?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       super_admins: {
         Row: {
