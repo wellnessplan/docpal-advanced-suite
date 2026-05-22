@@ -308,6 +308,33 @@ export default function PlatformConsole() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const extendTrial = useMutation({
+    mutationFn: async ({ clinicId, name, days, currentTrialEnd }: { clinicId: string; name: string; days: number; currentTrialEnd: string | null }) => {
+      const base = currentTrialEnd && new Date(currentTrialEnd) > new Date()
+        ? new Date(currentTrialEnd)
+        : new Date();
+      base.setDate(base.getDate() + days);
+      const { error } = await supabase
+        .from("clinic_subscriptions" as any)
+        .update({ trial_ends_at: base.toISOString(), status: "trial" })
+        .eq("clinic_id", clinicId);
+      if (error) throw error;
+      await logAudit({
+        action: "trial_extended",
+        target_type: "clinic",
+        target_id: clinicId,
+        target_label: name,
+        details: { days, new_trial_end: base.toISOString() },
+      });
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["platform-clinics"] });
+      qc.invalidateQueries({ queryKey: ["platform-audit"] });
+      toast.success(`Trial extended by ${v.days} days`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // ---------- Derived ----------
   const filtered = useMemo(() => clinics.filter((c: any) => {
     const s = !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase());
