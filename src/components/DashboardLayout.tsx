@@ -10,6 +10,7 @@ import { useClinicPdfDefaults } from "@/hooks/useClinicPdfDefaults";
 import MobileBottomNav from "./MobileBottomNav";
 import MobileQuickFab from "./MobileQuickFab";
 import InstallPromptBanner from "./InstallPromptBanner";
+import ImpersonationBanner from "./ImpersonationBanner";
 import GlobalSearchDialog from "./GlobalSearchDialog";
 import UserMenuDropdown from "./UserMenuDropdown";
 import BranchSwitcher from "./BranchSwitcher";
@@ -362,7 +363,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       )}
 
       <main className="flex-1 overflow-y-auto">
+        <ImpersonationBanner />
         <InstallPromptBanner />
+
         <div className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-md px-3 md:px-6 py-2.5 md:py-3 safe-area-top">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-heading text-[15px] md:text-lg font-semibold text-foreground truncate min-w-0">{currentPageLabel}</h2>

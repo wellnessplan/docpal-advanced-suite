@@ -3650,6 +3650,8 @@ export type Database = {
           full_name: string | null
           group_id: string | null
           id: string
+          impersonating_original_clinic_id: string | null
+          impersonating_original_group_id: string | null
           phone: string | null
           role: string | null
           specialization: string | null
@@ -3663,6 +3665,8 @@ export type Database = {
           full_name?: string | null
           group_id?: string | null
           id?: string
+          impersonating_original_clinic_id?: string | null
+          impersonating_original_group_id?: string | null
           phone?: string | null
           role?: string | null
           specialization?: string | null
@@ -3676,6 +3680,8 @@ export type Database = {
           full_name?: string | null
           group_id?: string | null
           id?: string
+          impersonating_original_clinic_id?: string | null
+          impersonating_original_group_id?: string | null
           phone?: string | null
           role?: string | null
           specialization?: string | null
@@ -5215,6 +5221,10 @@ export type Database = {
     Functions: {
       accept_staff_invitation: { Args: { p_token: string }; Returns: Json }
       clear_demo_data: { Args: never; Returns: Json }
+      clinic_ai_spend_this_month: {
+        Args: { p_clinic_id: string }
+        Returns: number
+      }
       create_branch_in_group: {
         Args: {
           p_address?: string
@@ -5238,6 +5248,7 @@ export type Database = {
         Args: { p_item_id: string; p_quantity: number }
         Returns: undefined
       }
+      end_impersonation: { Args: never; Returns: Json }
       gdpr_delete_patient: {
         Args: { p_patient_id: string }
         Returns: undefined
@@ -5285,6 +5296,7 @@ export type Database = {
         }
         Returns: Json
       }
+      start_impersonation: { Args: { p_clinic_id: string }; Returns: Json }
       switch_active_branch: {
         Args: { p_clinic_id: string }
         Returns: undefined
