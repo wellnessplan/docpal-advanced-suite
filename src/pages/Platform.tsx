@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import {
   Activity, Building2, Users, DollarSign, TrendingUp, Plus, Trash2, Shield,
   CheckCircle, PauseCircle, PlayCircle, UserPlus, Search, RefreshCw,
-  CalendarIcon, ScrollText, Filter, Package, Sparkles,
+  CalendarIcon, ScrollText, Filter, Package, Sparkles, UserCheck, LineChart,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -37,6 +37,7 @@ import {
 import { format, subDays, differenceInDays, startOfDay, endOfDay } from "date-fns";
 import PlansTab from "./platform/PlansTab";
 import AiApiTab from "./platform/AiApiTab";
+import ClinicAiReportTab from "./platform/ClinicAiReportTab";
 
 const STATUS_COLORS: Record<string, string> = {
   trial: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
