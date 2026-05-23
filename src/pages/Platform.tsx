@@ -335,6 +335,18 @@ export default function PlatformConsole() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+  const impersonate = useMutation({
+    mutationFn: async ({ clinicId, name }: { clinicId: string; name: string }) => {
+      const { error } = await (supabase.rpc as any)("start_impersonation", { p_clinic_id: clinicId });
+      if (error) throw error;
+      return name;
+    },
+    onSuccess: (name) => {
+      toast.success(`Impersonating ${name}. Redirecting…`);
+      setTimeout(() => window.location.assign("/dashboard"), 400);
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to start impersonation"),
+  });
 
   // ---------- Derived ----------
   const filtered = useMemo(() => clinics.filter((c: any) => {
@@ -400,9 +412,11 @@ export default function PlatformConsole() {
             <TabsTrigger value="clinics"><Building2 className="h-3.5 w-3.5 mr-1" />Centers</TabsTrigger>
             <TabsTrigger value="plans"><Package className="h-3.5 w-3.5 mr-1" />Plans</TabsTrigger>
             <TabsTrigger value="ai"><Sparkles className="h-3.5 w-3.5 mr-1" />AI & API</TabsTrigger>
+            <TabsTrigger value="ai-report"><LineChart className="h-3.5 w-3.5 mr-1" />AI Report</TabsTrigger>
             <TabsTrigger value="admins">Super Admins</TabsTrigger>
             <TabsTrigger value="audit">Audit Log</TabsTrigger>
           </TabsList>
+
 
           {/* USAGE */}
           <TabsContent value="usage" className="space-y-4">
@@ -589,11 +603,18 @@ export default function PlatformConsole() {
                                   <PauseCircle className="h-3.5 w-3.5 mr-1" />Suspend
                                 </Button>
                               )}
+                              <Button size="sm" variant="outline" className="h-8 text-xs"
+                                onClick={() => impersonate.mutate({ clinicId: c.id, name: c.name })}
+                                disabled={impersonate.isPending}
+                                title="Sign in as a user of this clinic (logged)">
+                                <UserCheck className="h-3.5 w-3.5 mr-1" />Impersonate
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
                       );
                     })}
+
                   </TableBody>
                 </Table>
               </CardContent>
@@ -609,6 +630,11 @@ export default function PlatformConsole() {
           <TabsContent value="ai" className="space-y-4">
             <AiApiTab />
           </TabsContent>
+
+          <TabsContent value="ai-report" className="space-y-4">
+            <ClinicAiReportTab />
+          </TabsContent>
+
 
           {/* SUPER ADMINS */}
           <TabsContent value="admins" className="space-y-4">
