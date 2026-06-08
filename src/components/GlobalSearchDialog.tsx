@@ -9,8 +9,25 @@ import {
   Package, TrendingUp, BarChart3, Megaphone, Settings, Target,
   Star, Gift, Crown, UserCog, ScrollText, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
-  TestTubes, FlaskConical, CalendarClock, Search, User, Plug
+  TestTubes, FlaskConical, CalendarClock, Search, User, Plug,
+  Plus, MessageCircle, Stethoscope, Zap
 } from "lucide-react";
+
+interface QuickAction {
+  label: string;
+  hint: string;
+  icon: any;
+  run: (nav: (p: string) => void) => void;
+}
+const quickActions: QuickAction[] = [
+  { label: "Add new patient", hint: "register", icon: Plus, run: (n) => n("/patients?new=1") },
+  { label: "Book appointment", hint: "schedule", icon: CalendarDays, run: (n) => n("/appointments?new=1") },
+  { label: "Create invoice", hint: "billing", icon: Receipt, run: (n) => n("/billing?new=1") },
+  { label: "Record payment", hint: "wallet", icon: Wallet, run: (n) => n("/payments?new=1") },
+  { label: "Send WhatsApp message", hint: "chat", icon: MessageCircle, run: (n) => n("/whatsapp") },
+  { label: "Open today's queue", hint: "live", icon: ListOrdered, run: (n) => n("/queue") },
+  { label: "Switch to Focus Mode", hint: "doctor", icon: Stethoscope, run: () => window.location.assign("/focus") },
+];
 
 const pages = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
