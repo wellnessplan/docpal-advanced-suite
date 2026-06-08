@@ -134,20 +134,13 @@ export default function GlobalSearchDialog() {
           <DialogDescription>Search patients and pages across the app</DialogDescription>
         </span>
         <CommandInput
-          placeholder="Search patients, pages…"
-          value={query}
-          onValueChange={setQuery}
-        />
-        <CommandList>
-          <CommandEmpty>{loading ? "Searching…" : "No results found."}</CommandEmpty>
-
-        <CommandInput
           placeholder="Type a command, patient, or page…"
           value={query}
           onValueChange={setQuery}
         />
         <CommandList>
           <CommandEmpty>{loading ? "Searching…" : "No results found."}</CommandEmpty>
+
 
           {patients.length > 0 && (
             <CommandGroup heading="Patients">
