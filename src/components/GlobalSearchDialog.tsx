@@ -141,6 +141,14 @@ export default function GlobalSearchDialog() {
         <CommandList>
           <CommandEmpty>{loading ? "Searching…" : "No results found."}</CommandEmpty>
 
+        <CommandInput
+          placeholder="Type a command, patient, or page…"
+          value={query}
+          onValueChange={setQuery}
+        />
+        <CommandList>
+          <CommandEmpty>{loading ? "Searching…" : "No results found."}</CommandEmpty>
+
           {patients.length > 0 && (
             <CommandGroup heading="Patients">
               {patients.map((p) => (
@@ -154,6 +162,18 @@ export default function GlobalSearchDialog() {
               ))}
             </CommandGroup>
           )}
+
+          <CommandGroup heading="Quick actions">
+            {quickActions
+              .filter(a => !query || a.label.toLowerCase().includes(query.toLowerCase()) || a.hint.includes(query.toLowerCase()))
+              .map((a) => (
+                <CommandItem key={a.label} value={`action-${a.label}`} onSelect={() => { setOpen(false); setQuery(""); a.run(navigate); }} className="gap-2.5">
+                  <a.icon className="h-4 w-4 text-primary" />
+                  <span className="font-medium">{a.label}</span>
+                  <Zap className="ml-auto h-3 w-3 text-muted-foreground" />
+                </CommandItem>
+              ))}
+          </CommandGroup>
 
           <CommandGroup heading="Pages">
             {filteredPages.map((page) => (
