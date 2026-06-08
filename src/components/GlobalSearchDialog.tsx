@@ -9,8 +9,25 @@ import {
   Package, TrendingUp, BarChart3, Megaphone, Settings, Target,
   Star, Gift, Crown, UserCog, ScrollText, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
-  TestTubes, FlaskConical, CalendarClock, Search, User, Plug
+  TestTubes, FlaskConical, CalendarClock, Search, User, Plug,
+  Plus, MessageCircle, Stethoscope, Zap
 } from "lucide-react";
+
+interface QuickAction {
+  label: string;
+  hint: string;
+  icon: any;
+  run: (nav: (p: string) => void) => void;
+}
+const quickActions: QuickAction[] = [
+  { label: "Add new patient", hint: "register", icon: Plus, run: (n) => n("/patients?new=1") },
+  { label: "Book appointment", hint: "schedule", icon: CalendarDays, run: (n) => n("/appointments?new=1") },
+  { label: "Create invoice", hint: "billing", icon: Receipt, run: (n) => n("/billing?new=1") },
+  { label: "Record payment", hint: "wallet", icon: Wallet, run: (n) => n("/payments?new=1") },
+  { label: "Send WhatsApp message", hint: "chat", icon: MessageCircle, run: (n) => n("/whatsapp") },
+  { label: "Open today's queue", hint: "live", icon: ListOrdered, run: (n) => n("/queue") },
+  { label: "Switch to Focus Mode", hint: "doctor", icon: Stethoscope, run: () => window.location.assign("/focus") },
+];
 
 const pages = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -117,12 +134,13 @@ export default function GlobalSearchDialog() {
           <DialogDescription>Search patients and pages across the app</DialogDescription>
         </span>
         <CommandInput
-          placeholder="Search patients, pages…"
+          placeholder="Type a command, patient, or page…"
           value={query}
           onValueChange={setQuery}
         />
         <CommandList>
           <CommandEmpty>{loading ? "Searching…" : "No results found."}</CommandEmpty>
+
 
           {patients.length > 0 && (
             <CommandGroup heading="Patients">
@@ -137,6 +155,18 @@ export default function GlobalSearchDialog() {
               ))}
             </CommandGroup>
           )}
+
+          <CommandGroup heading="Quick actions">
+            {quickActions
+              .filter(a => !query || a.label.toLowerCase().includes(query.toLowerCase()) || a.hint.includes(query.toLowerCase()))
+              .map((a) => (
+                <CommandItem key={a.label} value={`action-${a.label}`} onSelect={() => { setOpen(false); setQuery(""); a.run(navigate); }} className="gap-2.5">
+                  <a.icon className="h-4 w-4 text-primary" />
+                  <span className="font-medium">{a.label}</span>
+                  <Zap className="ml-auto h-3 w-3 text-muted-foreground" />
+                </CommandItem>
+              ))}
+          </CommandGroup>
 
           <CommandGroup heading="Pages">
             {filteredPages.map((page) => (
