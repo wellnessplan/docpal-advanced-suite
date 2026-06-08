@@ -154,19 +154,24 @@ export default function DashboardPage() {
       <ProductTour />
       <div className="space-y-5 animate-fade-in">
         <OnboardingChecklist />
-        {/* Header */}
+
+        {/* AI Morning Brief */}
+        <MorningBrief />
+
+        {/* Add Patient action row */}
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="font-heading text-xl md:text-2xl font-bold text-foreground">
-              👋 Welcome, {profile?.full_name?.split(" ").slice(0, 2).join(" ") || "Doctor"}
-            </h1>
-          </div>
+          <p className="text-xs text-muted-foreground font-mono">
+            Press <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted text-[10px]">⌘K</kbd> for commands
+          </p>
           <Button size="sm" onClick={() => navigate("/patients")} className="gap-1.5">
             <Plus className="h-3.5 w-3.5" /> Add Patient
           </Button>
         </div>
 
-        {/* 4 KPI Cards */}
+        {/* Living Pulse strip — replaces static KPI tiles */}
+        <ClinicPulse />
+
+        {/* Compact KPI row (kept for at-a-glance numbers) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {kpis.map((kpi) => (
             <Card key={kpi.label} className="shadow-card border-0 hover:shadow-md transition-shadow">
