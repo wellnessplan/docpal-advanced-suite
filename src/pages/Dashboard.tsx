@@ -11,6 +11,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import ProfileCompletionModal from "@/components/ProfileCompletionModal";
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
 import ProductTour from "@/components/onboarding/ProductTour";
+import MorningBrief from "@/components/dashboard/MorningBrief";
+import ClinicPulse from "@/components/dashboard/ClinicPulse";
 import { format } from "date-fns";
 
 const statusStyle: Record<string, string> = {
