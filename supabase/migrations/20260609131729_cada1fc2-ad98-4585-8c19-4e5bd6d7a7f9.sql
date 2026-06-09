@@ -1,0 +1,1 @@
+DELETE FROM public.education_videos WHERE is_global = true AND clinic_id IS NULL;
