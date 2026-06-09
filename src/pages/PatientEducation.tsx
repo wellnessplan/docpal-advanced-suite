@@ -79,7 +79,7 @@ export default function PatientEducation() {
             <h1 className="font-heading text-xl md:text-2xl font-bold flex items-center gap-2">
               <Library className="h-5 w-5 text-primary" /> Patient Education
             </h1>
-            <p className="text-muted-foreground text-sm">Curated dental videos + your own uploads. Cast to clinic TVs.</p>
+            <p className="text-muted-foreground text-sm">Upload your own videos. Cast to clinic TVs.</p>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" size="sm" className="gap-1.5">
