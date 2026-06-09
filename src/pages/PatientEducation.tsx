@@ -94,75 +94,66 @@ export default function PatientEducation() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
-            <TabsTrigger value="library">Curated Library ({videos.filter((v: any) => v.is_global).length})</TabsTrigger>
-            <TabsTrigger value="uploads">My Uploads ({videos.filter((v: any) => !v.is_global).length})</TabsTrigger>
-          </TabsList>
-
-          <div className="flex gap-2 mt-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search videos..." className="pl-9" />
-            </div>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search videos..." className="pl-9" />
           </div>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <TabsContent value={tab} className="mt-4">
-            {isLoading ? (
-              <div className="text-center py-12 text-muted-foreground text-sm">Loading...</div>
-            ) : filtered.length === 0 ? (
-              <Card><CardContent className="p-12 text-center text-muted-foreground text-sm">
-                {tab === "uploads" ? "No uploads yet. Click 'Add Video' to upload your own or paste a YouTube URL." : "No videos found."}
-              </CardContent></Card>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filtered.map((v: any) => (
-                  <Card key={v.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                    <div
-                      onClick={() => setPreviewVideo(v)}
-                      className="relative aspect-video bg-muted cursor-pointer overflow-hidden"
-                    >
-                      {v.thumbnail_url ? (
-                        <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-                          <Play className="h-12 w-12 text-primary" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="h-12 w-12 rounded-full bg-white/90 flex items-center justify-center">
-                          {v.media_type === "image" ? <ImageIcon className="h-5 w-5 text-foreground" /> : <Play className="h-5 w-5 text-foreground fill-current" />}
-                        </div>
+        <div className="mt-4">
+          {isLoading ? (
+            <div className="text-center py-12 text-muted-foreground text-sm">Loading...</div>
+          ) : filtered.length === 0 ? (
+            <Card><CardContent className="p-12 text-center text-muted-foreground text-sm">
+              No uploads yet. Click 'Add Video' to upload your own or paste a YouTube URL.
+            </CardContent></Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filtered.map((v: any) => (
+                <Card key={v.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
+                  <div
+                    onClick={() => setPreviewVideo(v)}
+                    className="relative aspect-video bg-muted cursor-pointer overflow-hidden"
+                  >
+                    {v.thumbnail_url ? (
+                      <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                        <Play className="h-12 w-12 text-primary" />
                       </div>
-                      <Badge className="absolute top-2 left-2 text-[10px]" variant={v.is_global ? "secondary" : "default"}>
-                        {v.media_type === "image" ? "Image" : v.is_global ? "Library" : "Mine"}
-                      </Badge>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="h-12 w-12 rounded-full bg-white/90 flex items-center justify-center">
+                        {v.media_type === "image" ? <ImageIcon className="h-5 w-5 text-foreground" /> : <Play className="h-5 w-5 text-foreground fill-current" />}
+                      </div>
                     </div>
-                    <CardContent className="p-3">
-                      <p className="font-semibold text-sm line-clamp-2 mb-1">{v.title}</p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="capitalize">{CATEGORIES.find(c => c.value === v.category)?.label || v.category}</span>
-                        {!v.is_global && (
-                          <Button size="icon" variant="ghost" className="h-6 w-6"
-                            onClick={(e) => { e.stopPropagation(); if (confirm("Remove this video?")) deleteMutation.mutate(v.id); }}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                    <Badge className="absolute top-2 left-2 text-[10px]" variant="default">
+                      {v.media_type === "image" ? "Image" : "Mine"}
+                    </Badge>
+                  </div>
+                  <CardContent className="p-3">
+                    <p className="font-semibold text-sm line-clamp-2 mb-1">{v.title}</p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="capitalize">{CATEGORIES.find(c => c.value === v.category)?.label || v.category}</span>
+                      <Button size="icon" variant="ghost" className="h-6 w-6"
+                        onClick={(e) => { e.stopPropagation(); if (confirm("Remove this video?")) deleteMutation.mutate(v.id); }}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
 
         <Dialog open={!!previewVideo} onOpenChange={(o) => !o && setPreviewVideo(null)}>
           <DialogContent className="max-w-3xl">
