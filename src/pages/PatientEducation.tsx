@@ -36,7 +36,6 @@ export default function PatientEducation() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
-  const [tab, setTab] = useState("library");
   const [previewVideo, setPreviewVideo] = useState<any>(null);
   const [addOpen, setAddOpen] = useState(false);
 
@@ -66,8 +65,7 @@ export default function PatientEducation() {
   });
 
   const filtered = videos.filter((v: any) => {
-    if (tab === "library" && !v.is_global) return false;
-    if (tab === "uploads" && v.is_global) return false;
+    if (v.is_global) return false;
     if (category !== "all" && v.category !== category) return false;
     if (search && !v.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
