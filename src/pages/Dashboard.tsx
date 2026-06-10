@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Users, ClipboardList, BellRing, FlaskConical, PackageAlert,
+  Users, ClipboardList, BellRing, FlaskConical, PackageX,
   TrendingUp, Percent, Calculator, Coins, CreditCard, Wallet,
   HandCoins, CalendarClock, AlertTriangle, Wrench, Bell, Briefcase,
   Stethoscope, Plus, FileText,
@@ -98,9 +98,9 @@ export default function DashboardPage() {
   const { data: pendingTreatments = 0 } = useQuery({
     queryKey: ["dash-pending-tx", clinicId],
     queryFn: async () => {
-      const { count } = await supabase.from("treatment_plan_items")
+      const { count } = await supabase.from("treatment_plans")
         .select("*", { count: "exact", head: true })
-        .eq("clinic_id", clinicId!).eq("status", "planned");
+        .eq("clinic_id", clinicId!).in("status", ["draft", "proposed", "accepted", "in_progress"]);
       return count ?? 0;
     },
     enabled: !!clinicId,
@@ -281,7 +281,7 @@ export default function DashboardPage() {
       cta: { label: "Send SMS", onClick: (e) => { e.stopPropagation(); navigate("/whatsapp"); } } },
     { label: "Active Lab Cases", value: activeLabs, icon: FlaskConical, tone: "bg-gradient-to-br from-emerald-50 to-teal-100/60", onClick: () => navigate("/lab-orders") },
 
-    { label: "Stock Alerts", value: stockAlerts, icon: PackageAlert, tone: "bg-gradient-to-br from-orange-50 to-amber-100/60", onClick: () => navigate("/inventory"),
+    { label: "Stock Alerts", value: stockAlerts, icon: PackageX, tone: "bg-gradient-to-br from-orange-50 to-amber-100/60", onClick: () => navigate("/inventory"),
       cta: { label: "View Inventory", onClick: (e) => { e.stopPropagation(); navigate("/inventory"); } } },
     { label: "Revenue Today", value: fmt(revenueToday), icon: TrendingUp, tone: "bg-gradient-to-br from-indigo-50 to-blue-100/60", onClick: () => navigate("/billing") },
     { label: "Collection Rate", value: `${collectionRate.toFixed(1)}%`, icon: Percent, tone: "bg-gradient-to-br from-cyan-50 to-sky-100/60", onClick: () => navigate("/billing") },
