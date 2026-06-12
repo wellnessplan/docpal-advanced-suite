@@ -366,14 +366,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <ImpersonationBanner />
         <InstallPromptBanner />
 
-        <div className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-md px-3 md:px-6 py-2.5 md:py-3 safe-area-top">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-heading text-[15px] md:text-lg font-semibold text-foreground truncate min-w-0">{currentPageLabel}</h2>
-            <div className="flex items-center gap-1 md:gap-3 shrink-0">
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl px-3 md:px-6 py-3 safe-area-top">
+          <div className="flex items-center justify-between gap-2 bg-card rounded-2xl shadow-[0_2px_10px_rgba(15,23,42,0.04)] px-4 py-2.5">
+            <h2 className="text-[15px] md:text-lg font-bold tracking-tight text-foreground truncate min-w-0">{currentPageLabel}</h2>
+            <div className="flex items-center gap-1 md:gap-2 shrink-0">
               <Button
                 size="sm"
                 variant="default"
-                className="gap-1.5 h-8 px-2 md:px-3 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg transition-all"
+                className="gap-1.5 h-9 px-3 rounded-xl bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
                 onClick={() => window.location.assign("/focus")}
                 title="Switch to simplified 2-screen doctor flow"
               >
