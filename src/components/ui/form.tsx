@@ -119,8 +119,15 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
     }
 
     return (
-      <p ref={ref} id={formMessageId} className={cn("text-sm font-medium text-destructive", className)} {...props}>
-        {body}
+      <p
+        ref={ref}
+        id={formMessageId}
+        role="alert"
+        className={cn("flex items-start gap-1.5 text-xs font-medium text-destructive", className)}
+        {...props}
+      >
+        <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+        <span>{body}</span>
       </p>
     );
   },
