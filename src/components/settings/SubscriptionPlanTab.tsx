@@ -153,13 +153,13 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
         <h3 className="font-heading text-lg font-semibold mb-1">Available Plans</h3>
         <p className="text-sm text-muted-foreground mb-4">Click a plan to request an upgrade or downgrade. Our team will contact you to complete the change.</p>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {PLANS.map(plan => {
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {PLANS.map((plan: any) => {
             const isCurrent = plan.id === currentPlan;
             const currentIdx = PLANS.findIndex(p => p.id === currentPlan);
             const planIdx = PLANS.findIndex(p => p.id === plan.id);
             const isUpgrade = planIdx > currentIdx;
-            const isDowngrade = planIdx < currentIdx;
+            const isLifetime = !!plan.lifetime;
 
             return (
               <Card
