@@ -176,10 +176,21 @@ export default function SubscriptionGate({ children }: { children: React.ReactNo
   if (status === "active" || (status === "trial" && (daysLeft ?? 0) > 0)) {
     return (
       <>
-        {status === "trial" && daysLeft !== null && daysLeft <= 7 && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-center text-sm text-amber-700">
-            <Clock className="inline h-4 w-4 mr-1" />
-            Your free trial ends in <strong>{daysLeft} day{daysLeft !== 1 ? "s" : ""}</strong>. Choose a plan to keep access.
+        {status === "trial" && daysLeft !== null && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-center text-sm text-amber-700 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <span className="inline-flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              Free trial: <strong>{daysLeft} day{daysLeft !== 1 ? "s" : ""}</strong> left
+            </span>
+            <Button size="sm" variant="default" className="h-7 gap-1 bg-amber-600 hover:bg-amber-700" asChild>
+              <a href="/settings?tab=subscription"><ArrowUpCircle className="h-3.5 w-3.5" /> View Plans & Upgrade</a>
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 gap-1" asChild>
+              <a href="tel:+919999999999"><Phone className="h-3.5 w-3.5" /> Call</a>
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 gap-1" asChild>
+              <a href="mailto:support@doctorsbuddy.in"><Mail className="h-3.5 w-3.5" /> Email</a>
+            </Button>
           </div>
         )}
         {children}
