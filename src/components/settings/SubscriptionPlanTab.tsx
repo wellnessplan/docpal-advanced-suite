@@ -28,8 +28,15 @@ const PLANS = [
   {
     id: "enterprise",
     name: "Enterprise",
-    price: 4999,
+    price: 5999,
     features: ["Everything in Pro", "Unlimited doctors", "Multi-clinic support", "API access", "Dedicated manager", "Custom integrations"],
+  },
+  {
+    id: "lifetime",
+    name: "Lifetime",
+    price: 50000,
+    lifetime: true,
+    features: ["One-time payment, never pay again", "Unlimited patients & doctors", "Multi-branch support", "All Pro & Enterprise features", "Priority support for life", "Free future updates"],
   },
 ];
 
@@ -146,22 +153,27 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
         <h3 className="font-heading text-lg font-semibold mb-1">Available Plans</h3>
         <p className="text-sm text-muted-foreground mb-4">Click a plan to request an upgrade or downgrade. Our team will contact you to complete the change.</p>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {PLANS.map(plan => {
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {PLANS.map((plan: any) => {
             const isCurrent = plan.id === currentPlan;
             const currentIdx = PLANS.findIndex(p => p.id === currentPlan);
             const planIdx = PLANS.findIndex(p => p.id === plan.id);
             const isUpgrade = planIdx > currentIdx;
-            const isDowngrade = planIdx < currentIdx;
+            const isLifetime = !!plan.lifetime;
 
             return (
               <Card
                 key={plan.id}
                 className={`relative shadow-card border-0 transition-all ${
-                  isCurrent ? "ring-2 ring-primary" : plan.popular ? "ring-1 ring-primary/30" : ""
+                  isCurrent ? "ring-2 ring-primary" :
+                  isLifetime ? "ring-2 ring-amber-500 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20" :
+                  plan.popular ? "ring-1 ring-primary/30" : ""
                 }`}
               >
-                {plan.popular && !isCurrent && (
+                {isLifetime && !isCurrent && (
+                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 bg-amber-500 hover:bg-amber-500">Best Value</Badge>
+                )}
+                {plan.popular && !isCurrent && !isLifetime && (
                   <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">Most Popular</Badge>
                 )}
                 {isCurrent && (
@@ -171,12 +183,12 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
                   <CardTitle className="font-heading text-xl">{plan.name}</CardTitle>
                   <div className="mt-1">
                     <span className="text-3xl font-bold">Rs {plan.price.toLocaleString()}</span>
-                    <span className="text-sm text-muted-foreground">/mo</span>
+                    <span className="text-sm text-muted-foreground">{isLifetime ? " one-time" : "/mo"}</span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-2">
-                    {plan.features.map((f, i) => (
+                    {plan.features.map((f: string, i: number) => (
                       <li key={i} className="text-sm flex items-start gap-2">
                         <Check className="h-4 w-4 text-success shrink-0 mt-0.5" />
                         <span>{f}</span>
@@ -190,13 +202,13 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
                     </Button>
                   ) : (
                     <Button
-                      variant={isUpgrade ? "default" : "outline"}
-                      className="w-full gap-1.5"
+                      variant={isUpgrade || isLifetime ? "default" : "outline"}
+                      className={`w-full gap-1.5 ${isLifetime ? "bg-amber-500 hover:bg-amber-600" : ""}`}
                       onClick={() => requestPlanChange.mutate(plan.id)}
                       disabled={requesting === plan.id}
                     >
-                      {isUpgrade ? <ArrowUpCircle className="h-4 w-4" /> : <ArrowDownCircle className="h-4 w-4" />}
-                      {requesting === plan.id ? "Requesting..." : isUpgrade ? "Request Upgrade" : "Request Downgrade"}
+                      {isUpgrade || isLifetime ? <ArrowUpCircle className="h-4 w-4" /> : <ArrowDownCircle className="h-4 w-4" />}
+                      {requesting === plan.id ? "Requesting..." : isLifetime ? "Get Lifetime" : isUpgrade ? "Request Upgrade" : "Request Downgrade"}
                     </Button>
                   )}
                 </CardContent>
