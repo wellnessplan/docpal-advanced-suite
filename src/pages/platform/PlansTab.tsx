@@ -40,6 +40,11 @@ interface Plan {
 export default function PlansTab() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<Plan> | null>(null);
+  const [subSearch, setSubSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkPlanId, setBulkPlanId] = useState<string>("");
+  const [confirmDelete, setConfirmDelete] = useState<{ ids: string[]; label: string } | null>(null);
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ["admin-subscription-plans"],
