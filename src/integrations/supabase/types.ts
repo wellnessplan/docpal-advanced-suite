@@ -5876,6 +5876,38 @@ export type Database = {
         Args: { p_clinic_id: string }
         Returns: string
       }
+      get_display_branding_by_pair: {
+        Args: { p_pair_code: string }
+        Returns: {
+          banner_fit: string | null
+          banner_image_url: string | null
+          banner_opacity: number | null
+          banner_scale: number | null
+          banner_x: number | null
+          banner_y: number | null
+          clinic_id: string
+          clinic_name: string | null
+          doctor_on_duty: string | null
+          logo_url: string | null
+          lower_third_style: string
+          phone: string | null
+          primary_color: string | null
+          show_doctor_on_duty: boolean | null
+          show_now_serving: boolean | null
+          show_queue_panel: boolean | null
+          tagline: string | null
+          text_color: string | null
+          ticker_messages: string[] | null
+          ticker_speed_sec: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "display_branding"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_invitation_by_token: {
         Args: { p_token: string }
         Returns: {

@@ -69,12 +69,9 @@ export default function DisplayScreen() {
         app_version: APP_VERSION,
       }).eq("id", (s as any).id);
 
-      const { data: br } = await supabase
-        .from("display_branding" as any)
-        .select("*")
-        .eq("clinic_id", (s as any).clinic_id)
-        .maybeSingle();
-      setBranding(br);
+      const { data: br } = await (supabase as any)
+        .rpc("get_display_branding_by_pair", { p_pair_code: code.toUpperCase() });
+      setBranding(Array.isArray(br) ? br[0] : br);
 
       if ((s as any).current_video_id) {
         const { data: v } = await supabase
