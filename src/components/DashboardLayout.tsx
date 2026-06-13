@@ -208,13 +208,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           >
             {/* Logo */}
             <div className="flex h-14 items-center gap-2.5 px-3 pt-1">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur shadow-lg ring-1 ring-white/30">
-                <Stethoscope className="h-4.5 w-4.5 text-white" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white backdrop-blur shadow-lg ring-1 ring-white/30 overflow-hidden">
+                <img src={logoAsset.url} alt="DoctorsBuddy" className="h-7 w-7 object-contain" />
               </div>
               {!collapsed && (
-                <span className="font-heading text-base font-bold text-white tracking-tight">
-                  DoctorsBuddy
-                </span>
+                <div className="min-w-0 flex flex-col leading-tight">
+                  <span className="font-heading text-base font-bold text-white tracking-tight truncate">
+                    DoctorsBuddy
+                  </span>
+                  {subscription?.planName && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-white/80 truncate">
+                      {subscription.planName}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
 
