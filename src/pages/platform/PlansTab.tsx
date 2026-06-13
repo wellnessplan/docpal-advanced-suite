@@ -108,22 +108,71 @@ export default function PlansTab() {
   });
 
   const changeClinicPlan = useMutation({
-    mutationFn: async ({ clinic_id, plan_id }: { clinic_id: string; plan_id: string }) => {
+    mutationFn: async ({ clinic_ids, plan_id }: { clinic_ids: string[]; plan_id: string }) => {
       const plan = plans.find((p) => p.id === plan_id);
       if (!plan) throw new Error("Plan not found");
       const { error } = await (supabase.from("clinic_subscriptions" as any) as any)
         .update({
           plan_id, plan_name: plan.code, amount: plan.price_inr,
           billing_cycle: plan.billing_cycle, ai_monthly_cap_inr: plan.ai_monthly_cap_inr,
-        }).eq("clinic_id", clinic_id);
+        }).in("clinic_id", clinic_ids);
       if (error) throw error;
+      return clinic_ids.length;
     },
-    onSuccess: () => {
+    onSuccess: (n) => {
       qc.invalidateQueries({ queryKey: ["admin-active-subs"] });
-      toast.success("Plan updated for clinic");
+      toast.success(`Plan updated for ${n} clinic${n > 1 ? "s" : ""}`);
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const deleteSubs = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await (supabase.from("clinic_subscriptions" as any) as any)
+        .delete().in("id", ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (n) => {
+      qc.invalidateQueries({ queryKey: ["admin-active-subs"] });
+      setSelected(new Set());
+      setConfirmDelete(null);
+      toast.success(`Deleted ${n} subscription${n > 1 ? "s" : ""}`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const filteredSubs = useMemo(() => {
+    const q = subSearch.trim().toLowerCase();
+    return (subs as any[]).filter((s) => {
+      if (statusFilter !== "all" && s.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        s.clinic_name?.toLowerCase().includes(q) ||
+        s.plan_name?.toLowerCase().includes(q) ||
+        s.status?.toLowerCase().includes(q)
+      );
+    });
+  }, [subs, subSearch, statusFilter]);
+
+  const allVisibleSelected = filteredSubs.length > 0 && filteredSubs.every((s: any) => selected.has(s.id));
+  const toggleAll = () => {
+    if (allVisibleSelected) {
+      const next = new Set(selected);
+      filteredSubs.forEach((s: any) => next.delete(s.id));
+      setSelected(next);
+    } else {
+      const next = new Set(selected);
+      filteredSubs.forEach((s: any) => next.add(s.id));
+      setSelected(next);
+    }
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selected);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setSelected(next);
+  };
+  const selectedSubs = (subs as any[]).filter((s) => selected.has(s.id));
 
   return (
     <div className="space-y-6">
