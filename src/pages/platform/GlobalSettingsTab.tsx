@@ -15,7 +15,7 @@ export default function GlobalSettingsTab() {
   const qc = useQueryClient();
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["platform-settings"],
-    queryFn: async () => ((await supabase.from("platform_settings" as any).select("*").order("key")).data as Row[]) || [],
+    queryFn: async () => ((await (supabase.from("platform_settings" as any) as any).select("*").order("key")).data as Row[]) || [],
   });
 
   const [draft, setDraft] = useState<Record<string, any>>({});
@@ -96,7 +96,7 @@ export default function GlobalSettingsTab() {
             {Object.entries(draft.feature_flags || {}).map(([k, v]) => (
               <div key={k} className="flex items-center justify-between rounded-lg border border-border/60 p-3">
                 <div>
-                  <p className="font-medium capitalize">{k.replaceAll("_", " ")}</p>
+                  <p className="font-medium capitalize">{k.split("_").join(" ")}</p>
                   <p className="text-xs text-muted-foreground">key: {k}</p>
                 </div>
                 <Switch checked={!!v} onCheckedChange={(c) => setDraft({ ...draft, feature_flags: { ...(draft.feature_flags || {}), [k]: c } })} />
