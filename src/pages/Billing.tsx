@@ -20,6 +20,8 @@ import { Plus, FileText, IndianRupee, Ban } from "lucide-react";
 import WhoChangedHover from "@/components/shared/WhoChangedHover";
 import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
 import { queueSystemEmail } from "@/lib/system-emails";
+import { TableSkeleton } from "@/components/ui/skeleton-loaders";
+
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",

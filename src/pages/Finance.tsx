@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, parseISO, isWithinInterval } from "date-fns";
 import { Plus, TrendingUp, TrendingDown, IndianRupee, Download, Trash2, PieChart } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RPieChart, Pie, Cell, Legend } from "recharts";
+import { TableSkeleton } from "@/components/ui/skeleton-loaders";
+
 
 const EXPENSE_CATEGORIES = ["Rent", "Salaries", "Lab Costs", "Materials", "Utilities", "Marketing", "Equipment", "Insurance", "Maintenance", "Miscellaneous"];
 const PAYMENT_METHODS = ["cash", "upi", "bank_transfer", "card", "cheque"];
@@ -31,7 +33,7 @@ export default function FinancePage() {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), "yyyy-MM"));
   const [form, setForm] = useState({ category: "General", description: "", amount: "", expense_date: format(new Date(), "yyyy-MM-dd"), payment_method: "cash", vendor_name: "", gst_rate: "18", reference_number: "", notes: "" });
 
-  const { data: expenses = [] } = useQuery({
+  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
     queryKey: ["expenses", clinicId],
     queryFn: async () => {
       if (!clinicId) return [];
@@ -42,6 +44,7 @@ export default function FinancePage() {
     },
     enabled: !!clinicId,
   });
+
 
   const { data: invoices = [] } = useQuery({
     queryKey: ["invoices-finance", clinicId],
@@ -257,9 +260,12 @@ export default function FinancePage() {
           <TabsContent value="expenses">
             <Card>
               <CardContent className="pt-6">
-                {filteredExpenses.length === 0 ? (
+                {expensesLoading ? (
+                  <TableSkeleton rows={6} cols={7} />
+                ) : filteredExpenses.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">No expenses recorded for this period</p>
                 ) : (
+
                   <Table>
                     <TableHeader>
                       <TableRow>
