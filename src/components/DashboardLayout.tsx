@@ -235,34 +235,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 {FRONT_DESK_ESSENTIALS.map(renderNavItem)}
               </div>
 
-              {/* More toggle */}
-              <div className="pt-2">
-                {!collapsed && <div className="h-px bg-white/[0.15] mx-2 mb-2" />}
-                {!collapsed ? (
-                  <button
-                    onClick={() => setMoreOpen(o => !o)}
-                    className="flex w-full items-center justify-between px-2.5 py-1.5 mb-1 rounded-lg hover:bg-white/[0.08] transition-colors"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <MoreHorizontal className="h-3.5 w-3.5 text-white/80" />
-                      <span className="font-bold tracking-[0.08em] text-white/85 uppercase font-sans text-xs">More</span>
-                    </div>
-                    {moreEffective ? <ChevronUp className="h-3 w-3 text-white/70" /> : <ChevronDown className="h-3 w-3 text-white/70" />}
-                  </button>
-                ) : (
-                  <div className="flex justify-center py-1">
-                    <MoreHorizontal className="h-4 w-4 text-white/70" />
-                  </div>
-                )}
-              </div>
-
-              {/* More groups (role-filtered) */}
-              {moreEffective && visibleGroups.map((group, gi) => {
+              {/* Sidebar groups */}
+              {visibleGroups.map((group, gi) => {
                 const groupActive = isGroupActive(group);
                 const isExpanded = group.collapsible ? (expandedGroups[group.label] ?? groupActive) : true;
 
                 return (
-                  <div key={group.label} className={gi > 0 ? "pt-2" : ""}>
+                  <div key={group.label} className={gi > 0 ? "pt-2" : "pt-2"}>
                     {gi > 0 && !collapsed && (
                       <div className="h-px bg-white/[0.10] mx-2 mb-2" />
                     )}
