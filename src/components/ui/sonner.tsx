@@ -46,4 +46,64 @@ const Toaster = ({ ...props }: ToasterProps) => {
   );
 };
 
+/**
+ * toastError — error toast with optional retry button and dismiss.
+ */
+export function toastError(
+  message: string,
+  opts?: { description?: string; retry?: () => void | Promise<void>; duration?: number },
+) {
+  return toast.error(message, {
+    description: opts?.description,
+    duration: opts?.duration ?? 8000,
+    action: opts?.retry
+      ? {
+          label: "Retry",
+          onClick: () => {
+            try {
+              void opts.retry!();
+            } catch {
+              /* swallow */
+            }
+          },
+        }
+      : undefined,
+    closeButton: true,
+  });
+}
+
+/**
+ * toastUndo — success toast with an Undo action.
+ * The undo handler is called when the user clicks "Undo".
+ */
+export function toastUndo(
+  message: string,
+  onUndo: () => void | Promise<void>,
+  opts?: { description?: string; duration?: number },
+) {
+  return toast.success(message, {
+    description: opts?.description,
+    duration: opts?.duration ?? 6000,
+    action: {
+      label: "Undo",
+      onClick: () => {
+        try {
+          void onUndo();
+        } catch {
+          /* swallow */
+        }
+      },
+    },
+    closeButton: true,
+  });
+}
+
+/**
+ * toastWarning — convenience wrapper with dismiss enabled.
+ */
+export function toastWarning(message: string, description?: string) {
+  return toast.warning(message, { description, closeButton: true, duration: 7000 });
+}
+
 export { Toaster, toast };
+

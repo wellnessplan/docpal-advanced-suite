@@ -20,6 +20,8 @@ import { Plus, FileText, IndianRupee, Ban } from "lucide-react";
 import WhoChangedHover from "@/components/shared/WhoChangedHover";
 import InvoiceReceipt from "@/components/billing/InvoiceReceipt";
 import { queueSystemEmail } from "@/lib/system-emails";
+import { TableSkeleton } from "@/components/ui/skeleton-loaders";
+
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -603,9 +605,10 @@ export default function BillingPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="p-0"><TableSkeleton rows={6} cols={7} className="border-0 rounded-none" /></TableCell></TableRow>
                 ) : !invoices?.length ? (
                   <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No invoices yet</TableCell></TableRow>
+
                 ) : invoices.map((inv: any) => {
                   const total = Number(inv.amount || 0);
                   const paid = Number(inv.paid_amount || 0);
