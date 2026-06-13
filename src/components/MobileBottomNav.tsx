@@ -6,7 +6,7 @@ import MobileMoreDrawer from "./MobileMoreDrawer";
 import { prefetchRoute } from "@/lib/route-prefetch";
 
 const tabs = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/patients", label: "Patients", icon: Users },
   { href: "/queue", label: "Queue", icon: ListOrdered },
 ];

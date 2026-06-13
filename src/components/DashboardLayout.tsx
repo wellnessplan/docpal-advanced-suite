@@ -40,7 +40,7 @@ interface NavGroup {
 //  - Everything else lives under role-filtered groups, hidden by default behind "More".
 //  - Assistants/receptionists do NOT see Revenue/Finance/Reports.
 const FRONT_DESK_ESSENTIALS: NavItem[] = [
-  { href: "/today-schedule", label: "Calendar", icon: CalendarDays },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/patients", label: "Patients", icon: Users },
   { href: "/billing", label: "Billing", icon: Receipt },
   { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
@@ -52,9 +52,9 @@ const moreGroups: NavGroup[] = [
     groupIcon: Users,
     collapsible: true,
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
       { href: "/queue", label: "Queue", icon: ListOrdered },
+      { href: "/today-schedule", label: "Calendar", icon: CalendarDays },
     ],
   },
   {
