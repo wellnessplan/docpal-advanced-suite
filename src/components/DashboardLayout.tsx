@@ -205,12 +205,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             )}
           >
             {/* Logo */}
-            <div className="flex h-14 items-center gap-2.5 px-3 pt-1">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white backdrop-blur shadow-lg ring-1 ring-white/30 overflow-hidden">
-                <img src={logoAsset.url} alt="DoctorsBuddy" className="h-7 w-7 object-contain" />
+            <div className={cn(
+              "flex h-14 items-center pt-1",
+              collapsed ? "px-1 gap-1 justify-center" : "px-3 gap-2.5"
+            )}>
+              <div className={cn(
+                "flex shrink-0 items-center justify-center rounded-xl bg-white backdrop-blur shadow-lg ring-1 ring-white/30 overflow-hidden",
+                collapsed ? "h-8 w-8" : "h-9 w-9"
+              )}>
+                <img src={logoAsset.url} alt="DoctorsBuddy" className={cn("object-contain", collapsed ? "h-6 w-6" : "h-7 w-7")} />
               </div>
               {!collapsed && (
-                <div className="min-w-0 flex flex-col leading-tight">
+                <div className="min-w-0 flex-1 flex flex-col leading-tight">
                   <span className="font-heading text-base font-bold text-white tracking-tight truncate">
                     DoctorsBuddy
                   </span>
@@ -221,6 +227,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   )}
                 </div>
               )}
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className={cn(
+                  "flex shrink-0 items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 text-white transition-colors",
+                  collapsed ? "h-6 w-6" : "h-8 w-8"
+                )}
+                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <Menu className={cn("text-white", collapsed ? "h-3.5 w-3.5" : "h-4 w-4")} />
+              </button>
             </div>
 
 
