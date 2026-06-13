@@ -776,11 +776,85 @@ function IntegrationsTab({ clinicId }: { clinicId: string }) {
 }
 
 // ─── Main Settings Page ─────────────────────────────────────────────
+import { Hospital, ShieldCheck, IndianRupee, Handshake, Zap, FileText, ChevronRight } from "lucide-react";
+
+type SettingsItem = { key: string; label: string; render: (clinicId: string, clinicName: string) => JSX.Element };
+type SettingsGroup = { label: string; icon: React.ComponentType<{ className?: string }>; items: SettingsItem[] };
+
+const SETTINGS_GROUPS: SettingsGroup[] = [
+  {
+    label: "Clinic Setup", icon: Hospital,
+    items: [
+      { key: "clinic", label: "Clinic Info", render: (id, name) => (
+        <div className="space-y-6">
+          <ClinicInfoTab clinicId={id} />
+          <WorkingHoursPerDayTab clinicId={id} />
+          <QRCodeTab clinicId={id} clinicName={name} />
+          <RegistrationPageBuilderTab clinicId={id} />
+        </div>
+      )},
+      { key: "branches", label: "Branches", render: () => <BranchesTab /> },
+      { key: "branding", label: "Branding", render: (id) => <ThemeBrandingTab clinicId={id} /> },
+      { key: "compliance", label: "Compliance", render: () => <CompliancePrivacyTab /> },
+    ],
+  },
+  {
+    label: "Users & Access", icon: ShieldCheck,
+    items: [
+      { key: "team", label: "Team", render: (id) => (
+        <div className="space-y-6">
+          <TeamTab clinicId={id} />
+          <InviteStaffTab clinicId={id} />
+        </div>
+      )},
+    ],
+  },
+  {
+    label: "Finance", icon: IndianRupee,
+    items: [
+      { key: "billing", label: "Billing / GST", render: (id) => <BillingTab clinicId={id} /> },
+      { key: "coupons", label: "Coupons", render: (id) => <DiscountCouponsTab clinicId={id} /> },
+      { key: "subscription", label: "Subscription", render: (id) => <SubscriptionPlanTab clinicId={id} /> },
+    ],
+  },
+  {
+    label: "Partners & Procurement", icon: Handshake,
+    items: [
+      { key: "tpa", label: "TPAs", render: () => <TpaProvidersTab /> },
+      { key: "vendors", label: "Vendors & Suppliers", render: (id) => (
+        <div className="space-y-8">
+          <VendorsTab clinicId={id} />
+          <SuppliersTab />
+        </div>
+      )},
+    ],
+  },
+  {
+    label: "Automation & Integrations", icon: Zap,
+    items: [
+      { key: "integrations", label: "Integrations", render: (id) => <IntegrationsTab clinicId={id} /> },
+      { key: "automations", label: "Automations", render: (id) => <AutomationRulesTab clinicId={id} /> },
+    ],
+  },
+  {
+    label: "Documents & Data", icon: FileText,
+    items: [
+      { key: "letterhead", label: "Letterhead & PDF", render: (id) => <PdfTemplateDefaultsTab clinicId={id} /> },
+      { key: "emails", label: "System Emails", render: () => <SystemEmailsTab /> },
+      { key: "import", label: "Data Import", render: (id) => <DataImportTab clinicId={id} /> },
+    ],
+  },
+];
+
 export default function SettingsPage() {
   const { clinicId } = useAuth();
   const tabFromUrl = typeof window !== "undefined"
     ? new URLSearchParams(window.location.search).get("tab")
     : null;
+  const allItems = SETTINGS_GROUPS.flatMap(g => g.items);
+  const initialKey = (tabFromUrl && allItems.find(i => i.key === tabFromUrl)?.key) || "clinic";
+  const [active, setActive] = useState<string>(initialKey);
+
   const { data: clinic } = useQuery({
     queryKey: ["clinic-name", clinicId],
     queryFn: async () => {
@@ -799,6 +873,9 @@ export default function SettingsPage() {
     );
   }
 
+  const activeItem = allItems.find(i => i.key === active) ?? allItems[0];
+  const clinicName = clinic?.name || "My Dental Clinic";
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
@@ -807,91 +884,52 @@ export default function SettingsPage() {
           <p className="text-muted-foreground">Manage your clinic, schedule, billing, team, and more</p>
         </div>
 
-        <Tabs defaultValue={tabFromUrl || "clinic"} className="space-y-6">
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="clinic">Clinic Info</TabsTrigger>
-             <TabsTrigger value="letterhead">Letterhead & PDF</TabsTrigger>
-             <TabsTrigger value="team">Team</TabsTrigger>
-             <TabsTrigger value="vendors">Vendors</TabsTrigger>
-             <TabsTrigger value="billing">Billing/GST</TabsTrigger>
-             <TabsTrigger value="coupons">Coupons</TabsTrigger>
-             <TabsTrigger value="subscription">Subscription</TabsTrigger>
-             <TabsTrigger value="branding">Branding</TabsTrigger>
-             <TabsTrigger value="integrations">Integrations</TabsTrigger>
-             <TabsTrigger value="automations">Automations</TabsTrigger>
-             <TabsTrigger value="import">Data Import</TabsTrigger>
-             <TabsTrigger value="emails">System Emails</TabsTrigger>
-             <TabsTrigger value="compliance">Compliance</TabsTrigger>
-             <TabsTrigger value="branches">Branches</TabsTrigger>
-             <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
-             <TabsTrigger value="tpa">TPAs</TabsTrigger>
-          </TabsList>
+        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+          <aside className="lg:sticky lg:top-4 lg:self-start">
+            <Card className="shadow-card border-0">
+              <CardContent className="p-2 space-y-3">
+                {SETTINGS_GROUPS.map(group => {
+                  const GIcon = group.icon;
+                  return (
+                    <div key={group.label}>
+                      <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <GIcon className="h-3.5 w-3.5" />
+                        {group.label}
+                      </div>
+                      <div className="space-y-0.5">
+                        {group.items.map(item => {
+                          const isActive = item.key === active;
+                          return (
+                            <button
+                              key={item.key}
+                              type="button"
+                              onClick={() => {
+                                setActive(item.key);
+                                const url = new URL(window.location.href);
+                                url.searchParams.set("tab", item.key);
+                                window.history.replaceState({}, "", url.toString());
+                              }}
+                              className={`w-full flex items-center justify-between gap-2 rounded-md pl-7 pr-2 py-1.5 text-sm transition-colors ${
+                                isActive
+                                  ? "bg-primary/10 text-primary font-medium"
+                                  : "text-foreground/80 hover:bg-muted/60"
+                              }`}
+                            >
+                              <span>{item.label}</span>
+                              {isActive && <ChevronRight className="h-3.5 w-3.5" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </aside>
 
-          <TabsContent value="clinic">
-            <div className="space-y-6">
-              <ClinicInfoTab clinicId={clinicId} />
-              <WorkingHoursPerDayTab clinicId={clinicId} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="letterhead">
-            <div className="space-y-6">
-              <PdfTemplateDefaultsTab clinicId={clinicId} />
-              <QRCodeTab clinicId={clinicId} clinicName={clinic?.name || "My Dental Clinic"} />
-              <RegistrationPageBuilderTab clinicId={clinicId} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="team">
-            <div className="space-y-6">
-              <TeamTab clinicId={clinicId} />
-              <InviteStaffTab clinicId={clinicId} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="vendors">
-            <VendorsTab clinicId={clinicId} />
-          </TabsContent>
-
-          <TabsContent value="billing">
-            <BillingTab clinicId={clinicId} />
-          </TabsContent>
-
-           <TabsContent value="coupons">
-             <DiscountCouponsTab clinicId={clinicId} />
-           </TabsContent>
-
-           <TabsContent value="subscription">
-             <SubscriptionPlanTab clinicId={clinicId} />
-           </TabsContent>
-
-           <TabsContent value="branding">
-             <ThemeBrandingTab clinicId={clinicId} />
-           </TabsContent>
-
-           <TabsContent value="integrations">
-             <IntegrationsTab clinicId={clinicId} />
-           </TabsContent>
-
-           <TabsContent value="automations">
-             <AutomationRulesTab clinicId={clinicId} />
-           </TabsContent>
-
-           <TabsContent value="import">
-             <DataImportTab clinicId={clinicId} />
-           </TabsContent>
-
-           <TabsContent value="emails">
-             <SystemEmailsTab />
-           </TabsContent>
-
-           <TabsContent value="compliance">
-             <CompliancePrivacyTab />
-           </TabsContent>
-           <TabsContent value="branches"><BranchesTab /></TabsContent>
-           <TabsContent value="suppliers"><SuppliersTab /></TabsContent>
-           <TabsContent value="tpa"><TpaProvidersTab /></TabsContent>
-        </Tabs>
+          <div className="min-w-0">{activeItem.render(clinicId, clinicName)}</div>
+        </div>
       </div>
     </DashboardLayout>
   );
