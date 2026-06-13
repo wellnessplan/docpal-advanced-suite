@@ -331,19 +331,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   </Link>
                 </>
               )}
-              <Link
-                to="/settings"
-                title={collapsed ? "Settings" : undefined}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors",
-                  pathname === "/settings"
-                    ? "bg-white text-primary"
-                    : "text-white/95 hover:bg-white/15"
-                )}
-              >
-                <Settings className="h-[18px] w-[18px] shrink-0" />
-                {!collapsed && <span>Settings</span>}
-              </Link>
               <button
                 onClick={() => setCollapsed(!collapsed)}
                 className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-white/95 hover:bg-white/15 transition-colors"
