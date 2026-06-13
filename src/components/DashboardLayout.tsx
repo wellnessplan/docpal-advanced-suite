@@ -1,4 +1,5 @@
 import { ReactNode, useState } from "react";
+
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -97,6 +98,14 @@ const navGroups: NavGroup[] = [
       { href: "/social-calendar", label: "Social Calendar", icon: CalendarDays },
       { href: "/leads", label: "Leads", icon: Target },
       { href: "/referrals", label: "Referrals", icon: Gift },
+    ],
+  },
+  {
+    label: "Settings",
+    groupIcon: Settings,
+    collapsible: true,
+    items: [
+      { href: "/settings", label: "Settings", icon: Settings },
     ],
   },
   {
@@ -322,19 +331,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   </Link>
                 </>
               )}
-              <Link
-                to="/settings"
-                title={collapsed ? "Settings" : undefined}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors",
-                  pathname === "/settings"
-                    ? "bg-white text-primary"
-                    : "text-white/95 hover:bg-white/15"
-                )}
-              >
-                <Settings className="h-[18px] w-[18px] shrink-0" />
-                {!collapsed && <span>Settings</span>}
-              </Link>
               <button
                 onClick={() => setCollapsed(!collapsed)}
                 className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-white/95 hover:bg-white/15 transition-colors"

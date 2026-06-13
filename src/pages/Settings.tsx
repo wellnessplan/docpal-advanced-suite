@@ -17,7 +17,8 @@ import { toast } from "sonner";
 import {
   Building2, Globe, MapPin, Phone, Mail, Link2, Facebook, Instagram, Twitter,
   Users, Plus, Trash2, Save, Package, Settings as SettingsIcon, QrCode, Plug,
-  Clock, Receipt, UserPlus, Download, Printer, Copy, ExternalLink, Truck
+  Clock, Receipt, UserPlus, Download, Printer, Copy, ExternalLink, Truck,
+  Crown
 } from "lucide-react";
 import GoogleIntegrationTab from "@/components/settings/GoogleIntegrationTab";
 import WhatsAppTemplatesTab from "@/components/settings/WhatsAppTemplatesTab";
@@ -783,6 +784,12 @@ type SettingsGroup = { label: string; icon: React.ComponentType<{ className?: st
 
 const SETTINGS_GROUPS: SettingsGroup[] = [
   {
+    label: "Subscription", icon: Crown,
+    items: [
+      { key: "subscription", label: "Subscription", render: (id) => <SubscriptionPlanTab clinicId={id} /> },
+    ],
+  },
+  {
     label: "Clinic Setup", icon: Hospital,
     items: [
       { key: "clinic", label: "Clinic Info", render: (id, name) => (
@@ -814,7 +821,6 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
     items: [
       { key: "billing", label: "Billing / GST", render: (id) => <BillingTab clinicId={id} /> },
       { key: "coupons", label: "Coupons", render: (id) => <DiscountCouponsTab clinicId={id} /> },
-      { key: "subscription", label: "Subscription", render: (id) => <SubscriptionPlanTab clinicId={id} /> },
     ],
   },
   {
