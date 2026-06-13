@@ -17,7 +17,8 @@ import { toast } from "sonner";
 import {
   Building2, Globe, MapPin, Phone, Mail, Link2, Facebook, Instagram, Twitter,
   Users, Plus, Trash2, Save, Package, Settings as SettingsIcon, QrCode, Plug,
-  Clock, Receipt, UserPlus, Download, Printer, Copy, ExternalLink, Truck
+  Clock, Receipt, UserPlus, Download, Printer, Copy, ExternalLink, Truck,
+  Crown
 } from "lucide-react";
 import GoogleIntegrationTab from "@/components/settings/GoogleIntegrationTab";
 import WhatsAppTemplatesTab from "@/components/settings/WhatsAppTemplatesTab";
