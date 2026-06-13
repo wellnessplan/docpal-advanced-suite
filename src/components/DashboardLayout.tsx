@@ -122,7 +122,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const [moreOpen, setMoreOpen] = useState(false);
   const isMobile = useIsMobile();
   useKeyboardShortcuts();
   useThemeLoader();
@@ -132,8 +131,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const role = profile?.role as string | undefined;
 
-  // Role-filtered groups for the "More" section
-  const visibleGroups = moreGroups
+  const visibleGroups = navGroups
     .map(g => ({ ...g, items: filterByRole(g.items, role) }))
     .filter(g => g.items.length > 0);
 
@@ -142,13 +140,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const href = i.href.split("?")[0];
     return pathname === href || pathname.startsWith(href + "/");
   })?.label ?? "DoctorsBuddy";
-
-  // Auto-open "More" if current route is in a More group
-  const currentInMore = visibleGroups.some(g => g.items.some(i => {
-    const href = i.href.split("?")[0];
-    return pathname === href || pathname.startsWith(href + "/");
-  }));
-  const moreEffective = moreOpen || currentInMore || collapsed;
 
   const toggleGroup = (label: string) => {
     setExpandedGroups(prev => {
