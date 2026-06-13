@@ -38,79 +38,76 @@ interface NavGroup {
   items: NavItem[];
 }
 
-// Role visibility:
-//  - Front-desk essentials are pinned at top: Calendar, Patients, Billing, WhatsApp.
-//  - Everything else lives under role-filtered groups, hidden by default behind "More".
-//  - Assistants/receptionists do NOT see Revenue/Finance/Reports.
+// Desktop sidebar groups in the order requested by clients
 const FRONT_DESK_ESSENTIALS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/patients", label: "Patients", icon: Users },
-  { href: "/billing", label: "Billing", icon: Receipt },
-  { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
 ];
 
-const moreGroups: NavGroup[] = [
+const navGroups: NavGroup[] = [
   {
-    label: "PATIENTS",
+    label: "Patient Care",
     groupIcon: Users,
     collapsible: true,
     items: [
+      { href: "/patients", label: "Patients", icon: Users },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
       { href: "/queue", label: "Queue", icon: ListOrdered },
-      { href: "/today-schedule", label: "Calendar", icon: CalendarDays },
-    ],
-  },
-  {
-    label: "DOCTOR",
-    groupIcon: Stethoscope,
-    collapsible: true,
-    items: [
-      { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope, roles: ["owner", "dentist"] },
+      { href: "/today-schedule", label: "Calendar", icon: CalendarClock },
       { href: "/tasks", label: "Follow-Ups", icon: ClipboardList },
       { href: "/treatment-plans", label: "Treatment Plans", icon: ClipboardCheck },
-      { href: "/treatment-costing", label: "Procedure List", icon: ListChecks, roles: ["owner", "dentist"] },
-      { href: "/ortho", label: "Orthodontics", icon: FlaskConical, roles: ["owner", "dentist"] },
       { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
     ],
   },
   {
-    label: "BILLING",
-    groupIcon: Receipt,
+    label: "Revenue",
+    groupIcon: IndianRupee,
     collapsible: true,
     items: [
+      { href: "/billing", label: "Billing", icon: Receipt },
       { href: "/payments", label: "Payments", icon: Wallet },
       { href: "/insurance", label: "Insurance", icon: ShieldCheck },
-      { href: "/finance", label: "Expenses", icon: TrendingUp, roles: ["owner", "admin"] },
+      { href: "/memberships", label: "Memberships", icon: Crown },
+    ],
+  },
+  {
+    label: "Inventory",
+    groupIcon: Package,
+    collapsible: true,
+    items: [
       { href: "/inventory", label: "Inventory", icon: Package },
     ],
   },
   {
-    label: "GROWTH",
+    label: "Communication",
+    groupIcon: MessageCircle,
+    collapsible: true,
+    items: [
+      { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+      { href: "/patient-education", label: "Patient Education", icon: Library },
+      { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
+      { href: "/reviews", label: "Feedback", icon: Star },
+    ],
+  },
+  {
+    label: "Growth",
     groupIcon: TrendingUp,
     collapsible: true,
     items: [
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
       { href: "/social-calendar", label: "Social Calendar", icon: CalendarDays },
-      { href: "/patient-education", label: "Patient Education", icon: Library },
-      { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
       { href: "/leads", label: "Leads", icon: Target },
-      { href: "/reviews", label: "Feedback", icon: Star },
       { href: "/referrals", label: "Referrals", icon: Gift },
-      { href: "/memberships", label: "Membership", icon: Crown },
     ],
   },
   {
-    label: "MANAGEMENT",
-    groupIcon: Settings,
+    label: "Administration",
+    groupIcon: UserCog,
     collapsible: true,
     items: [
-      { href: "/reports", label: "Reports", icon: BarChart3, roles: ["owner", "admin", "dentist"] },
-      { href: "/revenue", label: "Revenue", icon: IndianRupee, roles: ["owner", "admin"] },
-      { href: "/performance", label: "Performance", icon: Activity, roles: ["owner", "admin"] },
-      { href: "/settings?tab=vendors", label: "Vendors", icon: Truck, roles: ["owner", "admin"] },
-      { href: "/staff", label: "Staff", icon: UserCog, roles: ["owner", "admin"] },
-      { href: "/audit-log", label: "Audit Log", icon: ScrollText, roles: ["owner", "admin"] },
-      { href: "/settings", label: "Settings", icon: Settings, roles: ["owner", "admin"] },
+      { href: "/settings?tab=team", label: "Team", icon: UserCog, roles: ["owner", "admin"] },
+      { href: "/settings?tab=branches", label: "Branches", icon: Building2, roles: ["owner", "admin"] },
+      { href: "/settings?tab=vendors", label: "Vendors & Suppliers", icon: Truck, roles: ["owner", "admin"] },
+      { href: "/settings?tab=tpa", label: "TPAs", icon: ShieldCheck, roles: ["owner", "admin"] },
     ],
   },
 ];
