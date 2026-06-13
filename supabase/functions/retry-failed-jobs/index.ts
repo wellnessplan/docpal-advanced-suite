@@ -10,6 +10,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { nextBackoffMs } from "../_shared/dlq.ts";
+import { requireCron } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,6 +22,9 @@ const BATCH = 25;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const cronError = requireCron(req, corsHeaders);
+  if (cronError) return cronError;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -45,8 +49,10 @@ Deno.serve(async (req) => {
 
   for (const job of jobs ?? []) {
     try {
+      const cronSecret = Deno.env.get("CRON_SECRET");
       const { error: invokeErr } = await supabase.functions.invoke(job.function_name, {
         body: job.payload ?? {},
+        headers: cronSecret ? { Authorization: `Bearer ${cronSecret}` } : undefined,
       });
       if (invokeErr) throw invokeErr;
       await supabase.from("edge_function_failures")

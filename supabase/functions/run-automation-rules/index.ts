@@ -2,6 +2,7 @@
 // Triggered daily by pg_cron AND on-demand from app (event="post_treatment_instant").
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { recordFailure } from "../_shared/dlq.ts";
+import { canAccessClinic, getAuthenticatedContext, isCronAuthorized, jsonResponse, requireCron } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -285,9 +286,17 @@ Deno.serve(async (req) => {
     const event = body.event as string | undefined; // optional
     const treatmentId = body.treatment_id as string | undefined;
     const clinicIdParam = body.clinic_id as string | undefined;
+    const cronAuthorized = isCronAuthorized(req);
 
     // Single-event invocation (instant after treatment)
     if (event === "post_treatment_instant" && treatmentId && clinicIdParam) {
+      if (!cronAuthorized) {
+        const { context, errorResponse } = await getAuthenticatedContext(req, supabase, corsHeaders);
+        if (errorResponse) return errorResponse;
+        if (!context || !(await canAccessClinic(context, clinicIdParam, supabase))) {
+          return jsonResponse({ error: "Forbidden" }, 403, corsHeaders);
+        }
+      }
       const waba = await getClinicWABA(clinicIdParam);
       const clinicName = await getClinicName(clinicIdParam);
       const sent = await processInstantPostTreatment(clinicIdParam, treatmentId, waba, clinicName);
@@ -297,6 +306,9 @@ Deno.serve(async (req) => {
     }
 
     // Daily batch run for all clinics
+    const cronError = requireCron(req, corsHeaders);
+    if (cronError) return cronError;
+
     const { data: clinics } = await supabase.from("clinics").select("id");
     const results: any[] = [];
     for (const c of clinics ?? []) {

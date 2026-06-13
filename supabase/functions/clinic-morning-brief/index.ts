@@ -1,11 +1,12 @@
 // Generates an AI morning brief for a clinic using today's data.
 // POST { clinic_id, doctor_name? } -> { brief: string, highlights: string[] }
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { canAccessClinic, getAuthenticatedContext, jsonResponse } from "../_shared/auth.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -21,6 +22,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    const { context, errorResponse } = await getAuthenticatedContext(req, supabase, corsHeaders);
+    if (errorResponse) return errorResponse;
+    if (!context || !(await canAccessClinic(context, clinic_id, supabase))) {
+      return jsonResponse({ error: "Forbidden" }, 403, corsHeaders);
+    }
+
     const today = new Date().toISOString().slice(0, 10);
 
     const [{ data: appts }, { data: invoices }, { data: pendingInv }] = await Promise.all([

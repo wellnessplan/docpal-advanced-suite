@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { canAccessClinic, getAuthenticatedContext, jsonResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,6 +23,9 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    const { context, errorResponse } = await getAuthenticatedContext(req, supabase, corsHeaders);
+    if (errorResponse) return errorResponse;
+
     const { data: post, error: postErr } = await supabase
       .from("social_posts")
       .select("*")
@@ -33,6 +37,10 @@ Deno.serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (!context || !(await canAccessClinic(context, post.clinic_id, supabase))) {
+      return jsonResponse({ error: "Forbidden" }, 403, corsHeaders);
     }
 
     // Block if not approved
