@@ -165,7 +165,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       return pathname === href || pathname.startsWith(href + "/");
     });
 
-  const initials = (profile?.full_name || "U").charAt(0).toUpperCase();
+  
 
   const renderNavItem = (item: NavItem) => {
     const hrefBase = item.href.split("?")[0];
