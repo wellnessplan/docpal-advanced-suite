@@ -16,6 +16,8 @@ import GlobalSearchDialog from "./GlobalSearchDialog";
 import UserMenuDropdown from "./UserMenuDropdown";
 import BranchSwitcher from "./BranchSwitcher";
 import { prefetchRoute } from "@/lib/route-prefetch";
+import { useSubscription } from "@/hooks/useSubscription";
+import logoAsset from "@/assets/doctorsbuddy-logo.png.asset.json";
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
   Settings, LogOut, ChevronLeft, ChevronRight,
