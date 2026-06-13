@@ -25,7 +25,8 @@ import {
   ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
   Target, Star, Gift, Crown, UserCog, ScrollText, CalendarClock, Shield,
-  Truck, ListChecks, Focus, MessageCircle, MoreHorizontal, Library, Tv
+  Truck, ListChecks, Focus, MessageCircle, Library, Tv,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -37,79 +38,76 @@ interface NavGroup {
   items: NavItem[];
 }
 
-// Role visibility:
-//  - Front-desk essentials are pinned at top: Calendar, Patients, Billing, WhatsApp.
-//  - Everything else lives under role-filtered groups, hidden by default behind "More".
-//  - Assistants/receptionists do NOT see Revenue/Finance/Reports.
+// Desktop sidebar groups in the order requested by clients
 const FRONT_DESK_ESSENTIALS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/patients", label: "Patients", icon: Users },
-  { href: "/billing", label: "Billing", icon: Receipt },
-  { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
 ];
 
-const moreGroups: NavGroup[] = [
+const navGroups: NavGroup[] = [
   {
-    label: "PATIENTS",
+    label: "Patient Care",
     groupIcon: Users,
     collapsible: true,
     items: [
+      { href: "/patients", label: "Patients", icon: Users },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
       { href: "/queue", label: "Queue", icon: ListOrdered },
-      { href: "/today-schedule", label: "Calendar", icon: CalendarDays },
-    ],
-  },
-  {
-    label: "DOCTOR",
-    groupIcon: Stethoscope,
-    collapsible: true,
-    items: [
-      { href: "/dr-dashboard", label: "Dr Dashboard", icon: Stethoscope, roles: ["owner", "dentist"] },
+      { href: "/today-schedule", label: "Calendar", icon: CalendarClock },
       { href: "/tasks", label: "Follow-Ups", icon: ClipboardList },
       { href: "/treatment-plans", label: "Treatment Plans", icon: ClipboardCheck },
-      { href: "/treatment-costing", label: "Procedure List", icon: ListChecks, roles: ["owner", "dentist"] },
-      { href: "/ortho", label: "Orthodontics", icon: FlaskConical, roles: ["owner", "dentist"] },
       { href: "/lab-orders", label: "Lab Orders", icon: TestTubes },
     ],
   },
   {
-    label: "BILLING",
-    groupIcon: Receipt,
+    label: "Revenue",
+    groupIcon: IndianRupee,
     collapsible: true,
     items: [
+      { href: "/billing", label: "Billing", icon: Receipt },
       { href: "/payments", label: "Payments", icon: Wallet },
       { href: "/insurance", label: "Insurance", icon: ShieldCheck },
-      { href: "/finance", label: "Expenses", icon: TrendingUp, roles: ["owner", "admin"] },
+      { href: "/memberships", label: "Memberships", icon: Crown },
+    ],
+  },
+  {
+    label: "Inventory",
+    groupIcon: Package,
+    collapsible: true,
+    items: [
       { href: "/inventory", label: "Inventory", icon: Package },
     ],
   },
   {
-    label: "GROWTH",
+    label: "Communication",
+    groupIcon: MessageCircle,
+    collapsible: true,
+    items: [
+      { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+      { href: "/patient-education", label: "Patient Education", icon: Library },
+      { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
+      { href: "/reviews", label: "Feedback", icon: Star },
+    ],
+  },
+  {
+    label: "Growth",
     groupIcon: TrendingUp,
     collapsible: true,
     items: [
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
       { href: "/social-calendar", label: "Social Calendar", icon: CalendarDays },
-      { href: "/patient-education", label: "Patient Education", icon: Library },
-      { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
       { href: "/leads", label: "Leads", icon: Target },
-      { href: "/reviews", label: "Feedback", icon: Star },
       { href: "/referrals", label: "Referrals", icon: Gift },
-      { href: "/memberships", label: "Membership", icon: Crown },
     ],
   },
   {
-    label: "MANAGEMENT",
-    groupIcon: Settings,
+    label: "Administration",
+    groupIcon: UserCog,
     collapsible: true,
     items: [
-      { href: "/reports", label: "Reports", icon: BarChart3, roles: ["owner", "admin", "dentist"] },
-      { href: "/revenue", label: "Revenue", icon: IndianRupee, roles: ["owner", "admin"] },
-      { href: "/performance", label: "Performance", icon: Activity, roles: ["owner", "admin"] },
-      { href: "/settings?tab=vendors", label: "Vendors", icon: Truck, roles: ["owner", "admin"] },
-      { href: "/staff", label: "Staff", icon: UserCog, roles: ["owner", "admin"] },
-      { href: "/audit-log", label: "Audit Log", icon: ScrollText, roles: ["owner", "admin"] },
-      { href: "/settings", label: "Settings", icon: Settings, roles: ["owner", "admin"] },
+      { href: "/settings?tab=team", label: "Team", icon: UserCog, roles: ["owner", "admin"] },
+      { href: "/settings?tab=branches", label: "Branches", icon: Building2, roles: ["owner", "admin"] },
+      { href: "/settings?tab=vendors", label: "Vendors & Suppliers", icon: Truck, roles: ["owner", "admin"] },
+      { href: "/settings?tab=tpa", label: "TPAs", icon: ShieldCheck, roles: ["owner", "admin"] },
     ],
   },
 ];
@@ -124,7 +122,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const [moreOpen, setMoreOpen] = useState(false);
   const isMobile = useIsMobile();
   useKeyboardShortcuts();
   useThemeLoader();
@@ -134,8 +131,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const role = profile?.role as string | undefined;
 
-  // Role-filtered groups for the "More" section
-  const visibleGroups = moreGroups
+  const visibleGroups = navGroups
     .map(g => ({ ...g, items: filterByRole(g.items, role) }))
     .filter(g => g.items.length > 0);
 
@@ -144,13 +140,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const href = i.href.split("?")[0];
     return pathname === href || pathname.startsWith(href + "/");
   })?.label ?? "DoctorsBuddy";
-
-  // Auto-open "More" if current route is in a More group
-  const currentInMore = visibleGroups.some(g => g.items.some(i => {
-    const href = i.href.split("?")[0];
-    return pathname === href || pathname.startsWith(href + "/");
-  }));
-  const moreEffective = moreOpen || currentInMore || collapsed;
 
   const toggleGroup = (label: string) => {
     setExpandedGroups(prev => {
@@ -246,34 +235,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 {FRONT_DESK_ESSENTIALS.map(renderNavItem)}
               </div>
 
-              {/* More toggle */}
-              <div className="pt-2">
-                {!collapsed && <div className="h-px bg-white/[0.15] mx-2 mb-2" />}
-                {!collapsed ? (
-                  <button
-                    onClick={() => setMoreOpen(o => !o)}
-                    className="flex w-full items-center justify-between px-2.5 py-1.5 mb-1 rounded-lg hover:bg-white/[0.08] transition-colors"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <MoreHorizontal className="h-3.5 w-3.5 text-white/80" />
-                      <span className="font-bold tracking-[0.08em] text-white/85 uppercase font-sans text-xs">More</span>
-                    </div>
-                    {moreEffective ? <ChevronUp className="h-3 w-3 text-white/70" /> : <ChevronDown className="h-3 w-3 text-white/70" />}
-                  </button>
-                ) : (
-                  <div className="flex justify-center py-1">
-                    <MoreHorizontal className="h-4 w-4 text-white/70" />
-                  </div>
-                )}
-              </div>
-
-              {/* More groups (role-filtered) */}
-              {moreEffective && visibleGroups.map((group, gi) => {
+              {/* Sidebar groups */}
+              {visibleGroups.map((group, gi) => {
                 const groupActive = isGroupActive(group);
                 const isExpanded = group.collapsible ? (expandedGroups[group.label] ?? groupActive) : true;
 
                 return (
-                  <div key={group.label} className={gi > 0 ? "pt-2" : ""}>
+                  <div key={group.label} className={gi > 0 ? "pt-2" : "pt-2"}>
                     {gi > 0 && !collapsed && (
                       <div className="h-px bg-white/[0.10] mx-2 mb-2" />
                     )}
@@ -354,6 +322,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   </Link>
                 </>
               )}
+              <Link
+                to="/settings"
+                title={collapsed ? "Settings" : undefined}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold transition-colors",
+                  pathname === "/settings"
+                    ? "bg-white text-primary"
+                    : "text-white/95 hover:bg-white/15"
+                )}
+              >
+                <Settings className="h-[18px] w-[18px] shrink-0" />
+                {!collapsed && <span>Settings</span>}
+              </Link>
               <button
                 onClick={() => setCollapsed(!collapsed)}
                 className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] text-white/95 hover:bg-white/15 transition-colors"
