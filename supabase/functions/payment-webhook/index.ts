@@ -21,6 +21,27 @@ function verifyRazorpay(body: string, sig: string | null) {
   return expected === sig;
 }
 
+function verifyStripeWebhook(body: string, sigHeader: string | null) {
+  const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+  if (!secret || !sigHeader) return false;
+
+  const parts = Object.fromEntries(
+    sigHeader.split(",").map((part) => {
+      const [key, value] = part.split("=", 2);
+      return [key, value];
+    }),
+  );
+  const timestamp = parts.t;
+  const signature = parts.v1;
+  if (!timestamp || !signature) return false;
+
+  const ageSeconds = Math.abs(Date.now() / 1000 - Number(timestamp));
+  if (!Number.isFinite(ageSeconds) || ageSeconds > 300) return false;
+
+  const expected = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
+  return expected === signature;
+}
+
 async function extendSubscription(clinicId: string, cycle: "monthly" | "yearly") {
   const next = new Date();
   next.setMonth(next.getMonth() + (cycle === "yearly" ? 12 : 1));
@@ -83,7 +104,10 @@ Deno.serve(async (req) => {
     }
 
     if (provider === "stripe") {
-      // Lightweight Stripe handler. For strict signature verification, use stripe-node in Deno.
+      const sig = req.headers.get("stripe-signature");
+      if (!verifyStripeWebhook(body, sig)) {
+        return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401, headers: corsHeaders });
+      }
       const evt = JSON.parse(body);
       if (evt.type === "checkout.session.completed" || evt.type === "invoice.payment_succeeded") {
         const obj = evt.data?.object;
