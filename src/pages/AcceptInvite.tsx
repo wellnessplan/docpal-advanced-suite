@@ -36,19 +36,11 @@ export default function AcceptInvite() {
     (async () => {
       if (!token) { setError("Missing invite token."); setLoading(false); return; }
       const { data, error } = await (supabase as any)
-        .from("staff_invitations")
-        .select("id, clinic_id, email, full_name, role, status, expires_at")
-        .eq("invite_token", token)
-        .maybeSingle();
-
-      if (error || !data) { setError("Invitation not found or invalid."); setLoading(false); return; }
-      if (data.status !== "pending") { setError("This invitation has already been used."); setLoading(false); return; }
-      if (data.expires_at && new Date(data.expires_at) < new Date()) { setError("This invitation has expired."); setLoading(false); return; }
-
-      // Fetch clinic name
-      const { data: clinic } = await supabase.from("clinics").select("name").eq("id", data.clinic_id).maybeSingle();
-      setInvite({ ...data, clinic_name: clinic?.name });
-      setFullName(data.full_name || "");
+        .rpc("get_invitation_by_token", { p_token: token });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (error || !row) { setError("Invitation not found, expired, or already used."); setLoading(false); return; }
+      setInvite({ ...row, clinic_name: row.clinic_name });
+      setFullName(row.full_name || "");
       setLoading(false);
     })();
   }, [token]);
