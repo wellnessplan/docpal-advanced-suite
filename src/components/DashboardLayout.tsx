@@ -105,7 +105,7 @@ const navGroups: NavGroup[] = [
     groupIcon: Settings,
     collapsible: true,
     items: [
-      { href: "/settings", label: "Settings", icon: SettingsIcon },
+      { href: "/settings", label: "Settings", icon: Settings },
     ],
   },
   {
