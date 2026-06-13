@@ -784,6 +784,12 @@ type SettingsGroup = { label: string; icon: React.ComponentType<{ className?: st
 
 const SETTINGS_GROUPS: SettingsGroup[] = [
   {
+    label: "Subscription", icon: Crown,
+    items: [
+      { key: "subscription", label: "Subscription", render: (id) => <SubscriptionPlanTab clinicId={id} /> },
+    ],
+  },
+  {
     label: "Clinic Setup", icon: Hospital,
     items: [
       { key: "clinic", label: "Clinic Info", render: (id, name) => (
@@ -815,7 +821,6 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
     items: [
       { key: "billing", label: "Billing / GST", render: (id) => <BillingTab clinicId={id} /> },
       { key: "coupons", label: "Coupons", render: (id) => <DiscountCouponsTab clinicId={id} /> },
-      { key: "subscription", label: "Subscription", render: (id) => <SubscriptionPlanTab clinicId={id} /> },
     ],
   },
   {
