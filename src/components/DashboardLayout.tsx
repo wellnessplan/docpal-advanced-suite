@@ -130,6 +130,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   useThemeLoader();
   useClinicPdfDefaults(profile?.clinic_id);
   const { data: isSuperAdmin } = useSuperAdmin();
+  const { data: subscription } = useSubscription();
 
   const role = profile?.role as string | undefined;
 
