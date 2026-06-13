@@ -56,14 +56,33 @@ export function FormFieldShell({
   children,
 }: FormFieldShellProps) {
   const state = getState({ error, touched, dirty });
+  const autoId = React.useId();
+  const fieldId = htmlFor ?? autoId;
+  const errorId = `${fieldId}-error`;
+  const helperId = `${fieldId}-helper`;
+  const hasError = state === "error";
+  const hasHelper = !hasError && !!helper;
+  const describedBy = [hasError ? errorId : null, hasHelper ? helperId : null].filter(Boolean).join(" ") || undefined;
+
+  // Clone the first child input/select/textarea to inject id + aria-* automatically.
+  const enhancedChildren = React.Children.map(children, (child) => {
+    if (!React.isValidElement(child)) return child;
+    const existing = (child.props as any) || {};
+    return React.cloneElement(child as React.ReactElement<any>, {
+      id: existing.id ?? fieldId,
+      "aria-invalid": hasError || existing["aria-invalid"] || undefined,
+      "aria-required": required || existing["aria-required"] || undefined,
+      "aria-describedby": [existing["aria-describedby"], describedBy].filter(Boolean).join(" ") || undefined,
+    });
+  });
 
   return (
     <div className={cn("space-y-1.5", className)}>
       {label && (
         <div className="flex items-center justify-between gap-2">
-          <Label htmlFor={htmlFor} className={cn(state === "error" && "text-destructive")}>
+          <Label htmlFor={fieldId} className={cn(hasError && "text-destructive")}>
             {label}
-            {required && <span className="ml-0.5 text-destructive">*</span>}
+            {required && <span className="ml-0.5 text-destructive" aria-hidden="true">*</span>}
           </Label>
           {optional && <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Optional</span>}
         </div>
@@ -72,31 +91,32 @@ export function FormFieldShell({
       <div
         className={cn(
           "group/fld",
-          // ring helpers (Input already styles its own border, but this lets non-Input controls inherit state)
-          state === "error" && "[&_input]:border-destructive [&_textarea]:border-destructive [&_[data-state]]:border-destructive",
+          hasError && "[&_input]:border-destructive [&_textarea]:border-destructive [&_[data-state]]:border-destructive",
           state === "success" &&
             showSuccess &&
             "[&_input]:border-emerald-500/60 [&_textarea]:border-emerald-500/60",
         )}
       >
-        {children}
+        {enhancedChildren}
       </div>
 
-      {state === "error" ? (
+      {hasError ? (
         <p
+          id={errorId}
           role="alert"
+          aria-live="polite"
           className="flex items-start gap-1.5 text-xs font-medium text-destructive"
         >
-          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </p>
       ) : state === "success" && showSuccess ? (
         <p className="flex items-start gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-          <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden="true" />
           <span>Looks good</span>
         </p>
-      ) : helper ? (
-        <p className="text-xs text-muted-foreground">{helper}</p>
+      ) : hasHelper ? (
+        <p id={helperId} className="text-xs text-muted-foreground">{helper}</p>
       ) : null}
     </div>
   );
