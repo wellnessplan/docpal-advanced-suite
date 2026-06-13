@@ -603,9 +603,10 @@ export default function BillingPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="p-0"><TableSkeleton rows={6} cols={7} className="border-0 rounded-none" /></TableCell></TableRow>
                 ) : !invoices?.length ? (
                   <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No invoices yet</TableCell></TableRow>
+
                 ) : invoices.map((inv: any) => {
                   const total = Number(inv.amount || 0);
                   const paid = Number(inv.paid_amount || 0);
