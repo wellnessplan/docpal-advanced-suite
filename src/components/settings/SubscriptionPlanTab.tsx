@@ -28,8 +28,15 @@ const PLANS = [
   {
     id: "enterprise",
     name: "Enterprise",
-    price: 4999,
+    price: 5999,
     features: ["Everything in Pro", "Unlimited doctors", "Multi-clinic support", "API access", "Dedicated manager", "Custom integrations"],
+  },
+  {
+    id: "lifetime",
+    name: "Lifetime",
+    price: 50000,
+    lifetime: true,
+    features: ["One-time payment, never pay again", "Unlimited patients & doctors", "Multi-branch support", "All Pro & Enterprise features", "Priority support for life", "Free future updates"],
   },
 ];
 
