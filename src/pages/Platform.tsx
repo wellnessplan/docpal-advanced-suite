@@ -244,20 +244,20 @@ export default function PlatformConsole() {
 
   const createClinic = useMutation({
     mutationFn: async (input: { name: string; email: string; phone: string }) => {
-      const { data: clinic, error } = await supabase.from("clinics").insert({
-        name: input.name, email: input.email || null, phone: input.phone || null,
-      }).select().single();
-      if (error) throw error;
-      const trialEnd = new Date(); trialEnd.setDate(trialEnd.getDate() + 14);
-      await supabase.from("clinic_subscriptions" as any).insert({
-        clinic_id: clinic.id, status: "trial", trial_ends_at: trialEnd.toISOString(), plan_name: "basic",
+      const { data, error } = await (supabase as any).rpc("admin_create_clinic", {
+        p_name: input.name,
+        p_email: input.email || null,
+        p_phone: input.phone || null,
+        p_trial_days: 14,
       });
+      if (error) throw error;
+      const clinic = data as { id: string; name: string; trial_ends_at: string };
       await logAudit({
         action: "clinic_create",
         target_type: "clinic",
         target_id: clinic.id,
         target_label: clinic.name,
-        details: { email: input.email, phone: input.phone, trial_ends_at: trialEnd.toISOString() },
+        details: { email: input.email, phone: input.phone, trial_ends_at: clinic.trial_ends_at },
       });
       return clinic;
     },
