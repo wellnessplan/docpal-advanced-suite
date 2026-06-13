@@ -232,33 +232,88 @@ export default function PlansTab() {
 
       {/* Active subscriptions */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <IndianRupee className="h-4 w-4" /> Clinic subscriptions ({subs.length})
-          </CardTitle>
+        <CardHeader className="space-y-3">
+          <div className="flex flex-row items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-base flex items-center gap-2">
+              <IndianRupee className="h-4 w-4" /> Clinic subscriptions ({filteredSubs.length}/{subs.length})
+            </CardTitle>
+            {selected.size > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground">{selected.size} selected</span>
+                <Select value={bulkPlanId} onValueChange={setBulkPlanId}>
+                  <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue placeholder="Bulk: change plan…" /></SelectTrigger>
+                  <SelectContent>
+                    {plans.filter((p) => p.is_active).map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name} · ₹{p.price_inr}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm" className="h-8 text-xs"
+                  disabled={!bulkPlanId || changeClinicPlan.isPending}
+                  onClick={() => {
+                    const clinic_ids = selectedSubs.map((s) => s.clinic_id);
+                    changeClinicPlan.mutate({ clinic_ids, plan_id: bulkPlanId });
+                  }}
+                >Apply</Button>
+                <Button
+                  size="sm" variant="destructive" className="h-8 text-xs"
+                  onClick={() => setConfirmDelete({ ids: selectedSubs.map((s) => s.id), label: `${selected.size} subscription${selected.size > 1 ? "s" : ""}` })}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setSelected(new Set())}>Clear</Button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search clinic, plan, status…" className="pl-9 h-9"
+                value={subSearch} onChange={(e) => setSubSearch(e.target.value)} />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="trial">Trial</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+                <SelectItem value="pending_approval">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox checked={allVisibleSelected} onCheckedChange={toggleAll} aria-label="Select all" />
+                </TableHead>
                 <TableHead>Clinic</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Change plan</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {subs.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No subscriptions yet</TableCell></TableRow>
-              ) : subs.map((s: any) => (
-                <TableRow key={s.id}>
+              {filteredSubs.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No subscriptions match</TableCell></TableRow>
+              ) : filteredSubs.map((s: any) => (
+                <TableRow key={s.id} data-state={selected.has(s.id) ? "selected" : undefined}>
+                  <TableCell>
+                    <Checkbox checked={selected.has(s.id)} onCheckedChange={() => toggleOne(s.id)} aria-label={`Select ${s.clinic_name}`} />
+                  </TableCell>
                   <TableCell className="font-medium">{s.clinic_name}</TableCell>
                   <TableCell><Badge variant="outline">{s.plan_name || "—"}</Badge></TableCell>
                   <TableCell><Badge variant="outline" className="capitalize">{s.status}</Badge></TableCell>
                   <TableCell>₹{Number(s.amount || 0).toLocaleString()}</TableCell>
                   <TableCell>
-                    <Select value={s.plan_id || ""} onValueChange={(plan_id) => changeClinicPlan.mutate({ clinic_id: s.clinic_id, plan_id })}>
+                    <Select value={s.plan_id || ""} onValueChange={(plan_id) => changeClinicPlan.mutate({ clinic_ids: [s.clinic_id], plan_id })}>
                       <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue placeholder="Select plan…" /></SelectTrigger>
                       <SelectContent>
                         {plans.filter((p) => p.is_active).map((p) => (
@@ -267,12 +322,38 @@ export default function PlansTab() {
                       </SelectContent>
                     </Select>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="ghost" className="h-8 text-destructive"
+                      onClick={() => setConfirmDelete({ ids: [s.id], label: s.clinic_name })}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Delete confirm */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete subscription{confirmDelete && confirmDelete.ids.length > 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the subscription record for <strong>{confirmDelete?.label}</strong>. The clinic will lose its plan assignment. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confirmDelete && deleteSubs.mutate(confirmDelete.ids)}
+            >Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
