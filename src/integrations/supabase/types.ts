@@ -5829,6 +5829,15 @@ export type Database = {
     }
     Functions: {
       accept_staff_invitation: { Args: { p_token: string }; Returns: Json }
+      admin_create_clinic: {
+        Args: {
+          p_email?: string
+          p_name: string
+          p_phone?: string
+          p_trial_days?: number
+        }
+        Returns: Json
+      }
       clear_demo_data: { Args: never; Returns: Json }
       clinic_ai_spend_this_month: {
         Args: { p_clinic_id: string }
