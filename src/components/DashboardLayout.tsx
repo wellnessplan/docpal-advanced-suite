@@ -21,7 +21,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import logoAsset from "@/assets/doctorsbuddy-logo.png.asset.json";
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
-  Settings, LogOut, ChevronLeft, ChevronRight,
+  Settings, LogOut, Menu,
   ListOrdered, Package, TrendingUp, BarChart3, Stethoscope,
   ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
   ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
