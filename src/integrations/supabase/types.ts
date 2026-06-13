@@ -5867,6 +5867,19 @@ export type Database = {
         Args: { p_clinic_id: string }
         Returns: string
       }
+      get_invitation_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          clinic_id: string
+          clinic_name: string
+          email: string
+          expires_at: string
+          full_name: string
+          id: string
+          role: string
+          status: string
+        }[]
+      }
       get_next_token_number: {
         Args: { p_clinic_id: string; p_date: string }
         Returns: number
