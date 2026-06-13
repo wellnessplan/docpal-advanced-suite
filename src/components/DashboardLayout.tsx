@@ -223,20 +223,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               )}
             </div>
 
-            {/* User mini-profile */}
-            {!collapsed && (
-              <div className="px-3 py-3">
-                <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.15] p-2.5 ring-1 ring-white/15">
-                  <div className="h-8 w-8 rounded-xl bg-white text-primary flex items-center justify-center text-xs font-bold ring-2 ring-white/40">
-                    {initials}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{profile?.full_name || "Doctor"}</p>
-                    <p className="text-xs text-white/80 truncate capitalize">{profile?.role || "Admin"}</p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-1">
               {/* Pinned essentials */}
