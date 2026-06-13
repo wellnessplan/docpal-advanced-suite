@@ -38,6 +38,12 @@ import { format, subDays, differenceInDays, startOfDay, endOfDay } from "date-fn
 import PlansTab from "./platform/PlansTab";
 import AiApiTab from "./platform/AiApiTab";
 import ClinicAiReportTab from "./platform/ClinicAiReportTab";
+import RevenueTab from "./platform/RevenueTab";
+import InvoicesTab from "./platform/InvoicesTab";
+import GlobalSettingsTab from "./platform/GlobalSettingsTab";
+import SupportInboxTab from "./platform/SupportInboxTab";
+import AnnouncementsTab from "./platform/AnnouncementsTab";
+import TenantHealthTab from "./platform/TenantHealthTab";
 
 const STATUS_COLORS: Record<string, string> = {
   trial: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
@@ -409,13 +415,27 @@ export default function PlatformConsole() {
         <Tabs defaultValue="usage" className="space-y-4">
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="usage">Usage</TabsTrigger>
+            <TabsTrigger value="revenue"><LineChart className="h-3.5 w-3.5 mr-1" />Revenue</TabsTrigger>
             <TabsTrigger value="clinics"><Building2 className="h-3.5 w-3.5 mr-1" />Centers</TabsTrigger>
+            <TabsTrigger value="health">Tenant Health</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="plans"><Package className="h-3.5 w-3.5 mr-1" />Plans</TabsTrigger>
             <TabsTrigger value="ai"><Sparkles className="h-3.5 w-3.5 mr-1" />AI & API</TabsTrigger>
-            <TabsTrigger value="ai-report"><LineChart className="h-3.5 w-3.5 mr-1" />AI Report</TabsTrigger>
+            <TabsTrigger value="ai-report">AI Report</TabsTrigger>
+            <TabsTrigger value="announcements">Announcements</TabsTrigger>
+            <TabsTrigger value="support">Support</TabsTrigger>
+            <TabsTrigger value="settings">Global Settings</TabsTrigger>
             <TabsTrigger value="admins">Super Admins</TabsTrigger>
-            <TabsTrigger value="audit">Audit Log</TabsTrigger>
+            <TabsTrigger value="audit">Audit</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="revenue"><RevenueTab /></TabsContent>
+          <TabsContent value="health"><TenantHealthTab /></TabsContent>
+          <TabsContent value="invoices"><InvoicesTab /></TabsContent>
+          <TabsContent value="announcements"><AnnouncementsTab /></TabsContent>
+          <TabsContent value="support"><SupportInboxTab /></TabsContent>
+          <TabsContent value="settings"><GlobalSettingsTab /></TabsContent>
+
 
 
           {/* USAGE */}

@@ -11,6 +11,7 @@ import MobileBottomNav from "./MobileBottomNav";
 import MobileQuickFab from "./MobileQuickFab";
 import InstallPromptBanner from "./InstallPromptBanner";
 import ImpersonationBanner from "./ImpersonationBanner";
+import AnnouncementBanner from "./AnnouncementBanner";
 import GlobalSearchDialog from "./GlobalSearchDialog";
 import UserMenuDropdown from "./UserMenuDropdown";
 import BranchSwitcher from "./BranchSwitcher";
@@ -364,6 +365,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       <main className="flex-1 overflow-y-auto">
         <ImpersonationBanner />
+        <AnnouncementBanner />
         <InstallPromptBanner />
 
         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl px-3 md:px-6 py-3 safe-area-top">
