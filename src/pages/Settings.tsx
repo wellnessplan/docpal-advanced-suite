@@ -860,6 +860,7 @@ export default function SettingsPage() {
   const allItems = SETTINGS_GROUPS.flatMap(g => g.items);
   const initialKey = (tabFromUrl && allItems.find(i => i.key === tabFromUrl)?.key) || "clinic";
   const [active, setActive] = useState<string>(initialKey);
+  const [search, setSearch] = useState("");
 
   const { data: clinic } = useQuery({
     queryKey: ["clinic-name", clinicId],
@@ -882,6 +883,18 @@ export default function SettingsPage() {
   const activeItem = allItems.find(i => i.key === active) ?? allItems[0];
   const clinicName = clinic?.name || "My Dental Clinic";
 
+  const q = search.trim().toLowerCase();
+  const filteredGroups = !q
+    ? SETTINGS_GROUPS
+    : SETTINGS_GROUPS
+        .map(g => ({
+          ...g,
+          items: g.items.filter(i =>
+            i.label.toLowerCase().includes(q) || g.label.toLowerCase().includes(q)
+          ),
+        }))
+        .filter(g => g.items.length > 0);
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
@@ -894,7 +907,18 @@ export default function SettingsPage() {
           <aside className="lg:sticky lg:top-4 lg:self-start">
             <Card className="shadow-card border-0">
               <CardContent className="p-2 space-y-3">
-                {SETTINGS_GROUPS.map(group => {
+                <div className="px-1 pt-1">
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search settings…"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                {filteredGroups.length === 0 && (
+                  <p className="text-xs text-muted-foreground px-3 py-4 text-center">No settings match "{search}"</p>
+                )}
+                {filteredGroups.map(group => {
                   const GIcon = group.icon;
                   return (
                     <div key={group.label}>
@@ -940,3 +964,4 @@ export default function SettingsPage() {
     </DashboardLayout>
   );
 }
+
