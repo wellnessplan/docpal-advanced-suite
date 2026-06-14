@@ -76,15 +76,22 @@ export async function finalizeDraftInvoiceIfReady(opts: {
     .maybeSingle();
   if (!draft?.id) return { finalized: false };
 
-  // Check if patient still has any in_progress / planned (non-completed, non-rejected) treatments
-  const { data: pending } = await supabase.from("tooth_treatments")
+  // Check if any treatment_plan_items for this patient are still in_progress (accepted but not done)
+  const { data: plans } = await supabase.from("treatment_plans")
     .select("id")
     .eq("clinic_id", clinicId)
     .eq("patient_id", patientId)
-    .in("status", ["planned", "in_progress"] as any)
-    .limit(1);
+    .in("status", ["patient_accepted", "presented", "in_progress"] as any);
+  const planIds = (plans ?? []).map((p: any) => p.id);
+  if (planIds.length) {
+    const { data: pending } = await supabase.from("treatment_plan_items")
+      .select("id")
+      .in("treatment_plan_id", planIds)
+      .eq("status", "in_progress")
+      .limit(1);
+    if (pending && pending.length > 0) return { finalized: false };
+  }
 
-  if (pending && pending.length > 0) return { finalized: false };
 
   await supabase.from("invoices")
     .update({ status: "unpaid" as any })
