@@ -114,15 +114,6 @@ const navGroups: NavGroup[] = [
     ],
   },
 
-  {
-    label: "Administration",
-    groupIcon: UserCog,
-    collapsible: true,
-    items: [
-      { href: "/settings?tab=team", label: "Team", icon: UserCog, roles: ["owner", "admin"] },
-      { href: "/settings?tab=branches", label: "Branches", icon: Building2, roles: ["owner", "admin"] },
-      { href: "/settings?tab=vendors", label: "Vendors & Suppliers", icon: Truck, roles: ["owner", "admin"] },
-      { href: "/settings?tab=tpa", label: "TPAs", icon: ShieldCheck, roles: ["owner", "admin"] },
     ],
   },
 ];
