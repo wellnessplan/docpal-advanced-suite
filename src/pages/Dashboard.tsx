@@ -20,6 +20,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import NewPatientDialog from "@/components/dashboard/NewPatientDialog";
+import NewAppointmentDialog from "@/components/dashboard/NewAppointmentDialog";
 
 /* ─────────────────────────────────────────────────────────────
    PREMIUM SAAS DASHBOARD
@@ -148,6 +150,9 @@ export default function DashboardPage() {
   const { profile, clinicId } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [patientDialogOpen, setPatientDialogOpen] = useState(false);
+  const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
+  const [prefillPatient, setPrefillPatient] = useState<{ id: string; full_name: string } | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
@@ -288,15 +293,32 @@ export default function DashboardPage() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onClick={() => navigate("/patients")} className="gap-2 cursor-pointer">
+                <DropdownMenuItem onClick={() => { setPrefillPatient(null); setPatientDialogOpen(true); }} className="gap-2 cursor-pointer">
                   <UserPlus className="h-4 w-4 text-muted-foreground" /> New Patient
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/appointments?new=1")} className="gap-2 cursor-pointer">
+                <DropdownMenuItem onClick={() => { setPrefillPatient(null); setAppointmentDialogOpen(true); }} className="gap-2 cursor-pointer">
                   <CalendarPlus className="h-4 w-4 text-muted-foreground" /> New Appointment
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          <NewPatientDialog
+            open={patientDialogOpen}
+            onOpenChange={setPatientDialogOpen}
+            onCreated={(p) => navigate(`/patients/${p.id}`)}
+            extraAction={{
+              label: "Save & Book Appointment",
+              onClick: (p) => { setPrefillPatient(p); setAppointmentDialogOpen(true); },
+            }}
+          />
+          <NewAppointmentDialog
+            open={appointmentDialogOpen}
+            onOpenChange={(v) => { setAppointmentDialogOpen(v); if (!v) setPrefillPatient(null); }}
+            prefillPatient={prefillPatient}
+            onCreated={(a) => navigate(`/appointments?focus=${a.id}`)}
+          />
+
 
           {/* ═══ ANALYTICS CARDS (pastel) ═══ */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
