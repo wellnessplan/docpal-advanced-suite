@@ -103,7 +103,23 @@ export default function FocusToday() {
   const goToPatient = (patientId: string) =>
     navigate(`/focus/patient/${patientId}`);
 
-  const renderApptCard = (apt: any) => (
+  const handleArrive = async (apt: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!clinicId) return;
+    try {
+      const r = await arrivePatient({ clinicId, patientId: apt.patient_id, appointmentId: apt.id });
+      toast.success(r.reused ? `Already in queue (#${r.token_number})` : `Arrived — token #${r.token_number}`);
+      qc.invalidateQueries({ queryKey: ["focus-today-appts"] });
+      qc.invalidateQueries({ queryKey: ["focus-queue"] });
+      qc.invalidateQueries({ queryKey: ["queue"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to mark arrived");
+    }
+  };
+
+  const renderApptCard = (apt: any) => {
+    const canArrive = ["scheduled", "confirmed"].includes(apt.status);
+    return (
     <Card
       key={apt.id}
       className="cursor-pointer hover:shadow-md hover:border-primary/40 transition-all border-l-4 border-l-primary/40"
@@ -124,13 +140,20 @@ export default function FocusToday() {
             {apt.type || "Checkup"} {apt.notes ? `· ${apt.notes}` : ""}
           </p>
         </div>
+        {canArrive && (
+          <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={(e) => handleArrive(apt, e)}>
+            <LogIn className="h-3.5 w-3.5" /> Arrive
+          </Button>
+        )}
         <Badge variant="outline" className={cn("text-[10px] capitalize", statusStyle[apt.status] || "")}>
           {apt.status?.replace(/_/g, " ")}
         </Badge>
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </CardContent>
     </Card>
-  );
+    );
+  };
+
 
   const renderFollowUp = (apt: any) => (
     <Card key={apt.id} className="border-l-4 border-l-warning/60 hover:shadow-md transition-shadow">
