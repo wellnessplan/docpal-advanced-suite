@@ -11,8 +11,14 @@ import { Input } from "@/components/ui/input";
 import {
   Search, Bell, ArrowUpRight, Users, CalendarDays, FlaskConical,
   Folder, Plus, TrendingUp, IndianRupee, Wallet, ChevronRight,
-  Stethoscope, FileText, Package, Activity,
+  Stethoscope, FileText, Package, Activity, UserPlus, CalendarPlus,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 
 /* ─────────────────────────────────────────────────────────────
