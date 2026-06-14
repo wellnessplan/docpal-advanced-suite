@@ -33,7 +33,9 @@ const statusStyle: Record<string, string> = {
 export default function FocusToday() {
   const { clinicId } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [search, setSearch] = useState("");
+
   const today = format(new Date(), "yyyy-MM-dd");
 
   // Today's appointments
