@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipboardList } from "lucide-react";
+import VoiceDictation, { type SoapResult } from "./VoiceDictation";
 
 interface ClinicalExamPanelProps {
   chiefComplaint: string;
@@ -21,9 +22,23 @@ export default function ClinicalExamPanel({
   return (
     <Card className="shadow-card border-0">
       <CardHeader className="pb-2">
-        <CardTitle className="font-heading text-base flex items-center gap-2">
-          <ClipboardList className="h-4 w-4 text-primary" />
-          Clinical Examination
+        <CardTitle className="font-heading text-base flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-primary" />
+            Clinical Examination
+          </span>
+          <VoiceDictation
+            onApply={(s: SoapResult) => {
+              if (s.chief_complaint) onChange("chief_complaint", s.chief_complaint);
+              const diag = (["subjective","objective","assessment","plan"] as const)
+                .map(k => s[k] ? `${k[0].toUpperCase()}: ${s[k]}` : null)
+                .filter(Boolean)
+                .join("\n");
+              if (diag) onChange("diagnosis_notes", diag);
+              if (s.gum_condition) onChange("gum_condition", s.gum_condition);
+              if (s.alignment_condition) onChange("alignment_condition", s.alignment_condition);
+            }}
+          />
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
