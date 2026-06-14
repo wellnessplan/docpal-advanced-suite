@@ -13,16 +13,10 @@ export interface ThemePreset {
 
 export const FONT_OPTIONS: { key: string; label: string; stack: string; googleHref?: string }[] = [
   {
-    key: "instrument",
-    label: "Instrument Sans (Default)",
-    stack: "'Instrument Sans', system-ui, sans-serif",
-    googleHref: "https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap",
-  },
-  {
     key: "inter",
-    label: "Inter",
+    label: "Inter (Default)",
     stack: "'Inter', system-ui, sans-serif",
-    googleHref: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+    googleHref: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
   },
   {
     key: "manrope",
@@ -52,6 +46,12 @@ export const FONT_OPTIONS: { key: string; label: string; stack: string; googleHr
 
 // 4 strong preset themes; sidebars use saturated dark tint of brand color.
 export const PRESETS: ThemePreset[] = [
+  {
+    name: "Signature Orange",
+    primary: "22 92% 52%", accent: "22 92% 93%", ring: "22 92% 52%",
+    sidebarPrimary: "22 92% 60%", sidebarBg: "20 35% 12%", sidebarFg: "30 15% 94%",
+    hex: "#F26A1F",
+  },
   {
     name: "Sky Blue",
     primary: "197 71% 53%", accent: "197 71% 93%", ring: "197 71% 53%",
