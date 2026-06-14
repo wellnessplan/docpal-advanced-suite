@@ -33,6 +33,7 @@ import { SwipeableCard } from "@/components/mobile/SwipeableCard";
 import { PullToRefresh } from "@/components/mobile/PullToRefresh";
 import { Eye, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { completeTreatmentAndInvoice } from "@/lib/queue-sync";
 
 const STATUS_COLORS: Record<string, string> = {
   planned: "bg-primary/10 text-primary border-primary/30",
