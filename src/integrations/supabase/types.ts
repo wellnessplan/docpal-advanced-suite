@@ -4428,6 +4428,8 @@ export type Database = {
           created_at: string
           due_date: string
           id: string
+          last_nudged_at: string | null
+          last_stage: number
           last_visit_date: string | null
           notes: string | null
           patient_id: string
@@ -4441,6 +4443,8 @@ export type Database = {
           created_at?: string
           due_date: string
           id?: string
+          last_nudged_at?: string | null
+          last_stage?: number
           last_visit_date?: string | null
           notes?: string | null
           patient_id: string
@@ -4454,6 +4458,8 @@ export type Database = {
           created_at?: string
           due_date?: string
           id?: string
+          last_nudged_at?: string | null
+          last_stage?: number
           last_visit_date?: string | null
           notes?: string | null
           patient_id?: string
