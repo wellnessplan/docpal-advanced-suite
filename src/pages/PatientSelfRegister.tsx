@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CheckCircle2, UserPlus, Clock, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import TokenShareActions from "@/components/patients/TokenShareActions";
 
 const QRCodeGenerator = lazy(() => import("./PatientSelfRegisterQR"));
 
@@ -223,6 +224,16 @@ export default function PatientSelfRegister() {
             )}
             <p className="text-sm text-muted-foreground">{settings.thank_you_message}</p>
             <p className="text-sm font-semibold">Thank you, {fullName}!</p>
+
+            <TokenShareActions
+              tokenNumber={tokenNumber}
+              patientName={fullName}
+              clinicName={clinic?.name}
+              clinicLogoUrl={settings.show_logo ? clinic?.logo_url ?? null : null}
+              slotLabel={selected ? `${selected.sublabel} at ${selected.label}` : "Walk-in"}
+              brandColor={brand}
+              thankYouHeading={settings.thank_you_heading}
+            />
 
             {phone && (
               <a href={`/r/status?clinic=${clinicId}&phone=${encodeURIComponent(phone)}`}
