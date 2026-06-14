@@ -22,9 +22,23 @@ export default function ClinicalExamPanel({
   return (
     <Card className="shadow-card border-0">
       <CardHeader className="pb-2">
-        <CardTitle className="font-heading text-base flex items-center gap-2">
-          <ClipboardList className="h-4 w-4 text-primary" />
-          Clinical Examination
+        <CardTitle className="font-heading text-base flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-primary" />
+            Clinical Examination
+          </span>
+          <VoiceDictation
+            onApply={(s: SoapResult) => {
+              if (s.chief_complaint) onChange("chief_complaint", s.chief_complaint);
+              const diag = [s.subjective, s.objective, s.assessment, s.plan]
+                .filter(Boolean)
+                .map((v, i) => `${["S","O","A","P"][i]}: ${v}`)
+                .join("\n");
+              if (diag) onChange("diagnosis_notes", diag);
+              if (s.gum_condition) onChange("gum_condition", s.gum_condition);
+              if (s.alignment_condition) onChange("alignment_condition", s.alignment_condition);
+            }}
+          />
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
