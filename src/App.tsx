@@ -67,6 +67,8 @@ const WhatsAppStatus = lazy(() => import("./pages/WhatsAppStatus"));
 const PatientStatus = lazy(() => import("./pages/PatientStatus"));
 const FinanceHub = lazy(() => import("./pages/FinanceHub"));
 const AnalyticsHub = lazy(() => import("./pages/AnalyticsHub"));
+const FrontDesk = lazy(() => import("./pages/FrontDesk"));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
