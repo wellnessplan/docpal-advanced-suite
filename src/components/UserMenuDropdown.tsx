@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings as SettingsIcon, Sun, Moon, LogOut, Shield, Stethoscope } from "lucide-react";
+import { User, Settings as SettingsIcon, Sun, Moon, LogOut, Shield, Stethoscope, Crown } from "lucide-react";
 import { useSuperAdmin } from "@/hooks/useSubscription";
 
 export default function UserMenuDropdown() {
@@ -58,6 +58,10 @@ export default function UserMenuDropdown() {
         <DropdownMenuItem onClick={() => navigate("/settings")}>
           <SettingsIcon className="mr-2 h-4 w-4" />
           <span>Settings</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/settings?tab=subscription")}>
+          <Crown className="mr-2 h-4 w-4 text-primary" />
+          <span>Subscription &amp; Billing</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
