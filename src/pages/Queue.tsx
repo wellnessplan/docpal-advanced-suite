@@ -186,16 +186,25 @@ export default function QueuePage() {
         counter_number: form.counter_number || null, notes: form.notes || null, queue_date: today,
       });
       if (error) throw error;
+      // Auto-flip today's matching scheduled/confirmed appointment → checked_in
+      await supabase.from("appointments")
+        .update({ status: "checked_in" as any })
+        .eq("clinic_id", clinicId)
+        .eq("patient_id", form.patient_id)
+        .eq("appointment_date", today)
+        .in("status", ["scheduled", "confirmed"] as any);
       return nextNum;
     },
     onSuccess: (tokenNum) => {
       queryClient.invalidateQueries({ queryKey: ["queue"] });
+      queryClient.invalidateQueries({ queryKey: ["focus-today-appts"] });
       setOpen(false);
       setForm({ patient_id: "", provider_id: "", priority: "normal", counter_number: "", notes: "" });
-      toast.success(`Token #${tokenNum} generated!`);
+      toast.success(`Token #${tokenNum} generated — patient marked arrived`);
     },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
