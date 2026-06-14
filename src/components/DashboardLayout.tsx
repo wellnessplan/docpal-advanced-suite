@@ -33,6 +33,7 @@ import {
   Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 interface NavItem { href: string; label: string; icon: React.ElementType; roles?: string[] }
 interface NavGroup {
@@ -367,17 +368,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between gap-2 bg-card rounded-2xl shadow-[0_2px_10px_rgba(15,23,42,0.04)] px-4 py-2.5">
             <h2 className="text-[15px] md:text-lg font-bold tracking-tight text-foreground truncate min-w-0">{currentPageLabel}</h2>
             <div className="flex items-center gap-1 md:gap-2 shrink-0">
-              <Button
-                size="sm"
-                variant="default"
-                className="gap-1.5 h-9 px-3 rounded-xl bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
-                onClick={() => window.location.assign("/focus")}
-                title="Switch to simplified 2-screen doctor flow"
+              <label
+                className="hidden sm:flex items-center gap-1.5 cursor-pointer rounded-xl bg-muted/50 hover:bg-muted px-2.5 py-1.5 transition-colors"
+                title="Toggle simplified 2-screen doctor flow"
               >
-                <Focus className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline text-xs font-bold">Focus Mode</span>
-              </Button>
+                <Focus className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold">Focus</span>
+                <Switch
+                  checked={pathname.startsWith("/focus")}
+                  onCheckedChange={(on) => window.location.assign(on ? "/focus" : "/dashboard")}
+                  className="scale-75 -mr-1"
+                />
+              </label>
+              <GlobalSearchDialog mode="new" />
               <BranchSwitcher />
+
               <GlobalSearchDialog />
               <UserMenuDropdown />
             </div>
