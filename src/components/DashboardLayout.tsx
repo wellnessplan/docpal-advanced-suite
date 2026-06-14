@@ -370,6 +370,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-1 md:gap-2 shrink-0">
               <label
                 className="hidden sm:flex items-center gap-1.5 cursor-pointer rounded-xl bg-muted/50 hover:bg-muted px-2.5 py-1.5 transition-colors"
+                title="Receptionist Front Desk preset"
+              >
+                <ListChecks className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold">Front Desk</span>
+                <Switch
+                  checked={pathname.startsWith("/front-desk")}
+                  onCheckedChange={(on) => window.location.assign(on ? "/front-desk" : "/dashboard")}
+                  className="scale-75 -mr-1"
+                />
+              </label>
+              <label
+                className="hidden sm:flex items-center gap-1.5 cursor-pointer rounded-xl bg-muted/50 hover:bg-muted px-2.5 py-1.5 transition-colors"
                 title="Toggle simplified 2-screen doctor flow"
               >
                 <Focus className="h-3.5 w-3.5 text-primary" />
@@ -380,6 +392,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   className="scale-75 -mr-1"
                 />
               </label>
+
               <GlobalSearchDialog mode="new" />
               <BranchSwitcher />
 

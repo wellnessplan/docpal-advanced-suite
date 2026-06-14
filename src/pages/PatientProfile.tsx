@@ -237,10 +237,21 @@ export default function PatientProfilePage() {
       ctx?.snapshot?.forEach(([k, d]: any) => queryClient.setQueryData(k, d));
       toast.error(e?.message || "Failed to update");
     },
-    onSuccess: (_d, vars) => {
+    onSuccess: async (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["patient-treatments"] });
       queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
       const prev = vars as any;
+      // Auto-finalize the patient's draft invoice when all accepted treatments are done
+      if (prev?.status === "completed" && clinicId && id) {
+        try {
+          const { finalizeDraftInvoiceIfReady } = await import("@/lib/queue-sync");
+          const r = await finalizeDraftInvoiceIfReady({ clinicId, patientId: id });
+          if (r.finalized) {
+            queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
+            toast.success("Invoice finalized — ready to collect");
+          }
+        } catch { /* non-blocking */ }
+      }
       toast.success("Status updated", {
         action: prev?.previousStatus ? {
           label: "Undo",
@@ -251,6 +262,7 @@ export default function PatientProfilePage() {
         } : undefined,
       });
     },
+
   });
 
   // Record partial/full payment

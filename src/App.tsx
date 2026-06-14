@@ -67,6 +67,8 @@ const WhatsAppStatus = lazy(() => import("./pages/WhatsAppStatus"));
 const PatientStatus = lazy(() => import("./pages/PatientStatus"));
 const FinanceHub = lazy(() => import("./pages/FinanceHub"));
 const AnalyticsHub = lazy(() => import("./pages/AnalyticsHub"));
+const FrontDesk = lazy(() => import("./pages/FrontDesk"));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -181,6 +183,8 @@ const App = () => (
                 <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
                 <Route path="/focus" element={<ProtectedRoute><FocusToday /></ProtectedRoute>} />
                 <Route path="/focus/patient/:id" element={<ProtectedRoute><FocusPatient /></ProtectedRoute>} />
+                <Route path="/front-desk" element={<ProtectedRoute><FrontDesk /></ProtectedRoute>} />
+
                 <Route path="/patient-education" element={<ProtectedRoute><PatientEducation /></ProtectedRoute>} />
                 <Route path="/displays" element={<ProtectedRoute><DisplayManager /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
