@@ -53,6 +53,8 @@ function getCycledPrice(monthly: number, cycle: BillingCycle) {
 export default function SubscriptionPlanTab({ clinicId }: Props) {
   const queryClient = useQueryClient();
   const [requesting, setRequesting] = useState<string | null>(null);
+  const [cycle, setCycle] = useState<BillingCycle>("monthly");
+
 
   const { data: subscription, isLoading } = useQuery({
     queryKey: ["clinic-subscription-tab", clinicId],
