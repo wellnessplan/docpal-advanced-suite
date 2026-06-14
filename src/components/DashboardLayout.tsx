@@ -44,6 +44,8 @@ const FRONT_DESK_ESSENTIALS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
+const SETTINGS_ITEM: NavItem = { href: "/settings", label: "Settings", icon: Settings };
+
 const navGroups: NavGroup[] = [
   {
     label: "Patient Care",
@@ -101,14 +103,6 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Settings",
-    groupIcon: Settings,
-    collapsible: true,
-    items: [
-      { href: "/settings", label: "Settings", icon: Settings },
-    ],
-  },
-  {
     label: "Administration",
     groupIcon: UserCog,
     collapsible: true,
@@ -120,6 +114,7 @@ const navGroups: NavGroup[] = [
     ],
   },
 ];
+
 
 function filterByRole(items: NavItem[], role: string | undefined | null): NavItem[] {
   if (!role) return items.filter(i => !i.roles);
@@ -287,7 +282,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   </div>
                 );
               })}
+
+              {/* Standalone Settings link */}
+              <div className="pt-2">
+                {!collapsed && <div className="h-px bg-white/[0.10] mx-2 mb-2" />}
+                {renderNavItem(SETTINGS_ITEM)}
+              </div>
             </nav>
+
 
             <div className="p-2 space-y-0.5 border-t border-white/15">
               {isSuperAdmin && (
