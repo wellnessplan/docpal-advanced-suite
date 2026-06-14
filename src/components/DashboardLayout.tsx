@@ -1,4 +1,7 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, createContext, useContext } from "react";
+
+const NestedLayoutContext = createContext(false);
+
 
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -122,6 +125,8 @@ function filterByRole(items: NavItem[], role: string | undefined | null): NavIte
 }
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const nested = useContext(NestedLayoutContext);
+  if (nested) return <>{children}</>;
   const { pathname } = useLocation();
   const { profile, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
