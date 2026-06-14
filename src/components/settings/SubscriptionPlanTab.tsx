@@ -93,8 +93,8 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
         },
       } as any);
     },
-    onMutate: (planId: string) => setRequesting(planId),
-    onSuccess: (_d, planId) => {
+    onMutate: ({ planId }) => setRequesting(planId),
+    onSuccess: (_d, { planId }) => {
       const action = PLANS.findIndex(p => p.id === planId) > PLANS.findIndex(p => p.id === currentPlan) ? "upgrade" : "downgrade";
       toast.success(`${action.charAt(0).toUpperCase() + action.slice(1)} request submitted! Our team will contact you shortly.`);
       queryClient.invalidateQueries({ queryKey: ["clinic-subscription-tab"] });
