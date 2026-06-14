@@ -44,6 +44,8 @@ const FRONT_DESK_ESSENTIALS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
+const SETTINGS_ITEM: NavItem = { href: "/settings", label: "Settings", icon: Settings };
+
 const navGroups: NavGroup[] = [
   {
     label: "Patient Care",
