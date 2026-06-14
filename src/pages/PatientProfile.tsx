@@ -309,6 +309,50 @@ export default function PatientProfilePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // One-click complete + auto-invoice helper (used by table button)
+  const markCompleteAndInvoice = useMutation({
+    mutationFn: async (t: any) => {
+      if (!clinicId || !id) throw new Error("Missing context");
+      return await completeTreatmentAndInvoice({
+        clinicId, patientId: id,
+        treatmentId: t.id,
+        treatmentName: t.treatment_name,
+        toothNumber: t.tooth_records?.tooth_number ?? null,
+        cost: Number(t.cost) || 0,
+      });
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["patient-treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
+      toast.success(res.created ? "Completed · invoice drafted" : "Completed · added to invoice", {
+        action: res.invoiceId && res.balance > 0 ? {
+          label: "Record payment",
+          onClick: () => setSearchParams({ tab: "billing", pay: res.invoiceId! }),
+        } : undefined,
+      });
+    },
+    onError: (e: any) => toast.error(e.message || "Failed"),
+  });
+
+  // Auto-open Record Payment dialog when ?pay=<invoiceId> is present
+  useEffect(() => {
+    const payId = searchParams.get("pay");
+    if (!payId || !invoices.length || showPaymentDialog) return;
+    const inv = invoices.find((i: any) => i.id === payId);
+    if (inv) {
+      const balance = Number(inv.amount || 0) - Number(inv.paid_amount || 0);
+      if (balance > 0) {
+        setPaymentInvoice(inv);
+        setPaymentAmount(String(balance));
+        setShowPaymentDialog(true);
+      }
+      const next = new URLSearchParams(searchParams);
+      next.delete("pay");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, invoices, showPaymentDialog, setSearchParams]);
+
   if (isLoading) {
     return <DashboardLayout><div className="flex items-center justify-center min-h-[400px] text-muted-foreground">Loading...</div></DashboardLayout>;
   }
