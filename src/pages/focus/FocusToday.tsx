@@ -11,10 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Clock, Search, ChevronRight, ListOrdered, CalendarClock,
-  AlertTriangle, Phone, UserX, MessageCircle, Loader2
+  AlertTriangle, Phone, UserX, MessageCircle, Loader2, LogIn
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { arrivePatient } from "@/lib/queue-sync";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 const statusStyle: Record<string, string> = {
   scheduled: "bg-primary/10 text-primary border-primary/30",
