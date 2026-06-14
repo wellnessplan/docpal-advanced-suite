@@ -33,6 +33,7 @@ export default function ToothDetailPanel({
   patientId, clinicId, toothNumber, toothRecordId, currentStatus, onUpdate,
 }: ToothDetailPanelProps) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { names: catalogNames } = useTreatmentCatalog();
   const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [showConditionForm, setShowConditionForm] = useState(false);
