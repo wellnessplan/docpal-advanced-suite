@@ -281,12 +281,21 @@ export default function DashboardPage() {
               </h1>
               <p className="text-sm text-slate-500 mt-1">Here's what's happening at {clinic?.name || "your clinic"} today.</p>
             </div>
-            <button
-              onClick={() => navigate("/appointments?new=1")}
-              className="h-11 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold flex items-center gap-2 shadow-lg shadow-slate-900/20 transition"
-            >
-              <Plus className="h-4 w-4" /> New Appointment
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="h-11 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold flex items-center gap-2 shadow-lg shadow-slate-900/20 transition">
+                  <Plus className="h-4 w-4" /> New
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => navigate("/patients")} className="gap-2 cursor-pointer">
+                  <UserPlus className="h-4 w-4 text-muted-foreground" /> New Patient
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/appointments?new=1")} className="gap-2 cursor-pointer">
+                  <CalendarPlus className="h-4 w-4 text-muted-foreground" /> New Appointment
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* ═══ ANALYTICS CARDS (pastel) ═══ */}
