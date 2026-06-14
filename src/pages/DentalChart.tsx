@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,17 +23,29 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Phone, Calendar, Stethoscope, ClipboardList, FileImage, FileText, Activity, Zap, Camera } from "lucide-react";
+import { ArrowLeft, User, Phone, Calendar, LayoutGrid, FileImage, FileText, Activity, Zap, Camera } from "lucide-react";
 
 export default function DentalChartPage() {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { clinicId, profile } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
   const [chartType, setChartType] = useState<"adult" | "kids">("adult");
-  const [activeTab, setActiveTab] = useState("chart");
+  const initialTab = searchParams.get("tab") || "canvas";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    const current = searchParams.get("tab");
+    if (current !== activeTab) {
+      const next = new URLSearchParams(searchParams);
+      next.set("tab", activeTab);
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [gumCondition, setGumCondition] = useState("normal");
