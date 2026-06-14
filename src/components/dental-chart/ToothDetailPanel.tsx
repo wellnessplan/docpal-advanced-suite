@@ -10,8 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Stethoscope, Pill, FileText } from "lucide-react";
+import { Plus, Stethoscope, Pill, FileText, CheckCircle2, IndianRupee, Loader2 } from "lucide-react";
 import { fireInstantPostTreatment } from "@/lib/automation-triggers";
+import { completeTreatmentAndInvoice } from "@/lib/queue-sync";
+import { useNavigate } from "react-router-dom";
 import { useTreatmentCatalog } from "@/hooks/useTreatmentCatalog";
 
 interface ToothDetailPanelProps {
