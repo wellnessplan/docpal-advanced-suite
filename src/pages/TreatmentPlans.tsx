@@ -2,7 +2,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ClipboardCheck, Search } from "lucide-react";
+import { Plus, ClipboardCheck, Search, MessageSquareShare } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,23 +71,38 @@ export default function TreatmentPlans() {
           </Card>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((plan: any) => (
-              <Card key={plan.id} onClick={() => plan.patient_id && navigate(`/dental-chart/${plan.patient_id}?tab=canvas`)} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-semibold text-sm">{plan.patients?.full_name}</p>
-                      <p className="text-xs text-muted-foreground">{plan.plan_name}</p>
+            {filtered.map((plan: any) => {
+              const signUrl = `${window.location.origin}/sign/plan/${plan.id}`;
+              const sendEsign = (e: React.MouseEvent) => {
+                e.stopPropagation();
+                const phone = (plan.patients?.phone || "").replace(/\D/g, "");
+                if (!phone) { toast.error("Patient has no phone number"); return; }
+                const msg = encodeURIComponent(
+                  `Hi ${plan.patients?.full_name || ""}, please review and e-sign your treatment plan: ${signUrl}`
+                );
+                window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+              };
+              return (
+                <Card key={plan.id} onClick={() => plan.patient_id && navigate(`/dental-chart/${plan.patient_id}?tab=canvas`)} className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold text-sm">{plan.patients?.full_name}</p>
+                        <p className="text-xs text-muted-foreground">{plan.plan_name}</p>
+                      </div>
+                      <Badge className={statusColors[plan.status] || ""}>{plan.status}</Badge>
                     </div>
-                    <Badge className={statusColors[plan.status] || ""}>{plan.status}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Rs {plan.total_estimated_cost?.toLocaleString() || 0}</span>
-                    <span>{format(new Date(plan.created_at), "dd MMM yyyy")}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Rs {plan.total_estimated_cost?.toLocaleString() || 0}</span>
+                      <span>{format(new Date(plan.created_at), "dd MMM yyyy")}</span>
+                    </div>
+                    <Button size="sm" variant="outline" className="w-full gap-1.5 mt-1" onClick={sendEsign}>
+                      <MessageSquareShare className="h-3.5 w-3.5" /> Send e-sign via WhatsApp
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

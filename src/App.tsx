@@ -68,6 +68,7 @@ const PatientStatus = lazy(() => import("./pages/PatientStatus"));
 const FinanceHub = lazy(() => import("./pages/FinanceHub"));
 const AnalyticsHub = lazy(() => import("./pages/AnalyticsHub"));
 const FrontDesk = lazy(() => import("./pages/FrontDesk"));
+const PublicTreatmentPlanSign = lazy(() => import("./pages/PublicTreatmentPlanSign"));
 
 
 const queryClient = new QueryClient({
@@ -137,6 +138,7 @@ const App = () => (
                 <Route path="/register" element={<PatientSelfRegister />} />
                 <Route path="/r/status" element={<PatientStatus />} />
                 <Route path="/accept-invite/:token" element={<AcceptInvite />} />
+                <Route path="/sign/plan/:token" element={<PublicTreatmentPlanSign />} />
                 <Route path="/display" element={<DisplayPair />} />
                 <Route path="/display/:code" element={<DisplayScreen />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
