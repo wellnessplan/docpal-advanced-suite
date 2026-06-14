@@ -10,9 +10,11 @@ import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 export default function TreatmentPlans() {
   const { clinicId } = useAuth();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
   const { data: plans = [], isLoading } = useQuery({
@@ -69,7 +71,7 @@ export default function TreatmentPlans() {
         ) : (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((plan: any) => (
-              <Card key={plan.id} className="hover:shadow-md transition-shadow cursor-pointer">
+              <Card key={plan.id} onClick={() => plan.patient_id && navigate(`/dental-chart/${plan.patient_id}?tab=canvas`)} className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-start justify-between">
                     <div>
