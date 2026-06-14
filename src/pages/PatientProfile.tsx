@@ -53,6 +53,7 @@ const LAB_TREATMENTS = ["Crown", "Bridge", "Denture", "RPD", "FPD", "Veneer", "I
 export default function PatientProfilePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { clinicId } = useAuth();
   const queryClient = useQueryClient();
   const { names: catalogNames } = useTreatmentCatalog();
