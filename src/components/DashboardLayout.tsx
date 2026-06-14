@@ -113,10 +113,8 @@ const navGroups: NavGroup[] = [
       { href: "/settings?tab=tpa", label: "TPAs", icon: ShieldCheck, roles: ["owner", "admin"] },
     ],
   },
-
-    ],
-  },
 ];
+
 
 function filterByRole(items: NavItem[], role: string | undefined | null): NavItem[] {
   if (!role) return items.filter(i => !i.roles);
