@@ -150,6 +150,9 @@ export default function DashboardPage() {
   const { profile, clinicId } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [patientDialogOpen, setPatientDialogOpen] = useState(false);
+  const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
+  const [prefillPatient, setPrefillPatient] = useState<{ id: string; full_name: string } | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
