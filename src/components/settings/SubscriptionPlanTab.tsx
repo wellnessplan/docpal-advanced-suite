@@ -4,12 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Check, Clock, ArrowUpCircle, ArrowDownCircle, Mail } from "lucide-react";
+import { Crown, Check, Clock, ArrowUpCircle, ArrowDownCircle, Mail, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Props {
   clinicId: string;
 }
+
+type BillingCycle = "monthly" | "yearly";
+const YEARLY_DISCOUNT = 0.2; // 20% off
 
 const PLANS = [
   {
@@ -39,6 +43,12 @@ const PLANS = [
     features: ["One-time payment, never pay again", "Unlimited patients & doctors", "Multi-branch support", "All Pro & Enterprise features", "Priority support for life", "Free future updates"],
   },
 ];
+
+function getCycledPrice(monthly: number, cycle: BillingCycle) {
+  // Yearly = 12 months * monthly * (1 - discount)
+  const yearly = Math.round(monthly * 12 * (1 - YEARLY_DISCOUNT));
+  return cycle === "yearly" ? yearly : monthly;
+}
 
 export default function SubscriptionPlanTab({ clinicId }: Props) {
   const queryClient = useQueryClient();
