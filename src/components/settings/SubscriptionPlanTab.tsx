@@ -76,8 +76,9 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
     : null;
 
   const requestPlanChange = useMutation({
-    mutationFn: async (newPlan: string) => {
-      // Log request in audit_log; admin will action it
+    mutationFn: async ({ planId, planCycle }: { planId: string; planCycle: BillingCycle | "lifetime" }) => {
+      const plan = PLANS.find(p => p.id === planId);
+      const price = plan?.lifetime ? plan.price : getCycledPrice(plan?.price || 0, planCycle as BillingCycle);
       await supabase.from("audit_log").insert({
         clinic_id: clinicId,
         action: "plan_change_requested",
@@ -85,7 +86,9 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
         record_id: subscription?.id || null,
         details: {
           current_plan: currentPlan,
-          requested_plan: newPlan,
+          requested_plan: planId,
+          billing_cycle: planCycle,
+          price_inr: price,
           requested_at: new Date().toISOString(),
         },
       } as any);
