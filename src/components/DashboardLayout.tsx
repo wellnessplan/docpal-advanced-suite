@@ -377,7 +377,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
-        <div className={cn("p-3 md:p-6", isMobile && "pb-24")}>{children}</div>
+        <div className={cn("p-3 md:p-6", isMobile && "pb-24")}>
+          <NestedLayoutContext.Provider value={true}>{children}</NestedLayoutContext.Provider>
+        </div>
       </main>
 
       {isMobile && <MobileBottomNav />}
