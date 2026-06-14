@@ -65,14 +65,20 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Revenue",
+    label: "Finance",
     groupIcon: IndianRupee,
     collapsible: true,
     items: [
-      { href: "/billing", label: "Billing", icon: Receipt },
-      { href: "/payments", label: "Payments", icon: Wallet },
-      { href: "/insurance", label: "Insurance", icon: ShieldCheck },
+      { href: "/finance-hub", label: "Billing & Payments", icon: Receipt },
       { href: "/memberships", label: "Memberships", icon: Crown },
+    ],
+  },
+  {
+    label: "Analytics",
+    groupIcon: BarChart3,
+    collapsible: true,
+    items: [
+      { href: "/analytics", label: "Reports & Insights", icon: BarChart3 },
     ],
   },
   {
