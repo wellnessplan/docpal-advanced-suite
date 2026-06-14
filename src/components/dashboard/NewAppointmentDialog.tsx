@@ -93,8 +93,17 @@ export default function NewAppointmentDialog({ open, onOpenChange, prefillPatien
       <DialogContent className="max-w-xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New Appointment</DialogTitle>
-          <DialogDescription>Choose patient, date, time and provider.</DialogDescription>
+          <DialogDescription>
+            {prefillPatient
+              ? `Booking for ${prefillPatient.full_name} — pick a slot to finish.`
+              : "Choose patient, date, time and provider."}
+          </DialogDescription>
         </DialogHeader>
+        {prefillPatient && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-foreground">
+            Continuing from <strong>New Patient</strong> → <strong>{prefillPatient.full_name}</strong> is pre-selected.
+          </div>
+        )}
         <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-4">
           <div className="space-y-1.5">
             <Label>Patient <span className="text-destructive">*</span></Label>
