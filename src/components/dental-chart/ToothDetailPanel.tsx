@@ -171,7 +171,6 @@ export default function ToothDetailPanel({
       if (error) throw error;
       if (newStatus === "completed") {
         await deductMaterials(treatmentName, id);
-        // Fire instant post-treatment WhatsApp automation (Rx + post-op video)
         fireInstantPostTreatment({ clinicId, treatmentId: id });
       }
     },
@@ -180,6 +179,34 @@ export default function ToothDetailPanel({
       toast.success("Treatment status updated");
     },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  // One-click: mark complete + auto-create/append invoice + offer Record Payment
+  const markCompleteAndInvoice = useMutation({
+    mutationFn: async (t: any) => {
+      const res = await completeTreatmentAndInvoice({
+        clinicId, patientId,
+        treatmentId: t.id,
+        treatmentName: t.treatment_name,
+        toothNumber,
+        cost: Number(t.cost) || 0,
+      });
+      await deductMaterials(t.treatment_name, t.id);
+      fireInstantPostTreatment({ clinicId, treatmentId: t.id });
+      return res;
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["tooth-treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
+      toast.success(res.created ? "Completed · invoice drafted" : "Completed · added to invoice", {
+        action: res.invoiceId && res.balance > 0 ? {
+          label: "Record payment",
+          onClick: () => navigate(`/patients/${patientId}?tab=billing&pay=${res.invoiceId}`),
+        } : undefined,
+      });
+    },
+    onError: (e: any) => toast.error(e.message || "Failed"),
   });
 
   const statusBadgeColor: Record<string, string> = {
