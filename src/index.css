@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* DoctorsBuddy — Clinical Precision Design System v1.1
-   Sky Blue + Ivory + Instrument Sans. */
+/* DoctorsBuddy — Clinical Precision Design System v1.2
+   Primary: Orange (22 92% 52%) · Font: Inter · Background: Warm Ivory. */
 
 @layer base {
   :root {
