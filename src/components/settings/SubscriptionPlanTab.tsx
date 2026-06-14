@@ -165,8 +165,23 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
 
       {/* Available plans */}
       <div>
-        <h3 className="font-heading text-lg font-semibold mb-1">Available Plans</h3>
-        <p className="text-sm text-muted-foreground mb-4">Click a plan to request an upgrade or downgrade. Our team will contact you to complete the change.</p>
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h3 className="font-heading text-lg font-semibold mb-1">Available Plans</h3>
+            <p className="text-sm text-muted-foreground">Choose monthly or yearly billing. Yearly saves 20%.</p>
+          </div>
+          <Tabs value={cycle} onValueChange={(v) => setCycle(v as BillingCycle)}>
+            <TabsList>
+              <TabsTrigger value="monthly">Monthly</TabsTrigger>
+              <TabsTrigger value="yearly" className="gap-1.5">
+                Yearly
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-success/15 text-success border-0">
+                  <Sparkles className="h-3 w-3 mr-0.5" /> Save 20%
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((plan: any) => {
@@ -175,6 +190,9 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
             const planIdx = PLANS.findIndex(p => p.id === plan.id);
             const isUpgrade = planIdx > currentIdx;
             const isLifetime = !!plan.lifetime;
+            const displayPrice = isLifetime ? plan.price : getCycledPrice(plan.price, cycle);
+            const monthlyEq = isLifetime ? null : (cycle === "yearly" ? Math.round(displayPrice / 12) : plan.price);
+            const planCycle: BillingCycle | "lifetime" = isLifetime ? "lifetime" : cycle;
 
             return (
               <Card
@@ -197,9 +215,21 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
                 <CardHeader className="pb-3">
                   <CardTitle className="font-heading text-xl">{plan.name}</CardTitle>
                   <div className="mt-1">
-                    <span className="text-3xl font-bold">Rs {plan.price.toLocaleString()}</span>
-                    <span className="text-sm text-muted-foreground">{isLifetime ? " one-time" : "/mo"}</span>
+                    <span className="text-3xl font-bold">Rs {displayPrice.toLocaleString()}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {isLifetime ? " one-time" : cycle === "yearly" ? "/yr" : "/mo"}
+                    </span>
                   </div>
+                  {!isLifetime && cycle === "yearly" && (
+                    <p className="text-xs text-success mt-1">
+                      ≈ Rs {monthlyEq?.toLocaleString()}/mo · 20% off
+                    </p>
+                  )}
+                  {!isLifetime && cycle === "monthly" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Save Rs {(plan.price * 12 - getCycledPrice(plan.price, "yearly")).toLocaleString()} with yearly
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-2">
@@ -219,11 +249,11 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
                     <Button
                       variant={isUpgrade || isLifetime ? "default" : "outline"}
                       className={`w-full gap-1.5 ${isLifetime ? "bg-amber-500 hover:bg-amber-600" : ""}`}
-                      onClick={() => requestPlanChange.mutate(plan.id)}
+                      onClick={() => requestPlanChange.mutate({ planId: plan.id, planCycle })}
                       disabled={requesting === plan.id}
                     >
                       {isUpgrade || isLifetime ? <ArrowUpCircle className="h-4 w-4" /> : <ArrowDownCircle className="h-4 w-4" />}
-                      {requesting === plan.id ? "Requesting..." : isLifetime ? "Get Lifetime" : isUpgrade ? "Request Upgrade" : "Request Downgrade"}
+                      {requesting === plan.id ? "Requesting..." : isLifetime ? "Get Lifetime" : isUpgrade ? `Request ${cycle === "yearly" ? "Yearly" : "Monthly"} Upgrade` : "Request Downgrade"}
                     </Button>
                   )}
                 </CardContent>
@@ -232,6 +262,7 @@ export default function SubscriptionPlanTab({ clinicId }: Props) {
           })}
         </div>
       </div>
+
 
       {/* Contact card */}
       <Card className="border-dashed">
