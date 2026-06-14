@@ -166,79 +166,104 @@ export default function DentalChartPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full flex-wrap h-auto">
-            <TabsTrigger value="chart" className="flex-1 gap-1 text-xs min-w-[90px]"><Stethoscope className="h-3 w-3" />Examine</TabsTrigger>
+            <TabsTrigger value="canvas" className="flex-1 gap-1 text-xs min-w-[110px]"><LayoutGrid className="h-3 w-3" />Chart &amp; Plan</TabsTrigger>
             <TabsTrigger value="rx" className="flex-1 gap-1 text-xs min-w-[90px]"><FileText className="h-3 w-3" />Prescription</TabsTrigger>
-            <TabsTrigger value="plan" className="flex-1 gap-1 text-xs min-w-[90px]"><ClipboardList className="h-3 w-3" />Plan</TabsTrigger>
             <TabsTrigger value="xrays" className="flex-1 gap-1 text-xs min-w-[80px]"><FileImage className="h-3 w-3" />X-Rays</TabsTrigger>
             <TabsTrigger value="intraoral" className="flex-1 gap-1 text-xs min-w-[90px]"><Camera className="h-3 w-3" />Intra-Oral</TabsTrigger>
             <TabsTrigger value="perio" className="flex-1 gap-1 text-xs min-w-[70px]"><Activity className="h-3 w-3" />Perio</TabsTrigger>
             <TabsTrigger value="endo" className="flex-1 gap-1 text-xs min-w-[70px]"><Zap className="h-3 w-3" />Endo</TabsTrigger>
           </TabsList>
 
-          {/* EXAMINE TAB */}
-          <TabsContent value="chart" className="mt-3 space-y-3">
-            <ClinicalExamPanel
-              chiefComplaint={chiefComplaint}
-              gumCondition={gumCondition}
-              alignmentCondition={alignmentCondition}
-              diagnosisNotes={diagnosisNotes}
-              onChange={handleClinicalChange}
-            />
-
-            <Card className="shadow-card border-0">
-              <CardContent className="p-4">
-                <DentalChartGrid
-                  toothRecords={toothRecords ?? []}
-                  selectedTooth={selectedTooth}
-                  onSelectTooth={setSelectedTooth}
-                  chartType={chartType}
-                  onChartTypeChange={setChartType}
+          {/* UNIFIED CHART + PLAN CANVAS */}
+          <TabsContent value="canvas" className="mt-3">
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-3">
+              {/* LEFT: Chart & exam (3/5 on xl) */}
+              <div className="xl:col-span-3 space-y-3">
+                <ClinicalExamPanel
+                  chiefComplaint={chiefComplaint}
+                  gumCondition={gumCondition}
+                  alignmentCondition={alignmentCondition}
+                  diagnosisNotes={diagnosisNotes}
+                  onChange={handleClinicalChange}
                 />
-              </CardContent>
-            </Card>
 
-            {selectedTooth && prescriptionId && isMobile ? (
-              <Drawer open={!!selectedTooth} onOpenChange={(open) => { if (!open) setSelectedTooth(null); }}>
-                <DrawerContent className="max-h-[85vh]">
-                  <DrawerHeader><DrawerTitle>Tooth #{selectedTooth}</DrawerTitle></DrawerHeader>
-                  <div className="px-4 pb-6 overflow-y-auto max-h-[70vh]">
-                    <UnifiedToothEntry
-                      prescriptionId={prescriptionId}
-                      clinicId={clinicId}
-                      toothNumber={selectedTooth}
-                      currentStatus={selectedRecord?.status || "healthy"}
-                      toothRecordId={selectedRecord?.id}
-                      patientId={patientId}
-                      onUpdate={() => {
-                        refetchRecords();
-                        queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
-                      }}
+                <Card className="shadow-card border-0">
+                  <CardContent className="p-4">
+                    <DentalChartGrid
+                      toothRecords={toothRecords ?? []}
+                      selectedTooth={selectedTooth}
+                      onSelectTooth={setSelectedTooth}
+                      chartType={chartType}
+                      onChartTypeChange={setChartType}
                     />
-                  </div>
-                </DrawerContent>
-              </Drawer>
-            ) : selectedTooth && prescriptionId ? (
-              <UnifiedToothEntry
-                prescriptionId={prescriptionId}
-                clinicId={clinicId}
-                toothNumber={selectedTooth}
-                currentStatus={selectedRecord?.status || "healthy"}
-                toothRecordId={selectedRecord?.id}
-                patientId={patientId}
-                onUpdate={() => {
-                  refetchRecords();
-                  queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
-                }}
-              />
-            ) : null}
+                  </CardContent>
+                </Card>
 
-            {!selectedTooth && (
-              <Card className="shadow-card border-0">
-                <CardContent className="py-6 md:py-8 text-center text-muted-foreground text-xs md:text-sm">
-                  ← Tap a tooth on the chart to add condition, treatment & cost
-                </CardContent>
-              </Card>
-            )}
+                {selectedTooth && prescriptionId && isMobile ? (
+                  <Drawer open={!!selectedTooth} onOpenChange={(open) => { if (!open) setSelectedTooth(null); }}>
+                    <DrawerContent className="max-h-[85vh]">
+                      <DrawerHeader><DrawerTitle>Tooth #{selectedTooth}</DrawerTitle></DrawerHeader>
+                      <div className="px-4 pb-6 overflow-y-auto max-h-[70vh]">
+                        <UnifiedToothEntry
+                          prescriptionId={prescriptionId}
+                          clinicId={clinicId}
+                          toothNumber={selectedTooth}
+                          currentStatus={selectedRecord?.status || "healthy"}
+                          toothRecordId={selectedRecord?.id}
+                          patientId={patientId}
+                          onUpdate={() => {
+                            refetchRecords();
+                            queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
+                          }}
+                        />
+                      </div>
+                    </DrawerContent>
+                  </Drawer>
+                ) : selectedTooth && prescriptionId ? (
+                  <UnifiedToothEntry
+                    prescriptionId={prescriptionId}
+                    clinicId={clinicId}
+                    toothNumber={selectedTooth}
+                    currentStatus={selectedRecord?.status || "healthy"}
+                    toothRecordId={selectedRecord?.id}
+                    patientId={patientId}
+                    onUpdate={() => {
+                      refetchRecords();
+                      queryClient.invalidateQueries({ queryKey: ["prescription-items-all"] });
+                    }}
+                  />
+                ) : null}
+
+                {!selectedTooth && (
+                  <Card className="shadow-card border-0">
+                    <CardContent className="py-6 md:py-8 text-center text-muted-foreground text-xs md:text-sm">
+                      ← Tap a tooth on the chart to add condition, treatment &amp; cost
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* RIGHT: Live treatment plan (2/5 on xl, sticky) */}
+              <div className="xl:col-span-2">
+                <div className="xl:sticky xl:top-3">
+                  <Card className="shadow-card border-0">
+                    <CardContent className="p-3 md:p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-heading text-sm font-semibold">Treatment Plan</h3>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Live from exam</span>
+                      </div>
+                      <TreatmentPlanBuilder
+                        patientId={patientId}
+                        clinicId={clinicId}
+                        patient={patient}
+                        clinic={clinic}
+                        examFindings={treatmentsList}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           {/* PRESCRIPTION TAB */}
@@ -334,16 +359,6 @@ export default function DentalChartPage() {
             )}
           </TabsContent>
 
-          {/* TREATMENT PLAN TAB */}
-          <TabsContent value="plan" className="mt-3">
-            <TreatmentPlanBuilder
-              patientId={patientId}
-              clinicId={clinicId}
-              patient={patient}
-              clinic={clinic}
-              examFindings={treatmentsList}
-            />
-          </TabsContent>
 
           {/* X-RAYS TAB */}
           <TabsContent value="xrays" className="mt-3">
