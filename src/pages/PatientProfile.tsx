@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,7 @@ import { SwipeableCard } from "@/components/mobile/SwipeableCard";
 import { PullToRefresh } from "@/components/mobile/PullToRefresh";
 import { Eye, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { completeTreatmentAndInvoice } from "@/lib/queue-sync";
 
 const STATUS_COLORS: Record<string, string> = {
   planned: "bg-primary/10 text-primary border-primary/30",
@@ -53,6 +54,7 @@ const LAB_TREATMENTS = ["Crown", "Bridge", "Denture", "RPD", "FPD", "Veneer", "I
 export default function PatientProfilePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { clinicId } = useAuth();
   const queryClient = useQueryClient();
   const { names: catalogNames } = useTreatmentCatalog();
@@ -307,6 +309,50 @@ export default function PatientProfilePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // One-click complete + auto-invoice helper (used by table button)
+  const markCompleteAndInvoice = useMutation({
+    mutationFn: async (t: any) => {
+      if (!clinicId || !id) throw new Error("Missing context");
+      return await completeTreatmentAndInvoice({
+        clinicId, patientId: id,
+        treatmentId: t.id,
+        treatmentName: t.treatment_name,
+        toothNumber: t.tooth_records?.tooth_number ?? null,
+        cost: Number(t.cost) || 0,
+      });
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["patient-treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
+      toast.success(res.created ? "Completed · invoice drafted" : "Completed · added to invoice", {
+        action: res.invoiceId && res.balance > 0 ? {
+          label: "Record payment",
+          onClick: () => setSearchParams({ tab: "billing", pay: res.invoiceId! }),
+        } : undefined,
+      });
+    },
+    onError: (e: any) => toast.error(e.message || "Failed"),
+  });
+
+  // Auto-open Record Payment dialog when ?pay=<invoiceId> is present
+  useEffect(() => {
+    const payId = searchParams.get("pay");
+    if (!payId || !invoices.length || showPaymentDialog) return;
+    const inv = invoices.find((i: any) => i.id === payId);
+    if (inv) {
+      const balance = Number(inv.amount || 0) - Number(inv.paid_amount || 0);
+      if (balance > 0) {
+        setPaymentInvoice(inv);
+        setPaymentAmount(String(balance));
+        setShowPaymentDialog(true);
+      }
+      const next = new URLSearchParams(searchParams);
+      next.delete("pay");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, invoices, showPaymentDialog, setSearchParams]);
+
   if (isLoading) {
     return <DashboardLayout><div className="flex items-center justify-center min-h-[400px] text-muted-foreground">Loading...</div></DashboardLayout>;
   }
@@ -368,7 +414,7 @@ export default function PatientProfilePage() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="history">
+        <Tabs value={searchParams.get("tab") || "history"} onValueChange={(v) => { const n = new URLSearchParams(searchParams); n.set("tab", v); setSearchParams(n, { replace: true }); }}>
           <TabsList>
             <TabsTrigger value="history" className="gap-1"><Clock className="h-3.5 w-3.5" /> <span className="hidden xs:inline sm:inline">History</span><span className="xs:hidden sm:hidden">Hist</span></TabsTrigger>
             <TabsTrigger value="medical" className="gap-1"><HeartPulse className="h-3.5 w-3.5" /> Medical</TabsTrigger>
@@ -556,17 +602,20 @@ export default function PatientProfilePage() {
                           <TableHead>Status</TableHead>
                           <TableHead>Cost</TableHead>
                           <TableHead>Date</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {!treatments.length ? (
-                          <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No treatments yet</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">No treatments yet</TableCell></TableRow>
                         ) : treatments.map((t: any) => {
                           const pending =
                             updateTreatmentStatus.isPending &&
                             (updateTreatmentStatus.variables as any)?.treatmentId === t.id;
+                          const mcPending = markCompleteAndInvoice.isPending && (markCompleteAndInvoice.variables as any)?.id === t.id;
+                          const isCompleted = t.status === "completed";
                           return (
-                            <TableRow key={t.id} className={cn("transition-opacity", pending && "opacity-70")}>
+                            <TableRow key={t.id} className={cn("transition-opacity", (pending || mcPending) && "opacity-70")} data-testid={`tx-row-${t.id}`}>
                               <TableCell className="font-medium">{t.treatment_name}</TableCell>
                               <TableCell>#{t.tooth_records?.tooth_number}</TableCell>
                               <TableCell>
@@ -576,7 +625,7 @@ export default function PatientProfilePage() {
                                   treatmentName: t.treatment_name,
                                   cost: t.cost ? Number(t.cost) : 0,
                                 } as any)}>
-                                  <SelectTrigger className="w-28 h-7 text-xs">
+                                  <SelectTrigger className="w-28 h-7 text-xs" data-testid={`tx-status-trigger-${t.id}`}>
                                     <Badge className={`${STATUS_COLORS[t.status] || ""} text-xs`} variant="secondary">
                                       {pending ? (
                                         <span className="flex items-center gap-1"><Loader2 className="h-2.5 w-2.5 animate-spin" /> saving</span>
@@ -587,13 +636,50 @@ export default function PatientProfilePage() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     {["planned", "in_progress", "completed", "cancelled"].map(s =>
-                                      <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+                                      <SelectItem key={s} value={s} data-testid={`tx-status-${s}`}>{s.replace("_", " ")}</SelectItem>
                                     )}
                                   </SelectContent>
                                 </Select>
                               </TableCell>
                               <TableCell>{t.cost ? `Rs ${Number(t.cost).toLocaleString()}` : "—"}</TableCell>
                               <TableCell className="text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString()}</TableCell>
+                              <TableCell className="text-right">
+                                {!isCompleted ? (
+                                  <Button
+                                    size="sm"
+                                    className="h-7 text-xs gap-1"
+                                    data-testid={`tx-mark-complete-${t.id}`}
+                                    disabled={mcPending}
+                                    onClick={() => markCompleteAndInvoice.mutate(t)}
+                                  >
+                                    {mcPending
+                                      ? <><Loader2 className="h-3 w-3 animate-spin" /> Saving</>
+                                      : <><CheckCircle2 className="h-3 w-3" /> Mark Complete</>}
+                                  </Button>
+                                ) : (() => {
+                                  // find linked unpaid invoice via unbilled list / invoices list
+                                  const linked = invoices.find((inv: any) =>
+                                    inv.status !== "paid" && Number(inv.amount || 0) - Number(inv.paid_amount || 0) > 0
+                                  );
+                                  if (!linked) return <span className="text-[10px] text-success">Paid</span>;
+                                  const bal = Number(linked.amount || 0) - Number(linked.paid_amount || 0);
+                                  return (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs gap-1"
+                                      data-testid={`tx-record-payment-${t.id}`}
+                                      onClick={() => {
+                                        setPaymentInvoice(linked);
+                                        setPaymentAmount(String(bal));
+                                        setShowPaymentDialog(true);
+                                      }}
+                                    >
+                                      <IndianRupee className="h-3 w-3" /> Record Payment
+                                    </Button>
+                                  );
+                                })()}
+                              </TableCell>
                             </TableRow>
                           );
                         })}

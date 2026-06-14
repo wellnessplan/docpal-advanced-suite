@@ -10,8 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Stethoscope, Pill, FileText } from "lucide-react";
+import { Plus, Stethoscope, Pill, FileText, CheckCircle2, IndianRupee, Loader2 } from "lucide-react";
 import { fireInstantPostTreatment } from "@/lib/automation-triggers";
+import { completeTreatmentAndInvoice } from "@/lib/queue-sync";
+import { useNavigate } from "react-router-dom";
 import { useTreatmentCatalog } from "@/hooks/useTreatmentCatalog";
 
 interface ToothDetailPanelProps {
@@ -31,6 +33,7 @@ export default function ToothDetailPanel({
   patientId, clinicId, toothNumber, toothRecordId, currentStatus, onUpdate,
 }: ToothDetailPanelProps) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { names: catalogNames } = useTreatmentCatalog();
   const treatmentOptions = catalogNames.length ? catalogNames : FALLBACK_TREATMENTS;
   const [showConditionForm, setShowConditionForm] = useState(false);
@@ -168,7 +171,6 @@ export default function ToothDetailPanel({
       if (error) throw error;
       if (newStatus === "completed") {
         await deductMaterials(treatmentName, id);
-        // Fire instant post-treatment WhatsApp automation (Rx + post-op video)
         fireInstantPostTreatment({ clinicId, treatmentId: id });
       }
     },
@@ -177,6 +179,34 @@ export default function ToothDetailPanel({
       toast.success("Treatment status updated");
     },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  // One-click: mark complete + auto-create/append invoice + offer Record Payment
+  const markCompleteAndInvoice = useMutation({
+    mutationFn: async (t: any) => {
+      const res = await completeTreatmentAndInvoice({
+        clinicId, patientId,
+        treatmentId: t.id,
+        treatmentName: t.treatment_name,
+        toothNumber,
+        cost: Number(t.cost) || 0,
+      });
+      await deductMaterials(t.treatment_name, t.id);
+      fireInstantPostTreatment({ clinicId, treatmentId: t.id });
+      return res;
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["tooth-treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-unbilled-treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-invoices"] });
+      toast.success(res.created ? "Completed · invoice drafted" : "Completed · added to invoice", {
+        action: res.invoiceId && res.balance > 0 ? {
+          label: "Record payment",
+          onClick: () => navigate(`/patients/${patientId}?tab=billing&pay=${res.invoiceId}`),
+        } : undefined,
+      });
+    },
+    onError: (e: any) => toast.error(e.message || "Failed"),
   });
 
   const statusBadgeColor: Record<string, string> = {
@@ -292,29 +322,60 @@ export default function ToothDetailPanel({
 
             {!treatments?.length ? (
               <p className="text-sm text-muted-foreground py-2">No treatments recorded</p>
-            ) : treatments.map((t: any) => (
-              <div key={t.id} className="p-2 rounded bg-muted space-y-1">
-                <div className="flex items-center justify-between">
+            ) : treatments.map((t: any) => {
+              const isPending = markCompleteAndInvoice.isPending && (markCompleteAndInvoice.variables as any)?.id === t.id;
+              const isCompleted = t.status === "completed";
+              return (
+              <div key={t.id} className="p-2 rounded bg-muted space-y-1.5" data-testid={`tx-row-${t.id}`}>
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium">{t.treatment_name}</span>
                   <Select
                     value={t.status}
                     onValueChange={v => updateTreatmentStatus.mutate({ id: t.id, newStatus: v, treatmentName: t.treatment_name })}
                   >
-                    <SelectTrigger className="h-6 w-[110px] text-xs">
+                    <SelectTrigger className="h-6 w-[110px] text-xs" data-testid={`tx-status-trigger-${t.id}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="planned">Planned</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="planned" data-testid="tx-status-planned">Planned</SelectItem>
+                      <SelectItem value="in_progress" data-testid="tx-status-in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed" data-testid="tx-status-completed">Completed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 {t.cost > 0 && <p className="text-xs font-medium">Rs {Number(t.cost).toLocaleString()}</p>}
                 {t.notes && <p className="text-xs text-muted-foreground">{t.notes}</p>}
-                <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</p>
+                <div className="flex items-center justify-between gap-2 pt-0.5">
+                  <p className="text-[10px] text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</p>
+                  {!isCompleted && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="h-7 text-xs gap-1"
+                      data-testid={`tx-mark-complete-${t.id}`}
+                      disabled={isPending}
+                      onClick={() => markCompleteAndInvoice.mutate(t)}
+                    >
+                      {isPending
+                        ? <><Loader2 className="h-3 w-3 animate-spin" /> Saving</>
+                        : <><CheckCircle2 className="h-3 w-3" /> Mark Complete</>}
+                    </Button>
+                  )}
+                  {isCompleted && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      data-testid={`tx-record-payment-${t.id}`}
+                      onClick={() => navigate(`/patients/${patientId}?tab=billing`)}
+                    >
+                      <IndianRupee className="h-3 w-3" /> Record Payment
+                    </Button>
+                  )}
+                </div>
               </div>
-            ))}
+              );
+            })}
           </TabsContent>
         </Tabs>
       </CardContent>
