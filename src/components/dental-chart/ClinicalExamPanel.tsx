@@ -30,9 +30,9 @@ export default function ClinicalExamPanel({
           <VoiceDictation
             onApply={(s: SoapResult) => {
               if (s.chief_complaint) onChange("chief_complaint", s.chief_complaint);
-              const diag = [s.subjective, s.objective, s.assessment, s.plan]
+              const diag = (["subjective","objective","assessment","plan"] as const)
+                .map(k => s[k] ? `${k[0].toUpperCase()}: ${s[k]}` : null)
                 .filter(Boolean)
-                .map((v, i) => `${["S","O","A","P"][i]}: ${v}`)
                 .join("\n");
               if (diag) onChange("diagnosis_notes", diag);
               if (s.gum_condition) onChange("gum_condition", s.gum_condition);
