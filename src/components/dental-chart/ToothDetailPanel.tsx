@@ -322,29 +322,60 @@ export default function ToothDetailPanel({
 
             {!treatments?.length ? (
               <p className="text-sm text-muted-foreground py-2">No treatments recorded</p>
-            ) : treatments.map((t: any) => (
-              <div key={t.id} className="p-2 rounded bg-muted space-y-1">
-                <div className="flex items-center justify-between">
+            ) : treatments.map((t: any) => {
+              const isPending = markCompleteAndInvoice.isPending && (markCompleteAndInvoice.variables as any)?.id === t.id;
+              const isCompleted = t.status === "completed";
+              return (
+              <div key={t.id} className="p-2 rounded bg-muted space-y-1.5" data-testid={`tx-row-${t.id}`}>
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium">{t.treatment_name}</span>
                   <Select
                     value={t.status}
                     onValueChange={v => updateTreatmentStatus.mutate({ id: t.id, newStatus: v, treatmentName: t.treatment_name })}
                   >
-                    <SelectTrigger className="h-6 w-[110px] text-xs">
+                    <SelectTrigger className="h-6 w-[110px] text-xs" data-testid={`tx-status-trigger-${t.id}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="planned">Planned</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="planned" data-testid="tx-status-planned">Planned</SelectItem>
+                      <SelectItem value="in_progress" data-testid="tx-status-in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed" data-testid="tx-status-completed">Completed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 {t.cost > 0 && <p className="text-xs font-medium">Rs {Number(t.cost).toLocaleString()}</p>}
                 {t.notes && <p className="text-xs text-muted-foreground">{t.notes}</p>}
-                <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</p>
+                <div className="flex items-center justify-between gap-2 pt-0.5">
+                  <p className="text-[10px] text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</p>
+                  {!isCompleted && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="h-7 text-xs gap-1"
+                      data-testid={`tx-mark-complete-${t.id}`}
+                      disabled={isPending}
+                      onClick={() => markCompleteAndInvoice.mutate(t)}
+                    >
+                      {isPending
+                        ? <><Loader2 className="h-3 w-3 animate-spin" /> Saving</>
+                        : <><CheckCircle2 className="h-3 w-3" /> Mark Complete</>}
+                    </Button>
+                  )}
+                  {isCompleted && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      data-testid={`tx-record-payment-${t.id}`}
+                      onClick={() => navigate(`/patients/${patientId}?tab=billing`)}
+                    >
+                      <IndianRupee className="h-3 w-3" /> Record Payment
+                    </Button>
+                  )}
+                </div>
               </div>
-            ))}
+              );
+            })}
           </TabsContent>
         </Tabs>
       </CardContent>
