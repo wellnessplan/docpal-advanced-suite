@@ -602,17 +602,20 @@ export default function PatientProfilePage() {
                           <TableHead>Status</TableHead>
                           <TableHead>Cost</TableHead>
                           <TableHead>Date</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {!treatments.length ? (
-                          <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No treatments yet</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">No treatments yet</TableCell></TableRow>
                         ) : treatments.map((t: any) => {
                           const pending =
                             updateTreatmentStatus.isPending &&
                             (updateTreatmentStatus.variables as any)?.treatmentId === t.id;
+                          const mcPending = markCompleteAndInvoice.isPending && (markCompleteAndInvoice.variables as any)?.id === t.id;
+                          const isCompleted = t.status === "completed";
                           return (
-                            <TableRow key={t.id} className={cn("transition-opacity", pending && "opacity-70")}>
+                            <TableRow key={t.id} className={cn("transition-opacity", (pending || mcPending) && "opacity-70")} data-testid={`tx-row-${t.id}`}>
                               <TableCell className="font-medium">{t.treatment_name}</TableCell>
                               <TableCell>#{t.tooth_records?.tooth_number}</TableCell>
                               <TableCell>
@@ -622,7 +625,7 @@ export default function PatientProfilePage() {
                                   treatmentName: t.treatment_name,
                                   cost: t.cost ? Number(t.cost) : 0,
                                 } as any)}>
-                                  <SelectTrigger className="w-28 h-7 text-xs">
+                                  <SelectTrigger className="w-28 h-7 text-xs" data-testid={`tx-status-trigger-${t.id}`}>
                                     <Badge className={`${STATUS_COLORS[t.status] || ""} text-xs`} variant="secondary">
                                       {pending ? (
                                         <span className="flex items-center gap-1"><Loader2 className="h-2.5 w-2.5 animate-spin" /> saving</span>
@@ -633,13 +636,50 @@ export default function PatientProfilePage() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     {["planned", "in_progress", "completed", "cancelled"].map(s =>
-                                      <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+                                      <SelectItem key={s} value={s} data-testid={`tx-status-${s}`}>{s.replace("_", " ")}</SelectItem>
                                     )}
                                   </SelectContent>
                                 </Select>
                               </TableCell>
                               <TableCell>{t.cost ? `Rs ${Number(t.cost).toLocaleString()}` : "—"}</TableCell>
                               <TableCell className="text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString()}</TableCell>
+                              <TableCell className="text-right">
+                                {!isCompleted ? (
+                                  <Button
+                                    size="sm"
+                                    className="h-7 text-xs gap-1"
+                                    data-testid={`tx-mark-complete-${t.id}`}
+                                    disabled={mcPending}
+                                    onClick={() => markCompleteAndInvoice.mutate(t)}
+                                  >
+                                    {mcPending
+                                      ? <><Loader2 className="h-3 w-3 animate-spin" /> Saving</>
+                                      : <><CheckCircle2 className="h-3 w-3" /> Mark Complete</>}
+                                  </Button>
+                                ) : (() => {
+                                  // find linked unpaid invoice via unbilled list / invoices list
+                                  const linked = invoices.find((inv: any) =>
+                                    inv.status !== "paid" && Number(inv.amount || 0) - Number(inv.paid_amount || 0) > 0
+                                  );
+                                  if (!linked) return <span className="text-[10px] text-success">Paid</span>;
+                                  const bal = Number(linked.amount || 0) - Number(linked.paid_amount || 0);
+                                  return (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs gap-1"
+                                      data-testid={`tx-record-payment-${t.id}`}
+                                      onClick={() => {
+                                        setPaymentInvoice(linked);
+                                        setPaymentAmount(String(bal));
+                                        setShowPaymentDialog(true);
+                                      }}
+                                    >
+                                      <IndianRupee className="h-3 w-3" /> Record Payment
+                                    </Button>
+                                  );
+                                })()}
+                              </TableCell>
                             </TableRow>
                           );
                         })}
