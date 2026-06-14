@@ -20,6 +20,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import NewPatientDialog from "@/components/dashboard/NewPatientDialog";
+import NewAppointmentDialog from "@/components/dashboard/NewAppointmentDialog";
 
 /* ─────────────────────────────────────────────────────────────
    PREMIUM SAAS DASHBOARD
