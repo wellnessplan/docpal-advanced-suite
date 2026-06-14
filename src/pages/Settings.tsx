@@ -782,13 +782,8 @@ import { Hospital, ShieldCheck, IndianRupee, Handshake, Zap, FileText, ChevronRi
 type SettingsItem = { key: string; label: string; render: (clinicId: string, clinicName: string) => JSX.Element };
 type SettingsGroup = { label: string; icon: React.ComponentType<{ className?: string }>; items: SettingsItem[] };
 
+// Subscription moved to user-menu dropdown; 6 focused groups remain.
 const SETTINGS_GROUPS: SettingsGroup[] = [
-  {
-    label: "Subscription", icon: Crown,
-    items: [
-      { key: "subscription", label: "Subscription", render: (id) => <SubscriptionPlanTab clinicId={id} /> },
-    ],
-  },
   {
     label: "Clinic Setup", icon: Hospital,
     items: [

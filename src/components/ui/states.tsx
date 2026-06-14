@@ -12,19 +12,30 @@ interface EmptyStateProps {
   className?: string;
 }
 
-/** Premium, theme-aware empty state. Use across all list/table pages. */
+/** Premium, theme-aware empty state with subtle illustration. Used across all list/table pages. */
 export function EmptyState({ icon: Icon = Inbox, title, description, action, className }: EmptyStateProps) {
   return (
-    <Card className={cn("border-dashed border-border/70 bg-card/60", className)}>
-      <CardContent className="flex flex-col items-center justify-center text-center py-14 md:py-20 px-6">
-        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-foreground shadow-card">
+    <Card className={cn("border-dashed border-border/70 bg-card/60 overflow-hidden", className)}>
+      <CardContent className="relative flex flex-col items-center justify-center text-center py-14 md:py-20 px-6">
+        <svg
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 mx-auto h-40 w-full opacity-[0.08] pointer-events-none text-primary"
+          viewBox="0 0 400 200" fill="none"
+        >
+          <circle cx="200" cy="120" r="80" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 6" />
+          <circle cx="200" cy="120" r="50" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M120 160 Q200 40 280 160" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="120" cy="160" r="3" fill="currentColor" />
+          <circle cx="280" cy="160" r="3" fill="currentColor" />
+        </svg>
+        <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-accent text-primary shadow-card ring-1 ring-primary/10">
           <Icon className="h-7 w-7" />
         </div>
-        <h3 className="font-heading text-lg md:text-xl font-semibold tracking-tight">{title}</h3>
+        <h3 className="relative font-heading text-lg md:text-xl font-semibold tracking-tight">{title}</h3>
         {description && (
-          <p className="mt-1.5 max-w-md text-sm text-muted-foreground">{description}</p>
+          <p className="relative mt-1.5 max-w-md text-sm text-muted-foreground">{description}</p>
         )}
-        {action && <div className="mt-6">{action}</div>}
+        {action && <div className="relative mt-6">{action}</div>}
       </CardContent>
     </Card>
   );
