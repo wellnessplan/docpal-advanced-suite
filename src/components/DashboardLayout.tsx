@@ -282,7 +282,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   </div>
                 );
               })}
+
+              {/* Standalone Settings link */}
+              <div className="pt-2">
+                {!collapsed && <div className="h-px bg-white/[0.10] mx-2 mb-2" />}
+                {renderNavItem(SETTINGS_ITEM)}
+              </div>
             </nav>
+
 
             <div className="p-2 space-y-0.5 border-t border-white/15">
               {isSuperAdmin && (
