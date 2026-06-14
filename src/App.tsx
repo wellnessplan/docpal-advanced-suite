@@ -183,6 +183,8 @@ const App = () => (
                 <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
                 <Route path="/focus" element={<ProtectedRoute><FocusToday /></ProtectedRoute>} />
                 <Route path="/focus/patient/:id" element={<ProtectedRoute><FocusPatient /></ProtectedRoute>} />
+                <Route path="/front-desk" element={<ProtectedRoute><FrontDesk /></ProtectedRoute>} />
+
                 <Route path="/patient-education" element={<ProtectedRoute><PatientEducation /></ProtectedRoute>} />
                 <Route path="/displays" element={<ProtectedRoute><DisplayManager /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
