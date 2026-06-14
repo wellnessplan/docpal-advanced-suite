@@ -65,6 +65,8 @@ const DisplayScreen = lazy(() => import("./pages/DisplayScreen"));
 const PurchaseOrders = lazy(() => import("./pages/PurchaseOrders"));
 const WhatsAppStatus = lazy(() => import("./pages/WhatsAppStatus"));
 const PatientStatus = lazy(() => import("./pages/PatientStatus"));
+const FinanceHub = lazy(() => import("./pages/FinanceHub"));
+const AnalyticsHub = lazy(() => import("./pages/AnalyticsHub"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -142,6 +144,8 @@ const App = () => (
                 <Route path="/patients/:id" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
                 <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
                 <Route path="/treatment-plans" element={<ProtectedRoute><TreatmentPlans /></ProtectedRoute>} />
+                <Route path="/finance-hub" element={<ProtectedRoute><FinanceHub /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><AnalyticsHub /></ProtectedRoute>} />
                 <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
                 <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
                 <Route path="/insurance" element={<ProtectedRoute><InsuranceClaims /></ProtectedRoute>} />

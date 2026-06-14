@@ -1,4 +1,7 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, createContext, useContext } from "react";
+
+const NestedLayoutContext = createContext(false);
+
 
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,14 +65,20 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Revenue",
+    label: "Finance",
     groupIcon: IndianRupee,
     collapsible: true,
     items: [
-      { href: "/billing", label: "Billing", icon: Receipt },
-      { href: "/payments", label: "Payments", icon: Wallet },
-      { href: "/insurance", label: "Insurance", icon: ShieldCheck },
+      { href: "/finance-hub", label: "Billing & Payments", icon: Receipt },
       { href: "/memberships", label: "Memberships", icon: Crown },
+    ],
+  },
+  {
+    label: "Analytics",
+    groupIcon: BarChart3,
+    collapsible: true,
+    items: [
+      { href: "/analytics", label: "Reports & Insights", icon: BarChart3 },
     ],
   },
   {
@@ -122,6 +131,8 @@ function filterByRole(items: NavItem[], role: string | undefined | null): NavIte
 }
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const nested = useContext(NestedLayoutContext);
+  if (nested) return <>{children}</>;
   const { pathname } = useLocation();
   const { profile, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
@@ -372,7 +383,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
-        <div className={cn("p-3 md:p-6", isMobile && "pb-24")}>{children}</div>
+        <div className={cn("p-3 md:p-6", isMobile && "pb-24")}>
+          <NestedLayoutContext.Provider value={true}>{children}</NestedLayoutContext.Provider>
+        </div>
       </main>
 
       {isMobile && <MobileBottomNav />}
