@@ -414,7 +414,7 @@ export default function PatientProfilePage() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="history">
+        <Tabs value={searchParams.get("tab") || "history"} onValueChange={(v) => { const n = new URLSearchParams(searchParams); n.set("tab", v); setSearchParams(n, { replace: true }); }}>
           <TabsList>
             <TabsTrigger value="history" className="gap-1"><Clock className="h-3.5 w-3.5" /> <span className="hidden xs:inline sm:inline">History</span><span className="xs:hidden sm:hidden">Hist</span></TabsTrigger>
             <TabsTrigger value="medical" className="gap-1"><HeartPulse className="h-3.5 w-3.5" /> Medical</TabsTrigger>
