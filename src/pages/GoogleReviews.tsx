@@ -156,8 +156,8 @@ export default function GoogleReviews() {
         message_body: (t.message_body ?? "").trim(),
         enabled: t.enabled ?? true,
       };
-      if (!payload.message_body) throw new Error("Message body required");
-      if (payload.message_body.length > 2000) throw new Error("Message too long (max 2000)");
+      const bv = validateTemplateBody(payload.message_body);
+      if (!bv.ok) throw new Error(bv.reason!);
       if (t.id) {
         const { error } = await supabase.from("whatsapp_templates")
           .update(payload).eq("id", t.id);
