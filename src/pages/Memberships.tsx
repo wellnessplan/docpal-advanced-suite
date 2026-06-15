@@ -95,6 +95,7 @@ export default function Memberships() {
     mutationFn: async () => {
       if (!clinicId) throw new Error("No clinic");
       const benefits = planForm.benefits.split(",").map(b => b.trim()).filter(Boolean);
+      const allowed_services = planForm.allowed_services.split(",").map(b => b.trim()).filter(Boolean);
       const payload = {
         clinic_id: clinicId,
         plan_name: planForm.plan_name,
@@ -102,6 +103,9 @@ export default function Memberships() {
         discount_percent: parseFloat(planForm.discount_percent) || 0,
         amount: parseFloat(planForm.amount) || 0,
         benefits,
+        visit_interval_months: planForm.visit_interval_months ? parseInt(planForm.visit_interval_months) : null,
+        allowed_services,
+        maintenance_message: planForm.maintenance_message || null,
       };
       if (editingPlanId) {
         const { error } = await (supabase.from("membership_plans") as any).update(payload).eq("id", editingPlanId);
