@@ -12,13 +12,19 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Copy, QrCode, Settings2, Users, Send, Loader2 } from "lucide-react";
+import { Copy, QrCode, Settings2, Users, Send, Loader2, Upload } from "lucide-react";
 import ProgramContentLibrary from "@/components/programs/ProgramContentLibrary";
+import ProgramEngagementDashboard from "@/components/programs/ProgramEngagementDashboard";
+import BulkEnrollDialog from "@/components/programs/BulkEnrollDialog";
+
+const TIMEZONES = ["Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York", "America/Los_Angeles"];
+const WEEKDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 interface Program {
   id: string; clinic_id: string; code: string; name: string;
   description: string | null; emoji: string | null; interval_months: number;
   message_template: string; welcome_message: string | null; active: boolean;
+  send_rule: string; send_day_of_month: number; send_weekday: number | null; timezone: string;
 }
 interface Enrollment {
   id: string; full_name: string; phone: string; program_id: string;
