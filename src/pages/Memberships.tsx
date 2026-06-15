@@ -507,6 +507,8 @@ export default function Memberships() {
                         <th className="text-left py-2 font-medium">Plan</th>
                         <th className="text-left py-2 font-medium">End</th>
                         <th className="text-left py-2 font-medium">Status</th>
+                        <th className="text-left py-2 font-medium">Payment</th>
+                        <th className="text-left py-2 font-medium">Next visit</th>
                         <th className="text-right py-2 font-medium">Actions</th>
                       </tr>
                     </thead>
@@ -520,6 +522,8 @@ export default function Memberships() {
                           <td className="py-2.5">{m.plan_name}<div className="text-xs text-muted-foreground">Rs {Number(m.amount).toLocaleString()}</div></td>
                           <td className="py-2.5">{m.end_date ? format(new Date(m.end_date), "dd MMM yyyy") : "—"}</td>
                           <td className="py-2.5">{statusBadge(m)}</td>
+                          <td className="py-2.5">{paymentBadge(m)}</td>
+                          <td className="py-2.5 text-xs">{m.next_maintenance_date ? format(new Date(m.next_maintenance_date), "dd MMM yyyy") : <span className="text-muted-foreground">—</span>}</td>
                           <td className="py-2.5">
                             <div className="flex gap-1 justify-end">
                               {(m.isExpiring || m.isExpired) && m.patients?.phone && (
