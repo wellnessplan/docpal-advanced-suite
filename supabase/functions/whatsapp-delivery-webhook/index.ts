@@ -43,26 +43,47 @@ function timingSafeEqual(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
-function normalize(body: any): Array<{ id: string; status: string; raw: any }> {
-  const out: Array<{ id: string; status: string; raw: any }> = [];
+function normalize(body: any): {
+  statuses: Array<{ id: string; status: string; raw: any }>;
+  replies: Array<{ from: string; raw: any }>;
+} {
+  const statuses: Array<{ id: string; status: string; raw: any }> = [];
+  const replies: Array<{ from: string; raw: any }> = [];
+
+  // Meta Cloud API shape
   if (Array.isArray(body?.entry)) {
     for (const entry of body.entry) {
       for (const change of entry.changes ?? []) {
-        for (const s of change?.value?.statuses ?? []) {
-          if (s.id && s.status) out.push({ id: s.id, status: s.status, raw: s });
+        const v = change?.value ?? {};
+        for (const s of v.statuses ?? []) {
+          if (s.id && s.status) statuses.push({ id: s.id, status: s.status, raw: s });
+        }
+        for (const m of v.messages ?? []) {
+          // Inbound message from a patient (reply)
+          if (m?.from) replies.push({ from: String(m.from), raw: m });
         }
       }
     }
   }
+  // Gupshup / generic shapes
   if (body?.type === "message-event" && body?.payload?.id) {
-    out.push({ id: body.payload.id, status: body.payload.type ?? "unknown", raw: body.payload });
+    statuses.push({ id: body.payload.id, status: body.payload.type ?? "unknown", raw: body.payload });
+  }
+  if (body?.type === "message" && body?.payload?.source) {
+    replies.push({ from: String(body.payload.source), raw: body.payload });
   }
   if (Array.isArray(body?.messages)) {
     for (const m of body.messages) {
-      if (m.id && m.status) out.push({ id: m.id, status: m.status, raw: m });
+      if (m.id && m.status) statuses.push({ id: m.id, status: m.status, raw: m });
+      else if (m.from && !m.status) replies.push({ from: String(m.from), raw: m });
     }
   }
-  return out;
+  return { statuses, replies };
+}
+
+function normalizePhone(p: string): string {
+  // Keep digits only — match against last 10–15 digits stored in whatsapp_logs.phone
+  return (p ?? "").replace(/\D/g, "");
 }
 
 Deno.serve(async (req) => {
