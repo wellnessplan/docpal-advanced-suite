@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Crown, Trash2, Users, Pencil, RefreshCw, XCircle, MessageCircle, Search, AlertTriangle } from "lucide-react";
+import { Plus, Crown, Trash2, Users, Pencil, RefreshCw, XCircle, MessageCircle, Search, AlertTriangle, TrendingUp, Award, Minus, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPaged } from "@/lib/supabase-paged";
