@@ -104,6 +104,10 @@ export default function PatientPrograms() {
           interval_months: p.interval_months,
           message_template: p.message_template,
           welcome_message: p.welcome_message,
+          send_rule: p.send_rule,
+          send_day_of_month: p.send_day_of_month,
+          send_weekday: p.send_weekday,
+          timezone: p.timezone,
         })
         .eq("id", p.id);
       if (error) throw error;
