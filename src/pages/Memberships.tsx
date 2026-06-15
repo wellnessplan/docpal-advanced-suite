@@ -63,15 +63,49 @@ export default function Memberships() {
     enabled: !!clinicId,
   });
 
-  // Derived status: expired / expiring-soon flags
+  // Fetch payment status for membership-linked invoices
+  const invoiceIds = useMemo(
+    () => memberships.map((m: any) => m.invoice_id).filter(Boolean),
+    [memberships]
+  );
+  const { data: invoiceMap = {} } = useQuery({
+    queryKey: ["membership-invoices", clinicId, invoiceIds.length],
+    enabled: !!clinicId && invoiceIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("invoices")
+        .select("id, status, paid_amount, total")
+        .in("id", invoiceIds);
+      const map: Record<string, any> = {};
+      (data || []).forEach((i: any) => { map[i.id] = i; });
+      return map;
+    },
+  });
+
+  // Derived status: expired / expiring-soon flags + payment
   const today = new Date();
   const enriched = useMemo(() => memberships.map((m: any) => {
     const end = m.end_date ? new Date(m.end_date) : null;
     const daysLeft = end ? differenceInDays(end, today) : null;
     const isExpired = m.status === "active" && daysLeft !== null && daysLeft < 0;
     const isExpiring = m.status === "active" && daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
-    return { ...m, daysLeft, isExpired, isExpiring };
-  }), [memberships]);
+    const inv = m.invoice_id ? (invoiceMap as any)[m.invoice_id] : null;
+    let paymentStatus: "paid" | "partial" | "unpaid" | "failed" | null = null;
+    if (inv) {
+      if (inv.status === "failed") paymentStatus = "failed";
+      else if (Number(inv.paid_amount) >= Number(inv.total) && Number(inv.total) > 0) paymentStatus = "paid";
+      else if (Number(inv.paid_amount) > 0) paymentStatus = "partial";
+      else paymentStatus = "unpaid";
+    }
+    return { ...m, daysLeft, isExpired, isExpiring, paymentStatus };
+  }), [memberships, invoiceMap]);
+
+  const upcomingMaintenance = useMemo(() => {
+    const horizon = new Date(today.getTime() + 30 * 86_400_000);
+    return enriched
+      .filter((m: any) => m.status === "active" && m.next_maintenance_date && new Date(m.next_maintenance_date) <= horizon)
+      .sort((a: any, b: any) => new Date(a.next_maintenance_date).getTime() - new Date(b.next_maintenance_date).getTime());
+  }, [enriched]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
