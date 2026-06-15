@@ -3478,6 +3478,66 @@ export type Database = {
           },
         ]
       }
+      patient_programs: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          code: string
+          created_at: string
+          description: string | null
+          emoji: string | null
+          id: string
+          interval_months: number
+          message_template: string
+          name: string
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          code: string
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          interval_months?: number
+          message_template: string
+          name: string
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          interval_months?: number
+          message_template?: string
+          name?: string
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_programs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_programs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_health"
+            referencedColumns: ["clinic_id"]
+          },
+        ]
+      }
       patient_sessions: {
         Row: {
           clinic_id: string
@@ -4162,6 +4222,83 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenant_health"
             referencedColumns: ["clinic_id"]
+          },
+        ]
+      }
+      program_enrollments: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          full_name: string
+          id: string
+          last_reminder_at: string | null
+          next_reminder_at: string
+          patient_id: string | null
+          phone: string
+          program_id: string
+          reminders_sent: number
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          full_name: string
+          id?: string
+          last_reminder_at?: string | null
+          next_reminder_at: string
+          patient_id?: string | null
+          phone: string
+          program_id: string
+          reminders_sent?: number
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          last_reminder_at?: string | null
+          next_reminder_at?: string
+          patient_id?: string | null
+          phone?: string
+          program_id?: string
+          reminders_sent?: number
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_enrollments_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_enrollments_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_health"
+            referencedColumns: ["clinic_id"]
+          },
+          {
+            foreignKeyName: "program_enrollments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_enrollments_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "patient_programs"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5872,7 +6009,17 @@ export type Database = {
         Args: { p_item_id: string; p_quantity: number }
         Returns: undefined
       }
+      dispatch_program_reminders: { Args: never; Returns: Json }
       end_impersonation: { Args: never; Returns: Json }
+      enroll_in_programs_public: {
+        Args: {
+          p_clinic_id: string
+          p_full_name: string
+          p_phone: string
+          p_program_ids: string[]
+        }
+        Returns: Json
+      }
       gdpr_delete_patient: {
         Args: { p_patient_id: string }
         Returns: undefined
@@ -5932,6 +6079,17 @@ export type Database = {
         Returns: number
       }
       get_public_clinic_brand: { Args: { p_clinic_id: string }; Returns: Json }
+      get_public_programs: {
+        Args: { p_clinic_id: string }
+        Returns: {
+          code: string
+          description: string
+          emoji: string
+          id: string
+          interval_months: number
+          name: string
+        }[]
+      }
       get_user_clinic_id: { Args: never; Returns: string }
       get_user_group_id: { Args: never; Returns: string }
       has_role: {
@@ -5967,6 +6125,10 @@ export type Database = {
         Returns: Json
       }
       receive_purchase_order: { Args: { p_po_id: string }; Returns: undefined }
+      seed_default_patient_programs: {
+        Args: { p_clinic_id: string }
+        Returns: undefined
+      }
       self_register_patient:
         | {
             Args: {
