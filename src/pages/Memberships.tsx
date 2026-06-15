@@ -136,6 +136,9 @@ export default function Memberships() {
       discount_percent: String(p.discount_percent ?? 0),
       amount: String(p.amount ?? ""),
       benefits: Array.isArray(p.benefits) ? p.benefits.join(", ") : "",
+      visit_interval_months: String(p.visit_interval_months ?? ""),
+      allowed_services: Array.isArray(p.allowed_services) ? p.allowed_services.join(", ") : "",
+      maintenance_message: p.maintenance_message || "",
     });
     setPlanOpen(true);
   };
