@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,84 +6,115 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Crown, Trash2, Users } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Crown, Trash2, Users, Pencil, RefreshCw, XCircle, MessageCircle, Search, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPaged } from "@/lib/supabase-paged";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, differenceInDays, addMonths } from "date-fns";
+
+type PlanForm = { plan_name: string; duration_months: string; discount_percent: string; amount: string; benefits: string };
+const blankPlan: PlanForm = { plan_name: "", duration_months: "12", discount_percent: "0", amount: "", benefits: "" };
 
 export default function Memberships() {
   const { clinicId } = useAuth();
   const qc = useQueryClient();
+
+  // Plan dialog
   const [planOpen, setPlanOpen] = useState(false);
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+  const [planForm, setPlanForm] = useState<PlanForm>(blankPlan);
+
+  // Enroll dialog
   const [enrollOpen, setEnrollOpen] = useState(false);
-  const [planForm, setPlanForm] = useState({ plan_name: "", duration_months: "12", discount_percent: "0", amount: "", benefits: "" });
-  const [enrollForm, setEnrollForm] = useState({ patient_id: "", plan_id: "" });
+  const [enrollForm, setEnrollForm] = useState({ patient_id: "", plan_id: "", create_invoice: true });
+
+  // Edit enrollment
+  const [editEnroll, setEditEnroll] = useState<any | null>(null);
+
+  // Filters
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { data: plans = [] } = useQuery({
     queryKey: ["membership-plans", clinicId],
-    queryFn: async () => {
-      return await fetchAllPaged<any>((from, to) =>
-        (supabase.from("membership_plans") as any)
-          .select("*")
-          .eq("clinic_id", clinicId!)
-          .order("created_at", { ascending: false })
-          .range(from, to)
-      );
-    },
+    queryFn: async () => fetchAllPaged<any>((from, to) =>
+      (supabase.from("membership_plans") as any).select("*").eq("clinic_id", clinicId!).order("created_at", { ascending: false }).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   const { data: memberships = [], isLoading } = useQuery({
     queryKey: ["memberships", clinicId],
-    queryFn: async () => {
-      return await fetchAllPaged<any>((from, to) =>
-        supabase
-          .from("memberships")
-          .select("*, patients(full_name, phone)")
-          .eq("clinic_id", clinicId!)
-          .order("created_at", { ascending: false })
-          .range(from, to)
-      );
-    },
+    queryFn: async () => fetchAllPaged<any>((from, to) =>
+      supabase.from("memberships").select("*, patients(full_name, phone)").eq("clinic_id", clinicId!).order("created_at", { ascending: false }).range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
   const { data: patients = [] } = useQuery({
     queryKey: ["patients-list", clinicId],
-    queryFn: async () => {
-      return await fetchAllPaged<{ id: string; full_name: string }>((from, to) =>
-        supabase.from("patients").select("id, full_name").eq("clinic_id", clinicId!).order("full_name").range(from, to)
-      );
-    },
+    queryFn: async () => fetchAllPaged<{ id: string; full_name: string; phone: string | null }>((from, to) =>
+      supabase.from("patients").select("id, full_name, phone").eq("clinic_id", clinicId!).order("full_name").range(from, to)
+    ),
     enabled: !!clinicId,
   });
 
-  const activeCount = memberships.filter((m: any) => m.status === "active").length;
-  const totalRevenue = memberships.reduce((sum: number, m: any) => sum + (m.amount || 0), 0);
+  // Derived status: expired / expiring-soon flags
+  const today = new Date();
+  const enriched = useMemo(() => memberships.map((m: any) => {
+    const end = m.end_date ? new Date(m.end_date) : null;
+    const daysLeft = end ? differenceInDays(end, today) : null;
+    const isExpired = m.status === "active" && daysLeft !== null && daysLeft < 0;
+    const isExpiring = m.status === "active" && daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
+    return { ...m, daysLeft, isExpired, isExpiring };
+  }), [memberships]);
 
-  const addPlan = useMutation({
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return enriched.filter((m: any) => {
+      if (statusFilter === "active" && m.status !== "active") return false;
+      if (statusFilter === "expired" && !(m.status === "expired" || m.isExpired)) return false;
+      if (statusFilter === "expiring" && !m.isExpiring) return false;
+      if (statusFilter === "cancelled" && m.status !== "cancelled") return false;
+      if (!q) return true;
+      return (m.patients?.full_name || "").toLowerCase().includes(q) || (m.plan_name || "").toLowerCase().includes(q);
+    });
+  }, [enriched, search, statusFilter]);
+
+  const activeCount = enriched.filter((m: any) => m.status === "active" && !m.isExpired).length;
+  const expiringCount = enriched.filter((m: any) => m.isExpiring).length;
+  const expiredCount = enriched.filter((m: any) => m.status === "expired" || m.isExpired).length;
+  const totalRevenue = memberships.reduce((sum: number, m: any) => sum + Number(m.amount || 0), 0);
+
+  // Plan mutations
+  const savePlan = useMutation({
     mutationFn: async () => {
       if (!clinicId) throw new Error("No clinic");
       const benefits = planForm.benefits.split(",").map(b => b.trim()).filter(Boolean);
-      const { error } = await (supabase.from("membership_plans") as any).insert({
+      const payload = {
         clinic_id: clinicId,
         plan_name: planForm.plan_name,
         duration_months: parseInt(planForm.duration_months) || 12,
         discount_percent: parseFloat(planForm.discount_percent) || 0,
         amount: parseFloat(planForm.amount) || 0,
         benefits,
-      });
-      if (error) throw error;
+      };
+      if (editingPlanId) {
+        const { error } = await (supabase.from("membership_plans") as any).update(payload).eq("id", editingPlanId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase.from("membership_plans") as any).insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["membership-plans"] });
-      setPlanOpen(false);
-      setPlanForm({ plan_name: "", duration_months: "12", discount_percent: "0", amount: "", benefits: "" });
-      toast.success("Plan created!");
+      setPlanOpen(false); setEditingPlanId(null); setPlanForm(blankPlan);
+      toast.success(editingPlanId ? "Plan updated" : "Plan created");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -93,22 +124,31 @@ export default function Memberships() {
       const { error } = await (supabase.from("membership_plans") as any).delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["membership-plans"] });
-      toast.success("Plan deleted");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["membership-plans"] }); toast.success("Plan deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
 
+  const openEditPlan = (p: any) => {
+    setEditingPlanId(p.id);
+    setPlanForm({
+      plan_name: p.plan_name || "",
+      duration_months: String(p.duration_months ?? 12),
+      discount_percent: String(p.discount_percent ?? 0),
+      amount: String(p.amount ?? ""),
+      benefits: Array.isArray(p.benefits) ? p.benefits.join(", ") : "",
+    });
+    setPlanOpen(true);
+  };
+
+  // Enroll
   const enrollPatient = useMutation({
     mutationFn: async () => {
       if (!clinicId) throw new Error("No clinic");
       const plan = plans.find((p: any) => p.id === enrollForm.plan_id);
       if (!plan) throw new Error("Select a plan");
       const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + (plan.duration_months || 12));
-      const { error } = await supabase.from("memberships").insert({
+      const endDate = addMonths(startDate, plan.duration_months || 12);
+      const { data: m, error } = await supabase.from("memberships").insert({
         clinic_id: clinicId,
         patient_id: enrollForm.patient_id,
         plan_name: plan.plan_name,
@@ -118,17 +158,104 @@ export default function Memberships() {
         start_date: startDate.toISOString().split("T")[0],
         end_date: endDate.toISOString().split("T")[0],
         status: "active",
-      });
+      }).select().single();
       if (error) throw error;
+
+      if (enrollForm.create_invoice && plan.amount > 0) {
+        const { data: inv, error: ie } = await supabase.from("invoices").insert({
+          clinic_id: clinicId,
+          patient_id: enrollForm.patient_id,
+          subtotal: plan.amount,
+          total: plan.amount,
+          paid_amount: 0,
+          status: "unpaid",
+          invoice_date: startDate.toISOString().split("T")[0],
+          notes: `Membership: ${plan.plan_name}`,
+        } as any).select().single();
+        if (!ie && inv) {
+          await supabase.from("invoice_items").insert({
+            invoice_id: (inv as any).id,
+            description: `Membership – ${plan.plan_name} (${plan.duration_months} mo)`,
+            quantity: 1, unit_price: plan.amount, total: plan.amount,
+          } as any);
+        }
+      }
+      return m;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["memberships"] });
       setEnrollOpen(false);
-      setEnrollForm({ patient_id: "", plan_id: "" });
-      toast.success("Patient enrolled!");
+      setEnrollForm({ patient_id: "", plan_id: "", create_invoice: true });
+      toast.success("Patient enrolled");
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  // Renew, cancel, update enrollment
+  const renewMembership = useMutation({
+    mutationFn: async (m: any) => {
+      const plan = plans.find((p: any) => p.id === m.plan_type);
+      const months = plan?.duration_months || 12;
+      const base = m.end_date && new Date(m.end_date) > today ? new Date(m.end_date) : today;
+      const newEnd = addMonths(base, months);
+      const { error } = await supabase.from("memberships").update({
+        status: "active",
+        end_date: newEnd.toISOString().split("T")[0],
+      }).eq("id", m.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberships"] }); toast.success("Renewed"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const cancelMembership = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("memberships").update({ status: "cancelled" }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberships"] }); toast.success("Cancelled"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const saveEnroll = useMutation({
+    mutationFn: async () => {
+      if (!editEnroll) return;
+      const { error } = await supabase.from("memberships").update({
+        plan_name: editEnroll.plan_name,
+        amount: Number(editEnroll.amount) || 0,
+        start_date: editEnroll.start_date,
+        end_date: editEnroll.end_date,
+        status: editEnroll.status,
+      }).eq("id", editEnroll.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberships"] }); setEditEnroll(null); toast.success("Saved"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const sendRenewalReminder = useMutation({
+    mutationFn: async (m: any) => {
+      const phone = m.patients?.phone;
+      if (!phone) throw new Error("No phone on file");
+      const name = m.patients?.full_name || "there";
+      const when = m.end_date ? format(new Date(m.end_date), "dd MMM yyyy") : "soon";
+      const body = `Hi ${name}, your ${m.plan_name} membership expires on ${when}. Reply to renew and continue enjoying member benefits.`;
+      const { error } = await (supabase.from("whatsapp_logs") as any).insert({
+        clinic_id: clinicId, patient_id: m.patient_id, template_name: "membership_renewal",
+        phone, message_body: body, status: "queued", delivery_status: "queued", sent_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => toast.success("Renewal reminder queued"),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const statusBadge = (m: any) => {
+    if (m.status === "cancelled") return <Badge variant="secondary">Cancelled</Badge>;
+    if (m.status === "expired" || m.isExpired) return <Badge variant="destructive">Expired</Badge>;
+    if (m.isExpiring) return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Expiring in {m.daysLeft}d</Badge>;
+    return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>;
+  };
 
   return (
     <DashboardLayout>
@@ -137,43 +264,40 @@ export default function Memberships() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="font-heading text-xl md:text-2xl font-bold">Memberships</h1>
-            <p className="text-muted-foreground text-sm">Dental care membership plans</p>
+            <p className="text-muted-foreground text-sm">Maintenance & care plans</p>
           </div>
           <div className="flex gap-2">
-            <Dialog open={planOpen} onOpenChange={setPlanOpen}>
+            <Dialog open={planOpen} onOpenChange={(o) => { setPlanOpen(o); if (!o) { setEditingPlanId(null); setPlanForm(blankPlan); } }}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1.5"><Plus className="h-3.5 w-3.5" /> Plan</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Create Membership Plan</DialogTitle>
-                  <DialogDescription>Define a reusable plan template for patients.</DialogDescription>
+                  <DialogTitle>{editingPlanId ? "Edit Plan" : "Create Membership Plan"}</DialogTitle>
+                  <DialogDescription>Reusable plan template.</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={e => { e.preventDefault(); addPlan.mutate(); }} className="space-y-3">
+                <form onSubmit={e => { e.preventDefault(); savePlan.mutate(); }} className="space-y-3">
                   <div className="space-y-1.5">
                     <Label>Plan Name *</Label>
                     <Input value={planForm.plan_name} onChange={e => setPlanForm(f => ({ ...f, plan_name: e.target.value }))} required placeholder="Healthy Family" />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1.5">
-                      <Label>Duration (months)</Label>
+                    <div className="space-y-1.5"><Label>Duration (months)</Label>
                       <Input type="number" value={planForm.duration_months} onChange={e => setPlanForm(f => ({ ...f, duration_months: e.target.value }))} />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label>Discount %</Label>
+                    <div className="space-y-1.5"><Label>Discount %</Label>
                       <Input type="number" value={planForm.discount_percent} onChange={e => setPlanForm(f => ({ ...f, discount_percent: e.target.value }))} />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label>Amount (Rs ) *</Label>
+                    <div className="space-y-1.5"><Label>Amount (Rs) *</Label>
                       <Input type="number" value={planForm.amount} onChange={e => setPlanForm(f => ({ ...f, amount: e.target.value }))} required placeholder="500" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <Label>Benefits (comma-separated)</Label>
-                    <Input value={planForm.benefits} onChange={e => setPlanForm(f => ({ ...f, benefits: e.target.value }))} placeholder="2 Cleaning, 1 Filling" />
+                    <Input value={planForm.benefits} onChange={e => setPlanForm(f => ({ ...f, benefits: e.target.value }))} placeholder="2 Cleaning, 1 Filling, 10% off treatments" />
                   </div>
-                  <Button type="submit" className="w-full" disabled={addPlan.isPending}>
-                    {addPlan.isPending ? "Creating..." : "Create Plan"}
+                  <Button type="submit" className="w-full" disabled={savePlan.isPending}>
+                    {savePlan.isPending ? "Saving…" : (editingPlanId ? "Save Plan" : "Create Plan")}
                   </Button>
                 </form>
               </DialogContent>
@@ -186,25 +310,32 @@ export default function Memberships() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Enroll Patient</DialogTitle>
-                  <DialogDescription>Assign a membership plan to a patient.</DialogDescription>
+                  <DialogDescription>Assign a plan and optionally create an invoice.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={e => { e.preventDefault(); enrollPatient.mutate(); }} className="space-y-3">
                   <div className="space-y-1.5">
                     <Label>Patient *</Label>
                     <Select value={enrollForm.patient_id} onValueChange={v => setEnrollForm(f => ({ ...f, patient_id: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select patient..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Select patient…" /></SelectTrigger>
                       <SelectContent>{patients.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label>Plan *</Label>
                     <Select value={enrollForm.plan_id} onValueChange={v => setEnrollForm(f => ({ ...f, plan_id: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select plan..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Select plan…" /></SelectTrigger>
                       <SelectContent>{plans.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.plan_name} — Rs {p.amount}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  <div className="flex items-center justify-between rounded-md border p-3">
+                    <div className="space-y-0.5">
+                      <Label>Create invoice</Label>
+                      <p className="text-xs text-muted-foreground">Auto-generate an unpaid invoice for the plan amount.</p>
+                    </div>
+                    <Switch checked={enrollForm.create_invoice} onCheckedChange={v => setEnrollForm(f => ({ ...f, create_invoice: v }))} />
+                  </div>
                   <Button type="submit" className="w-full" disabled={enrollPatient.isPending || !enrollForm.patient_id || !enrollForm.plan_id}>
-                    {enrollPatient.isPending ? "Enrolling..." : "Enroll Patient"}
+                    {enrollPatient.isPending ? "Enrolling…" : "Enroll Patient"}
                   </Button>
                 </form>
               </DialogContent>
@@ -212,26 +343,17 @@ export default function Memberships() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">Active Members</p>
-              <p className="text-2xl font-bold mt-1">{activeCount}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">Revenue</p>
-              <p className="text-2xl font-bold mt-1 text-green-600">Rs {totalRevenue.toLocaleString()}</p>
-            </CardContent>
-          </Card>
+        {/* KPIs */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Active</p><p className="text-2xl font-bold mt-1">{activeCount}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Expiring ≤30d</p><p className="text-2xl font-bold mt-1 text-amber-600">{expiringCount}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Expired</p><p className="text-2xl font-bold mt-1 text-destructive">{expiredCount}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Revenue</p><p className="text-2xl font-bold mt-1 text-green-600">Rs {totalRevenue.toLocaleString()}</p></CardContent></Card>
         </div>
 
-        {/* Plans + Enrollments side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Plans */}
-          <Card>
+          <Card className="lg:col-span-1">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <Crown className="h-4 w-4 text-primary" />
@@ -244,27 +366,22 @@ export default function Memberships() {
                   {plans.map((p: any) => (
                     <Card key={p.id} className="border">
                       <CardContent className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
                             <p className="font-semibold text-sm">{p.plan_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {p.duration_months} months · {p.discount_percent}% off
-                            </p>
-                            {p.benefits && p.benefits.length > 0 && (
-                              <p className="text-xs text-muted-foreground mt-0.5 uppercase">
-                                {p.benefits.join(", ")}
-                              </p>
+                            <p className="text-xs text-muted-foreground">{p.duration_months} mo · {p.discount_percent}% off</p>
+                            {p.benefits?.length > 0 && (
+                              <p className="text-xs text-muted-foreground mt-0.5">{p.benefits.join(" · ")}</p>
                             )}
                           </div>
-                          <p className="text-lg font-bold whitespace-nowrap ml-3">Rs {p.amount}</p>
+                          <p className="text-lg font-bold whitespace-nowrap">Rs {p.amount}</p>
                         </div>
-                        <div className="flex justify-end mt-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={() => deletePlan.mutate(p.id)}
-                          >
+                        <div className="flex justify-end gap-1 mt-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPlan(p)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={() => { if (confirm(`Delete plan "${p.plan_name}"?`)) deletePlan.mutate(p.id); }}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
@@ -277,16 +394,33 @@ export default function Memberships() {
           </Card>
 
           {/* Enrollments */}
-          <Card>
+          <Card className="lg:col-span-2">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3">
                 <Users className="h-4 w-4 text-primary" />
                 <h2 className="font-semibold text-base">Enrollments</h2>
               </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <div className="relative flex-1 min-w-[180px]">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input className="pl-7 h-8 text-sm" placeholder="Search patient or plan…" value={search} onChange={e => setSearch(e.target.value)} />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-8 w-[150px] text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="expiring">Expiring ≤30d</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {isLoading ? (
-                <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-10 rounded bg-muted animate-pulse" />)}</div>
-              ) : memberships.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">No enrollments yet</p>
+                <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-10 rounded bg-muted animate-pulse" />)}</div>
+              ) : filtered.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">No enrollments match.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -294,23 +428,42 @@ export default function Memberships() {
                       <tr className="text-muted-foreground text-xs border-b">
                         <th className="text-left py-2 font-medium">Patient</th>
                         <th className="text-left py-2 font-medium">Plan</th>
-                        <th className="text-left py-2 font-medium">End Date</th>
+                        <th className="text-left py-2 font-medium">End</th>
                         <th className="text-left py-2 font-medium">Status</th>
+                        <th className="text-right py-2 font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {memberships.map((m: any) => (
+                      {filtered.map((m: any) => (
                         <tr key={m.id} className="border-b last:border-0">
-                          <td className="py-2.5">{m.patients?.full_name || "—"}</td>
-                          <td className="py-2.5">{m.plan_name}</td>
-                          <td className="py-2.5">{m.end_date || "—"}</td>
                           <td className="py-2.5">
-                            <Badge
-                              variant="secondary"
-                              className={m.status === "active" ? "bg-green-50 text-green-700" : ""}
-                            >
-                              {m.status}
-                            </Badge>
+                            <div className="font-medium">{m.patients?.full_name || "—"}</div>
+                            {m.patients?.phone && <div className="text-xs text-muted-foreground">{m.patients.phone}</div>}
+                          </td>
+                          <td className="py-2.5">{m.plan_name}<div className="text-xs text-muted-foreground">Rs {Number(m.amount).toLocaleString()}</div></td>
+                          <td className="py-2.5">{m.end_date ? format(new Date(m.end_date), "dd MMM yyyy") : "—"}</td>
+                          <td className="py-2.5">{statusBadge(m)}</td>
+                          <td className="py-2.5">
+                            <div className="flex gap-1 justify-end">
+                              {(m.isExpiring || m.isExpired) && m.patients?.phone && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7" title="Send renewal reminder"
+                                  onClick={() => sendRenewalReminder.mutate(m)}>
+                                  <MessageCircle className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="icon" className="h-7 w-7" title="Renew" onClick={() => renewMembership.mutate(m)}>
+                                <RefreshCw className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => setEditEnroll(m)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              {m.status !== "cancelled" && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Cancel"
+                                  onClick={() => { if (confirm("Cancel this membership?")) cancelMembership.mutate(m.id); }}>
+                                  <XCircle className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -321,7 +474,60 @@ export default function Memberships() {
             </CardContent>
           </Card>
         </div>
+
+        {expiringCount > 0 && (
+          <Card className="border-amber-200 bg-amber-50/40">
+            <CardContent className="p-3 flex items-center gap-2 text-sm">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <span><strong>{expiringCount}</strong> membership{expiringCount > 1 ? "s" : ""} expiring within 30 days. Use the chat icon to send a WhatsApp renewal nudge.</span>
+            </CardContent>
+          </Card>
+        )}
       </div>
+
+      {/* Edit enrollment */}
+      <Dialog open={!!editEnroll} onOpenChange={(o) => !o && setEditEnroll(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Membership</DialogTitle>
+            <DialogDescription>{editEnroll?.patients?.full_name}</DialogDescription>
+          </DialogHeader>
+          {editEnroll && (
+            <form onSubmit={e => { e.preventDefault(); saveEnroll.mutate(); }} className="space-y-3">
+              <div className="space-y-1.5"><Label>Plan name</Label>
+                <Input value={editEnroll.plan_name || ""} onChange={e => setEditEnroll((p: any) => ({ ...p, plan_name: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label>Start date</Label>
+                  <Input type="date" value={editEnroll.start_date || ""} onChange={e => setEditEnroll((p: any) => ({ ...p, start_date: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5"><Label>End date</Label>
+                  <Input type="date" value={editEnroll.end_date || ""} onChange={e => setEditEnroll((p: any) => ({ ...p, end_date: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label>Amount</Label>
+                  <Input type="number" value={editEnroll.amount ?? 0} onChange={e => setEditEnroll((p: any) => ({ ...p, amount: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5"><Label>Status</Label>
+                  <Select value={editEnroll.status} onValueChange={v => setEditEnroll((p: any) => ({ ...p, status: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="expired">Expired</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setEditEnroll(null)}>Cancel</Button>
+                <Button type="submit" disabled={saveEnroll.isPending}>{saveEnroll.isPending ? "Saving…" : "Save"}</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
