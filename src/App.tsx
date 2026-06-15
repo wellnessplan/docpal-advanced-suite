@@ -156,6 +156,8 @@ const App = () => (
                 <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
                 <Route path="/insurance" element={<ProtectedRoute><InsuranceClaims /></ProtectedRoute>} />
                 <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
+                <Route path="/programs" element={<ProtectedRoute><PatientPrograms /></ProtectedRoute>} />
+                <Route path="/programs/:clinicId" element={<PublicPrograms />} />
                 <Route path="/ai-generator" element={<ProtectedRoute><AIGenerator /></ProtectedRoute>} />
                 <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
                 <Route path="/whatsapp-status" element={<ProtectedRoute><WhatsAppStatus /></ProtectedRoute>} />
