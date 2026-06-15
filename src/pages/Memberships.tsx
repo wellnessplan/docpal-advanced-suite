@@ -726,6 +726,44 @@ export default function Memberships() {
                   <p className="text-xs text-muted-foreground">Linked invoice status: <strong className="capitalize">{editEnroll.paymentStatus}</strong></p>
                 )}
               </div>
+
+              {Array.isArray(editEnroll.benefits) && editEnroll.benefits.length > 0 && (
+                <div className="rounded-md border p-3 space-y-2 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold">Benefit usage</p>
+                    {editEnroll.patients?.phone && (
+                      <Button type="button" size="sm" variant="outline" className="h-7 gap-1 text-xs"
+                        onClick={() => sendBenefitsCard.mutate(editEnroll)}>
+                        <Send className="h-3 w-3" /> Send card
+                      </Button>
+                    )}
+                  </div>
+                  {editEnroll.benefits.map((b: string) => {
+                    const key = b.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+                    const used = (editEnroll.usage_counters || {})[key] || 0;
+                    return (
+                      <div key={key} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="truncate flex-1">{b}</span>
+                        <div className="flex items-center gap-1">
+                          <Button type="button" size="icon" variant="outline" className="h-6 w-6"
+                            onClick={async () => { await adjustUsage.mutateAsync({ m: editEnroll, key, delta: -1 }); setEditEnroll((p: any) => ({ ...p, usage_counters: { ...(p.usage_counters || {}), [key]: Math.max(0, used - 1) } })); }}>
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="font-mono text-sm w-6 text-center">{used}</span>
+                          <Button type="button" size="icon" variant="outline" className="h-6 w-6"
+                            onClick={async () => { await adjustUsage.mutateAsync({ m: editEnroll, key, delta: 1 }); setEditEnroll((p: any) => ({ ...p, usage_counters: { ...(p.usage_counters || {}), [key]: used + 1 } })); }}>
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {editEnroll.dunning_attempts > 0 && (
+                    <p className="text-[11px] text-amber-700 pt-1 border-t">Dunning attempts: {editEnroll.dunning_attempts} / 3</p>
+                  )}
+                </div>
+              )}
+
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setEditEnroll(null)}>Cancel</Button>
                 <Button type="submit" disabled={saveEnroll.isPending}>{saveEnroll.isPending ? "Saving…" : "Save"}</Button>
