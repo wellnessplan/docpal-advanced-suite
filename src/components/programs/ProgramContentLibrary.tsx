@@ -206,7 +206,13 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
               </div>
               <div>
                 <Label>Program</Label>
-                <Select value={composer.program_id ?? ""} onValueChange={(v) => setComposer({ ...composer, program_id: v })}>
+                <Select
+                  value={composer.program_id ?? ""}
+                  onValueChange={async (v) => {
+                    const { data } = await (supabase.rpc as any)("compute_next_program_send_date", { p_program_id: v });
+                    setComposer({ ...composer, program_id: v, scheduled_for: data ?? composer.scheduled_for });
+                  }}
+                >
                   <SelectTrigger><SelectValue placeholder="Pick a program" /></SelectTrigger>
                   <SelectContent>
                     {programs.map((p) => (
@@ -216,13 +222,28 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
                 </Select>
               </div>
               <div>
-                <Label>Message — {`{{name}}`} is replaced per patient</Label>
+                <Label>Message</Label>
                 <Textarea rows={5} value={composer.body ?? ""} onChange={(e) => setComposer({ ...composer, body: e.target.value })} placeholder="Hi {{name}}, this month's tip..." />
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {VARIABLES.map((v) => (
+                    <Button key={v.token} type="button" size="sm" variant="outline" className="h-6 text-[10px] font-mono"
+                      onClick={() => setComposer({ ...composer, body: (composer.body ?? "") + v.token })}>
+                      {v.token}
+                    </Button>
+                  ))}
+                </div>
               </div>
+              {composer.body && (
+                <div className="rounded-lg bg-muted p-3 text-sm">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                    <Eye className="h-3 w-3" />Preview
+                  </div>
+                  <div className="whitespace-pre-wrap">{renderPreview(composer.body)}</div>
+                </div>
+              )}
               <div>
-                <Label>Send on (date)</Label>
+                <Label>Send on (auto-suggested from program rule)</Label>
                 <Input type="date" value={composer.scheduled_for ?? ""} onChange={(e) => setComposer({ ...composer, scheduled_for: e.target.value })} />
-                <p className="text-[11px] text-muted-foreground mt-1">Pick any day each month. The 9 AM IST job will broadcast to all active enrollees of that program.</p>
               </div>
               <div className="flex flex-wrap gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={() => saveItem.mutate({ ...composer, mode: "library" })} disabled={saveItem.isPending}>
@@ -236,6 +257,15 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
           )}
         </DialogContent>
       </Dialog>
+
+      <SendTestDialog />
+    </Card>
+  );
+}
+
+// === Send test dialog ===
+function SendTestDialog() { return null; }
+
     </Card>
   );
 }
