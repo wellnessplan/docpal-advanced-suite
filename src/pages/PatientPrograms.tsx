@@ -182,13 +182,19 @@ export default function PatientPrograms() {
               <div className="space-y-2">
                 {(enrollments ?? []).map((e) => {
                   const prog = programs?.find((p) => p.id === e.program_id);
+                  const paused = !!(e.pause_until && new Date(e.pause_until) > new Date());
+                  const stopped = !!e.opted_out_at;
                   return (
                     <div key={e.id} className="flex items-center justify-between border-b pb-2 last:border-0">
                       <div>
                         <div className="font-medium text-sm">{e.full_name} <span className="text-muted-foreground font-normal">· {e.phone}</span></div>
                         <div className="text-xs text-muted-foreground">{prog?.emoji} {prog?.name} · next reminder {new Date(e.next_reminder_at).toLocaleDateString()}</div>
                       </div>
-                      <Badge variant="secondary"><Send className="h-3 w-3 mr-1" />{e.reminders_sent}</Badge>
+                      <div className="flex items-center gap-2">
+                        {stopped && <Badge variant="destructive">Opted out</Badge>}
+                        {!stopped && paused && <Badge variant="secondary">Paused</Badge>}
+                        {!stopped && !paused && <Badge variant="secondary"><Send className="h-3 w-3 mr-1" />{e.reminders_sent}</Badge>}
+                      </div>
                     </div>
                   );
                 })}
@@ -196,6 +202,8 @@ export default function PatientPrograms() {
             )}
           </CardContent>
         </Card>
+
+        <ProgramContentLibrary programs={(programs ?? []).map((p) => ({ id: p.id, name: p.name, emoji: p.emoji }))} />
       </div>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
