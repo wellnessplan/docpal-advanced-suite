@@ -386,10 +386,33 @@ export default function GoogleReviews() {
         {/* Dashboard */}
         <ErrorBoundary name="Review metrics" inline>
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" /> Last 14 days
               </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const header = ["date", "queued", "sent", "delivered", "read", "replied", "failed", "total"];
+                  const rows: (string | number)[][] = [header];
+                  for (const d of byDay) {
+                    const total = d.queued + d.sent + d.delivered + d.read + d.replied + d.failed;
+                    rows.push([
+                      // restore full YYYY-MM-DD
+                      new Date(new Date().getFullYear() + "-" + d.day).toISOString().slice(0, 10),
+                      d.queued, d.sent, d.delivered, d.read, d.replied, d.failed, total,
+                    ]);
+                  }
+                  rows.push([
+                    "TOTAL", totals.queued, totals.sent, totals.delivered, totals.read, totals.replied, totals.failed,
+                    totals.queued + totals.sent + totals.delivered + totals.read + totals.replied + totals.failed,
+                  ]);
+                  downloadCsv(`google-review-requests-${new Date().toISOString().slice(0,10)}.csv`, rows);
+                }}
+              >
+                Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-4">
