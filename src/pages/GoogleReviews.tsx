@@ -187,12 +187,18 @@ export default function GoogleReviews() {
   });
 
   const toggleTemplate = useMutation({
-    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+    mutationFn: async ({ id, enabled, body }: { id: string; enabled: boolean; body: string }) => {
+      // Block enabling a template that fails validation
+      if (enabled) {
+        const v = validateTemplateBody(body);
+        if (!v.ok) throw new Error(`Cannot enable: ${v.reason}`);
+      }
       const { error } = await supabase.from("whatsapp_templates")
         .update({ enabled }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["google_review_templates", clinicId] }),
+    onError: (e: any) => toast.error(e.message ?? "Failed"),
   });
 
   const uploadFile = async (file: File) => {
