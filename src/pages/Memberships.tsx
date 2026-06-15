@@ -155,19 +155,11 @@ export default function Memberships() {
       if (!plan) throw new Error("Select a plan");
       const startDate = new Date();
       const endDate = addMonths(startDate, plan.duration_months || 12);
-      const { data: m, error } = await supabase.from("memberships").insert({
-        clinic_id: clinicId,
-        patient_id: enrollForm.patient_id,
-        plan_name: plan.plan_name,
-        plan_type: plan.id,
-        amount: plan.amount,
-        benefits: plan.benefits || [],
-        start_date: startDate.toISOString().split("T")[0],
-        end_date: endDate.toISOString().split("T")[0],
-        status: "active",
-      }).select().single();
-      if (error) throw error;
+      const nextMaint = plan.visit_interval_months
+        ? addMonths(startDate, plan.visit_interval_months).toISOString().split("T")[0]
+        : null;
 
+      let invoiceId: string | null = null;
       if (enrollForm.create_invoice && plan.amount > 0) {
         const { data: inv, error: ie } = await supabase.from("invoices").insert({
           clinic_id: clinicId,
@@ -180,17 +172,34 @@ export default function Memberships() {
           notes: `Membership: ${plan.plan_name}`,
         } as any).select().single();
         if (!ie && inv) {
+          invoiceId = (inv as any).id;
           await supabase.from("invoice_items").insert({
-            invoice_id: (inv as any).id,
+            invoice_id: invoiceId,
             description: `Membership – ${plan.plan_name} (${plan.duration_months} mo)`,
             quantity: 1, unit_price: plan.amount, total: plan.amount,
           } as any);
         }
       }
+
+      const { data: m, error } = await supabase.from("memberships").insert({
+        clinic_id: clinicId,
+        patient_id: enrollForm.patient_id,
+        plan_name: plan.plan_name,
+        plan_type: plan.id,
+        amount: plan.amount,
+        benefits: plan.benefits || [],
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+        status: "active",
+        invoice_id: invoiceId,
+        next_maintenance_date: nextMaint,
+      } as any).select().single();
+      if (error) throw error;
       return m;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["memberships"] });
+      qc.invalidateQueries({ queryKey: ["membership-invoices"] });
       setEnrollOpen(false);
       setEnrollForm({ patient_id: "", plan_id: "", create_invoice: true });
       toast.success("Patient enrolled");
@@ -205,10 +214,14 @@ export default function Memberships() {
       const months = plan?.duration_months || 12;
       const base = m.end_date && new Date(m.end_date) > today ? new Date(m.end_date) : today;
       const newEnd = addMonths(base, months);
+      const nextMaint = plan?.visit_interval_months
+        ? addMonths(today, plan.visit_interval_months).toISOString().split("T")[0]
+        : m.next_maintenance_date;
       const { error } = await supabase.from("memberships").update({
         status: "active",
         end_date: newEnd.toISOString().split("T")[0],
-      }).eq("id", m.id);
+        next_maintenance_date: nextMaint,
+      } as any).eq("id", m.id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberships"] }); toast.success("Renewed"); },
@@ -233,7 +246,8 @@ export default function Memberships() {
         start_date: editEnroll.start_date,
         end_date: editEnroll.end_date,
         status: editEnroll.status,
-      }).eq("id", editEnroll.id);
+        next_maintenance_date: editEnroll.next_maintenance_date || null,
+      } as any).eq("id", editEnroll.id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberships"] }); setEditEnroll(null); toast.success("Saved"); },
@@ -242,18 +256,13 @@ export default function Memberships() {
 
   const sendRenewalReminder = useMutation({
     mutationFn: async (m: any) => {
-      const phone = m.patients?.phone;
-      if (!phone) throw new Error("No phone on file");
-      const name = m.patients?.full_name || "there";
-      const when = m.end_date ? format(new Date(m.end_date), "dd MMM yyyy") : "soon";
-      const body = `Hi ${name}, your ${m.plan_name} membership expires on ${when}. Reply to renew and continue enjoying member benefits.`;
-      const { error } = await (supabase.from("whatsapp_logs") as any).insert({
-        clinic_id: clinicId, patient_id: m.patient_id, template_name: "membership_renewal",
-        phone, message_body: body, status: "queued", delivery_status: "queued", sent_at: new Date().toISOString(),
+      if (!m.patients?.phone) throw new Error("No phone on file");
+      const { error } = await supabase.functions.invoke("send-membership-reminders", {
+        body: { membership_id: m.id },
       });
       if (error) throw error;
     },
-    onSuccess: () => toast.success("Renewal reminder queued"),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberships"] }); toast.success("Renewal reminder sent"); },
     onError: (e: any) => toast.error(e.message),
   });
 
