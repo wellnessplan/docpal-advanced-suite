@@ -134,17 +134,32 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
             <div className="space-y-2">
               {scheduled.map((i) => (
                 <div key={i.id} className="border rounded-lg p-3 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="font-medium text-sm">{i.title}</div>
-                    <div className="text-xs text-muted-foreground line-clamp-1">{i.body}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-1">{renderPreview(i.body)}</div>
                     <div className="text-xs mt-1 flex items-center gap-2 flex-wrap">
                       <Badge variant="secondary">{programLabel(i.program_id)}</Badge>
                       <Badge variant="outline">{new Date(i.scheduled_for!).toLocaleDateString()}</Badge>
                     </div>
                   </div>
-                  <Button size="icon" variant="ghost" onClick={() => deleteItem.mutate(i.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button size="sm" variant="ghost" onClick={async () => {
+                      const phone = window.prompt("Send TEST to staff WhatsApp (10-digit):");
+                      if (!phone) return;
+                      const digits = phone.replace(/\D/g, "");
+                      if (digits.length < 10) return toast.error("Invalid phone");
+                      const { error } = await (supabase.rpc as any)("send_program_content_test", {
+                        p_content_id: i.id, p_test_phone: digits, p_test_name: "Test User",
+                      });
+                      if (error) return toast.error(error.message);
+                      toast.success("Test message queued");
+                    }}>
+                      <TestTube2 className="h-4 w-4 mr-1" />Test
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => deleteItem.mutate(i.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
