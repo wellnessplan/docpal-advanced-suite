@@ -2458,6 +2458,7 @@ export type Database = {
       }
       membership_plans: {
         Row: {
+          allowed_services: string[] | null
           amount: number
           benefits: string[] | null
           clinic_id: string
@@ -2465,10 +2466,13 @@ export type Database = {
           discount_percent: number | null
           duration_months: number
           id: string
+          maintenance_message: string | null
           plan_name: string
           updated_at: string
+          visit_interval_months: number | null
         }
         Insert: {
+          allowed_services?: string[] | null
           amount?: number
           benefits?: string[] | null
           clinic_id: string
@@ -2476,10 +2480,13 @@ export type Database = {
           discount_percent?: number | null
           duration_months?: number
           id?: string
+          maintenance_message?: string | null
           plan_name: string
           updated_at?: string
+          visit_interval_months?: number | null
         }
         Update: {
+          allowed_services?: string[] | null
           amount?: number
           benefits?: string[] | null
           clinic_id?: string
@@ -2487,8 +2494,10 @@ export type Database = {
           discount_percent?: number | null
           duration_months?: number
           id?: string
+          maintenance_message?: string | null
           plan_name?: string
           updated_at?: string
+          visit_interval_months?: number | null
         }
         Relationships: [
           {
@@ -2515,6 +2524,9 @@ export type Database = {
           created_at: string
           end_date: string | null
           id: string
+          invoice_id: string | null
+          last_reminder_sent_at: string | null
+          next_maintenance_date: string | null
           patient_id: string
           plan_name: string
           plan_type: string | null
@@ -2529,6 +2541,9 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           id?: string
+          invoice_id?: string | null
+          last_reminder_sent_at?: string | null
+          next_maintenance_date?: string | null
           patient_id: string
           plan_name?: string
           plan_type?: string | null
@@ -2543,6 +2558,9 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           id?: string
+          invoice_id?: string | null
+          last_reminder_sent_at?: string | null
+          next_maintenance_date?: string | null
           patient_id?: string
           plan_name?: string
           plan_type?: string | null
@@ -2564,6 +2582,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenant_health"
             referencedColumns: ["clinic_id"]
+          },
+          {
+            foreignKeyName: "memberships_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "memberships_patient_id_fkey"
