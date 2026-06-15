@@ -3490,6 +3490,10 @@ export type Database = {
           interval_months: number
           message_template: string
           name: string
+          send_day_of_month: number
+          send_rule: string
+          send_weekday: number | null
+          timezone: string
           updated_at: string
           welcome_message: string | null
         }
@@ -3504,6 +3508,10 @@ export type Database = {
           interval_months?: number
           message_template: string
           name: string
+          send_day_of_month?: number
+          send_rule?: string
+          send_weekday?: number | null
+          timezone?: string
           updated_at?: string
           welcome_message?: string | null
         }
@@ -3518,6 +3526,10 @@ export type Database = {
           interval_months?: number
           message_template?: string
           name?: string
+          send_day_of_month?: number
+          send_rule?: string
+          send_weekday?: number | null
+          timezone?: string
           updated_at?: string
           welcome_message?: string | null
         }
@@ -5918,6 +5930,7 @@ export type Database = {
           message_body: string | null
           patient_id: string
           phone: string | null
+          program_id: string | null
           provider_message_id: string | null
           sent_at: string
           status: string
@@ -5932,6 +5945,7 @@ export type Database = {
           message_body?: string | null
           patient_id: string
           phone?: string | null
+          program_id?: string | null
           provider_message_id?: string | null
           sent_at?: string
           status?: string
@@ -5946,6 +5960,7 @@ export type Database = {
           message_body?: string | null
           patient_id?: string
           phone?: string | null
+          program_id?: string | null
           provider_message_id?: string | null
           sent_at?: string
           status?: string
@@ -5971,6 +5986,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_logs_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "patient_programs"
             referencedColumns: ["id"]
           },
         ]
@@ -6028,6 +6050,43 @@ export type Database = {
       }
     }
     Views: {
+      engagement_program_dashboard: {
+        Row: {
+          clinic_id: string | null
+          delivered: number | null
+          emoji: string | null
+          failed: number | null
+          month: string | null
+          program_id: string | null
+          program_name: string | null
+          read_count: number | null
+          replied: number | null
+          total_sent: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_logs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_logs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_health"
+            referencedColumns: ["clinic_id"]
+          },
+          {
+            foreignKeyName: "whatsapp_logs_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "patient_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_health: {
         Row: {
           appts_30d: number | null
@@ -6057,10 +6116,18 @@ export type Database = {
         }
         Returns: Json
       }
+      bulk_enroll_program: {
+        Args: { p_program_id: string; p_rows: Json }
+        Returns: Json
+      }
       clear_demo_data: { Args: never; Returns: Json }
       clinic_ai_spend_this_month: {
         Args: { p_clinic_id: string }
         Returns: number
+      }
+      compute_next_program_send_date: {
+        Args: { p_program_id: string }
+        Returns: string
       }
       create_branch_in_group: {
         Args: {
@@ -6245,6 +6312,14 @@ export type Database = {
             }
             Returns: Json
           }
+      send_program_content_test: {
+        Args: {
+          p_content_id: string
+          p_test_name?: string
+          p_test_phone: string
+        }
+        Returns: Json
+      }
       start_impersonation: { Args: { p_clinic_id: string }; Returns: Json }
       switch_active_branch: {
         Args: { p_clinic_id: string }

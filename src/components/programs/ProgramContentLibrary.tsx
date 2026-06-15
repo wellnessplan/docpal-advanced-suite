@@ -11,7 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, CalendarClock, BookOpen, Send, Trash2, Repeat, Loader2 } from "lucide-react";
+import { Plus, CalendarClock, BookOpen, Send, Trash2, Repeat, Loader2, Eye, TestTube2 } from "lucide-react";
+
+const VARIABLES = [
+  { token: "{{name}}", label: "Patient name", sample: "Priya Sharma" },
+  { token: "{{program}}", label: "Program name", sample: "Change Your Brush" },
+  { token: "{{clinic}}", label: "Clinic name", sample: "Smile Dental" },
+  { token: "{{next_date}}", label: "Next reminder date", sample: "15 Mar 2026" },
+];
+const renderPreview = (body: string) =>
+  VARIABLES.reduce((acc, v) => acc.split(v.token).join(v.sample), body || "");
+
 
 interface Program { id: string; name: string; emoji: string | null; }
 interface ContentItem {
@@ -124,17 +134,32 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
             <div className="space-y-2">
               {scheduled.map((i) => (
                 <div key={i.id} className="border rounded-lg p-3 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="font-medium text-sm">{i.title}</div>
-                    <div className="text-xs text-muted-foreground line-clamp-1">{i.body}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-1">{renderPreview(i.body)}</div>
                     <div className="text-xs mt-1 flex items-center gap-2 flex-wrap">
                       <Badge variant="secondary">{programLabel(i.program_id)}</Badge>
                       <Badge variant="outline">{new Date(i.scheduled_for!).toLocaleDateString()}</Badge>
                     </div>
                   </div>
-                  <Button size="icon" variant="ghost" onClick={() => deleteItem.mutate(i.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button size="sm" variant="ghost" onClick={async () => {
+                      const phone = window.prompt("Send TEST to staff WhatsApp (10-digit):");
+                      if (!phone) return;
+                      const digits = phone.replace(/\D/g, "");
+                      if (digits.length < 10) return toast.error("Invalid phone");
+                      const { error } = await (supabase.rpc as any)("send_program_content_test", {
+                        p_content_id: i.id, p_test_phone: digits, p_test_name: "Test User",
+                      });
+                      if (error) return toast.error(error.message);
+                      toast.success("Test message queued");
+                    }}>
+                      <TestTube2 className="h-4 w-4 mr-1" />Test
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => deleteItem.mutate(i.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -196,7 +221,13 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
               </div>
               <div>
                 <Label>Program</Label>
-                <Select value={composer.program_id ?? ""} onValueChange={(v) => setComposer({ ...composer, program_id: v })}>
+                <Select
+                  value={composer.program_id ?? ""}
+                  onValueChange={async (v) => {
+                    const { data } = await (supabase.rpc as any)("compute_next_program_send_date", { p_program_id: v });
+                    setComposer({ ...composer, program_id: v, scheduled_for: data ?? composer.scheduled_for });
+                  }}
+                >
                   <SelectTrigger><SelectValue placeholder="Pick a program" /></SelectTrigger>
                   <SelectContent>
                     {programs.map((p) => (
@@ -206,13 +237,28 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
                 </Select>
               </div>
               <div>
-                <Label>Message — {`{{name}}`} is replaced per patient</Label>
+                <Label>Message</Label>
                 <Textarea rows={5} value={composer.body ?? ""} onChange={(e) => setComposer({ ...composer, body: e.target.value })} placeholder="Hi {{name}}, this month's tip..." />
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {VARIABLES.map((v) => (
+                    <Button key={v.token} type="button" size="sm" variant="outline" className="h-6 text-[10px] font-mono"
+                      onClick={() => setComposer({ ...composer, body: (composer.body ?? "") + v.token })}>
+                      {v.token}
+                    </Button>
+                  ))}
+                </div>
               </div>
+              {composer.body && (
+                <div className="rounded-lg bg-muted p-3 text-sm">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                    <Eye className="h-3 w-3" />Preview
+                  </div>
+                  <div className="whitespace-pre-wrap">{renderPreview(composer.body)}</div>
+                </div>
+              )}
               <div>
-                <Label>Send on (date)</Label>
+                <Label>Send on (auto-suggested from program rule)</Label>
                 <Input type="date" value={composer.scheduled_for ?? ""} onChange={(e) => setComposer({ ...composer, scheduled_for: e.target.value })} />
-                <p className="text-[11px] text-muted-foreground mt-1">Pick any day each month. The 9 AM IST job will broadcast to all active enrollees of that program.</p>
               </div>
               <div className="flex flex-wrap gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={() => saveItem.mutate({ ...composer, mode: "library" })} disabled={saveItem.isPending}>
@@ -226,6 +272,8 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
           )}
         </DialogContent>
       </Dialog>
+
     </Card>
   );
 }
+

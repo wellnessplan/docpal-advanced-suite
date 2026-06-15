@@ -12,13 +12,19 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Copy, QrCode, Settings2, Users, Send, Loader2 } from "lucide-react";
+import { Copy, QrCode, Settings2, Users, Send, Loader2, Upload } from "lucide-react";
 import ProgramContentLibrary from "@/components/programs/ProgramContentLibrary";
+import ProgramEngagementDashboard from "@/components/programs/ProgramEngagementDashboard";
+import BulkEnrollDialog from "@/components/programs/BulkEnrollDialog";
+
+const TIMEZONES = ["Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York", "America/Los_Angeles"];
+const WEEKDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 interface Program {
   id: string; clinic_id: string; code: string; name: string;
   description: string | null; emoji: string | null; interval_months: number;
   message_template: string; welcome_message: string | null; active: boolean;
+  send_rule: string; send_day_of_month: number; send_weekday: number | null; timezone: string;
 }
 interface Enrollment {
   id: string; full_name: string; phone: string; program_id: string;
@@ -41,6 +47,7 @@ export default function PatientPrograms() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Program | null>(null);
   const [qrFor, setQrFor] = useState<string | null>(null);
+  const [bulkFor, setBulkFor] = useState<Program | null>(null);
 
   const publicUrl = useMemo(
     () => clinicId ? `${window.location.origin}/programs/${clinicId}` : "",
@@ -97,6 +104,10 @@ export default function PatientPrograms() {
           interval_months: p.interval_months,
           message_template: p.message_template,
           welcome_message: p.welcome_message,
+          send_rule: p.send_rule,
+          send_day_of_month: p.send_day_of_month,
+          send_weekday: p.send_weekday,
+          timezone: p.timezone,
         })
         .eq("id", p.id);
       if (error) throw error;
@@ -162,11 +173,16 @@ export default function PatientPrograms() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground line-clamp-2">{p.message_template}</p>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <Badge variant="outline"><Users className="h-3 w-3 mr-1" />{enrollmentCount(p.id)} active</Badge>
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(p)}>
-                    <Settings2 className="h-4 w-4 mr-1" />Edit
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => setBulkFor(p)}>
+                      <Upload className="h-4 w-4 mr-1" />Bulk
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditing(p)}>
+                      <Settings2 className="h-4 w-4 mr-1" />Edit
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -203,8 +219,17 @@ export default function PatientPrograms() {
           </CardContent>
         </Card>
 
+        <ProgramEngagementDashboard />
         <ProgramContentLibrary programs={(programs ?? []).map((p) => ({ id: p.id, name: p.name, emoji: p.emoji }))} />
       </div>
+
+      {bulkFor && (
+        <BulkEnrollDialog
+          program={{ id: bulkFor.id, name: bulkFor.name, emoji: bulkFor.emoji }}
+          open={!!bulkFor}
+          onOpenChange={(o) => !o && setBulkFor(null)}
+        />
+      )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -232,6 +257,42 @@ export default function PatientPrograms() {
                 <Label>Reminder message — use {`{{name}}`} for personalization</Label>
                 <Textarea rows={4} value={editing.message_template} onChange={(e) => setEditing({ ...editing, message_template: e.target.value })} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Send rule</Label>
+                  <select className="w-full border rounded-md h-10 px-2 bg-background text-sm"
+                    value={editing.send_rule}
+                    onChange={(e) => setEditing({ ...editing, send_rule: e.target.value })}>
+                    <option value="day_of_month">Fixed day of month</option>
+                    <option value="weekday">Same weekday each month</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Timezone</Label>
+                  <select className="w-full border rounded-md h-10 px-2 bg-background text-sm"
+                    value={editing.timezone}
+                    onChange={(e) => setEditing({ ...editing, timezone: e.target.value })}>
+                    {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+                  </select>
+                </div>
+                {editing.send_rule === "day_of_month" ? (
+                  <div>
+                    <Label>Day of month (1–28)</Label>
+                    <Input type="number" min={1} max={28} value={editing.send_day_of_month}
+                      onChange={(e) => setEditing({ ...editing, send_day_of_month: Math.min(28, Math.max(1, parseInt(e.target.value) || 1)) })} />
+                  </div>
+                ) : (
+                  <div>
+                    <Label>Weekday</Label>
+                    <select className="w-full border rounded-md h-10 px-2 bg-background text-sm"
+                      value={editing.send_weekday ?? 1}
+                      onChange={(e) => setEditing({ ...editing, send_weekday: parseInt(e.target.value) })}>
+                      {WEEKDAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+              <div className="hidden">
               <div>
                 <Label className="text-xs">Quick library (campaign templates)</Label>
                 <div className="flex flex-wrap gap-2 mt-1">
