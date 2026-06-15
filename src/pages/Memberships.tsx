@@ -307,6 +307,14 @@ export default function Memberships() {
     return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>;
   };
 
+  const paymentBadge = (m: any) => {
+    if (!m.paymentStatus) return <span className="text-xs text-muted-foreground">—</span>;
+    if (m.paymentStatus === "paid") return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-[10px]">Paid</Badge>;
+    if (m.paymentStatus === "failed") return <Badge variant="destructive" className="text-[10px]">Failed</Badge>;
+    if (m.paymentStatus === "partial") return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-[10px]">Partial</Badge>;
+    return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 text-[10px]">Unpaid</Badge>;
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-5 animate-fade-in">
