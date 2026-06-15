@@ -219,8 +219,17 @@ export default function PatientPrograms() {
           </CardContent>
         </Card>
 
+        <ProgramEngagementDashboard />
         <ProgramContentLibrary programs={(programs ?? []).map((p) => ({ id: p.id, name: p.name, emoji: p.emoji }))} />
       </div>
+
+      {bulkFor && (
+        <BulkEnrollDialog
+          program={{ id: bulkFor.id, name: bulkFor.name, emoji: bulkFor.emoji }}
+          open={!!bulkFor}
+          onOpenChange={(o) => !o && setBulkFor(null)}
+        />
+      )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
