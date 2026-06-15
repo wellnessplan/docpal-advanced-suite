@@ -483,6 +483,39 @@ export default function Memberships() {
           <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Revenue</p><p className="text-2xl font-bold mt-1 text-green-600">Rs {totalRevenue.toLocaleString()}</p></CardContent></Card>
         </div>
 
+        {/* Revenue intelligence: MRR / Churn / LTV */}
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <h2 className="font-semibold text-sm">Membership revenue intelligence</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">MRR</p>
+                <p className="text-xl font-bold font-mono">Rs {(metrics?.mrr ?? 0).toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">ARR ≈ Rs {(metrics?.arr ?? 0).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Churn (30d)</p>
+                <p className={`text-xl font-bold font-mono ${(metrics?.churn_pct ?? 0) > 10 ? "text-destructive" : "text-foreground"}`}>{(metrics?.churn_pct ?? 0).toFixed(1)}%</p>
+                <p className="text-[10px] text-muted-foreground">{metrics?.churned_30d ?? 0} lost / 30d</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">LTV</p>
+                <p className="text-xl font-bold font-mono">Rs {(metrics?.ltv ?? 0).toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">avg lifespan {(metrics?.avg_lifetime_months ?? 0).toFixed(1)}mo</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">All-time</p>
+                <p className="text-xl font-bold font-mono">Rs {(metrics?.lifetime_revenue ?? 0).toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">{metrics?.total_members_ever ?? 0} members ever</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Plans */}
           <Card className="lg:col-span-1">
