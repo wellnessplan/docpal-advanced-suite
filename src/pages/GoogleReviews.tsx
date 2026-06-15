@@ -324,6 +324,9 @@ export default function GoogleReviews() {
                   </Button>
                 )}
               </div>
+              {urlInput && !validateReviewUrl(urlInput).ok && (
+                <p className="text-xs text-destructive">{validateReviewUrl(urlInput).reason}</p>
+              )}
             </CardContent>
           </Card>
         </ErrorBoundary>
