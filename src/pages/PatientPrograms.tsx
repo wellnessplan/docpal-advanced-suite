@@ -16,6 +16,7 @@ import { Copy, QrCode, Settings2, Users, Send, Loader2, Upload } from "lucide-re
 import ProgramContentLibrary from "@/components/programs/ProgramContentLibrary";
 import ProgramEngagementDashboard from "@/components/programs/ProgramEngagementDashboard";
 import BulkEnrollDialog from "@/components/programs/BulkEnrollDialog";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const TIMEZONES = ["Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York", "America/Los_Angeles"];
 const WEEKDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -219,8 +220,12 @@ export default function PatientPrograms() {
           </CardContent>
         </Card>
 
-        <ProgramEngagementDashboard />
-        <ProgramContentLibrary programs={(programs ?? []).map((p) => ({ id: p.id, name: p.name, emoji: p.emoji }))} />
+        <ErrorBoundary name="Engagement Dashboard" inline>
+          <ProgramEngagementDashboard />
+        </ErrorBoundary>
+        <ErrorBoundary name="Content Library" inline>
+          <ProgramContentLibrary programs={(programs ?? []).map((p) => ({ id: p.id, name: p.name, emoji: p.emoji }))} />
+        </ErrorBoundary>
       </div>
 
       {bulkFor && (
