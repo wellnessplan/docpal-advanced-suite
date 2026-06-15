@@ -467,7 +467,7 @@ export default function GoogleReviews() {
                         <p className="text-xs text-muted-foreground line-clamp-2 mt-1 whitespace-pre-wrap">{t.message_body}</p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <Switch checked={t.enabled} onCheckedChange={(v) => toggleTemplate.mutate({ id: t.id, enabled: v })} />
+                        <Switch checked={t.enabled} onCheckedChange={(v) => toggleTemplate.mutate({ id: t.id, enabled: v, body: t.message_body })} />
                         <Button size="icon" variant="ghost" onClick={() => setEditing(t)}><Pencil className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete template?")) deleteTemplate.mutate(t.id); }}>
                           <Trash2 className="h-4 w-4 text-destructive" />
