@@ -99,6 +99,7 @@ const navGroups: NavGroup[] = [
       { href: "/patient-education", label: "Patient Education", icon: Library },
       { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
       { href: "/reviews", label: "Feedback", icon: Star },
+      { href: "/google-reviews", label: "Google Reviews", icon: Star },
     ],
   },
   {
