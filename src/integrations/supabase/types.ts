@@ -4225,6 +4225,76 @@ export type Database = {
           },
         ]
       }
+      program_content: {
+        Row: {
+          body: string
+          clinic_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_template: boolean
+          program_id: string | null
+          scheduled_for: string | null
+          sent_at: string | null
+          sent_count: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          clinic_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_template?: boolean
+          program_id?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_template?: boolean
+          program_id?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_content_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_content_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_health"
+            referencedColumns: ["clinic_id"]
+          },
+          {
+            foreignKeyName: "program_content_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "patient_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       program_enrollments: {
         Row: {
           clinic_id: string
@@ -4233,7 +4303,9 @@ export type Database = {
           id: string
           last_reminder_at: string | null
           next_reminder_at: string
+          opted_out_at: string | null
           patient_id: string | null
+          pause_until: string | null
           phone: string
           program_id: string
           reminders_sent: number
@@ -4248,7 +4320,9 @@ export type Database = {
           id?: string
           last_reminder_at?: string | null
           next_reminder_at: string
+          opted_out_at?: string | null
           patient_id?: string | null
+          pause_until?: string | null
           phone: string
           program_id: string
           reminders_sent?: number
@@ -4263,7 +4337,9 @@ export type Database = {
           id?: string
           last_reminder_at?: string | null
           next_reminder_at?: string
+          opted_out_at?: string | null
           patient_id?: string | null
+          pause_until?: string | null
           phone?: string
           program_id?: string
           reminders_sent?: number
@@ -6074,6 +6150,19 @@ export type Database = {
           status: string
         }[]
       }
+      get_my_program_enrollments: {
+        Args: { p_clinic_id: string; p_phone: string }
+        Returns: {
+          emoji: string
+          enrollment_id: string
+          interval_months: number
+          next_reminder_at: string
+          opted_out_at: string
+          pause_until: string
+          program_name: string
+          status: string
+        }[]
+      }
       get_next_token_number: {
         Args: { p_clinic_id: string; p_date: string }
         Returns: number
@@ -6160,6 +6249,15 @@ export type Database = {
       switch_active_branch: {
         Args: { p_clinic_id: string }
         Returns: undefined
+      }
+      update_my_program_enrollment: {
+        Args: {
+          p_action: string
+          p_clinic_id: string
+          p_enrollment_id: string
+          p_phone: string
+        }
+        Returns: Json
       }
     }
     Enums: {
