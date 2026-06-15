@@ -38,6 +38,48 @@ const VARS = [
 const fillTemplate = (body: string) =>
   VARS.reduce((acc, v) => acc.split(v.token).join(v.sample), body || "");
 
+const REQUIRED_VARS = ["{{url}}"];
+const GOOGLE_HOSTS = [
+  "g.page", "maps.app.goo.gl", "goo.gl", "google.com", "maps.google.com",
+  "search.google.com", "www.google.com",
+];
+
+function validateReviewUrl(raw: string): { ok: boolean; reason?: string } {
+  const v = (raw ?? "").trim();
+  if (!v) return { ok: false, reason: "URL is required" };
+  if (v.length > 500) return { ok: false, reason: "URL too long (max 500)" };
+  let u: URL;
+  try { u = new URL(v); } catch { return { ok: false, reason: "Not a valid URL" }; }
+  if (u.protocol !== "https:") return { ok: false, reason: "Must start with https://" };
+  const host = u.hostname.toLowerCase();
+  const isGoogle = GOOGLE_HOSTS.some((h) => host === h || host.endsWith("." + h));
+  if (!isGoogle) return { ok: false, reason: "Must be a Google review link (g.page, maps.app.goo.gl, google.com/maps, …)" };
+  return { ok: true };
+}
+
+function validateTemplateBody(body: string): { ok: boolean; reason?: string } {
+  const b = (body ?? "").trim();
+  if (!b) return { ok: false, reason: "Message body required" };
+  if (b.length > 2000) return { ok: false, reason: "Message too long (max 2000)" };
+  const missing = REQUIRED_VARS.filter((v) => !b.includes(v));
+  if (missing.length) return { ok: false, reason: `Template must include ${missing.join(", ")}` };
+  return { ok: true };
+}
+
+function downloadCsv(filename: string, rows: (string | number)[][]) {
+  const escape = (v: string | number) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = rows.map((r) => r.map(escape).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 interface Template {
   id: string;
   template_name: string;
