@@ -177,6 +177,7 @@ const App = () => (
                 <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
                 <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
                 <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
+                <Route path="/google-reviews" element={<ProtectedRoute><ErrorBoundary name="Google Reviews"><GoogleReviews /></ErrorBoundary></ProtectedRoute>} />
                 <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
                 <Route path="/memberships" element={<ProtectedRoute><Memberships /></ProtectedRoute>} />
                 <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
