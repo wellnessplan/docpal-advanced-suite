@@ -318,6 +318,7 @@ export default function WebhooksTab({ clinicId }: { clinicId: string }) {
           <p className="font-medium text-sm mb-2">How to set up:</p>
           <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
             <li><strong>Zapier:</strong> Create a Zap → Trigger: "Webhooks by Zapier" → "Catch Hook" → Copy the webhook URL</li>
+            <li><strong>Make.com:</strong> Create a scenario → add "Webhooks → Custom webhook" module → Copy the generated URL</li>
             <li><strong>n8n:</strong> Add a Webhook node → Copy the Production URL</li>
             <li><strong>Google Sheets:</strong> Use Google Apps Script with a doPost function, deploy as web app, and paste the URL</li>
             <li><strong>Custom:</strong> Any HTTP endpoint that accepts POST with JSON body</li>
