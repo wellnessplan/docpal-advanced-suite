@@ -69,6 +69,8 @@ const FinanceHub = lazy(() => import("./pages/FinanceHub"));
 const AnalyticsHub = lazy(() => import("./pages/AnalyticsHub"));
 const FrontDesk = lazy(() => import("./pages/FrontDesk"));
 const PublicTreatmentPlanSign = lazy(() => import("./pages/PublicTreatmentPlanSign"));
+const PublicPrograms = lazy(() => import("./pages/PublicPrograms"));
+const PatientPrograms = lazy(() => import("./pages/PatientPrograms"));
 
 
 const queryClient = new QueryClient({
