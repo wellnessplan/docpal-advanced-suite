@@ -2522,9 +2522,12 @@ export type Database = {
           benefits: Json | null
           clinic_id: string
           created_at: string
+          dunning_attempts: number
           end_date: string | null
           id: string
           invoice_id: string | null
+          last_benefits_card_at: string | null
+          last_dunning_at: string | null
           last_reminder_sent_at: string | null
           next_maintenance_date: string | null
           patient_id: string
@@ -2532,16 +2535,21 @@ export type Database = {
           plan_type: string | null
           start_date: string
           status: string
+          suspended_at: string | null
           updated_at: string
+          usage_counters: Json
         }
         Insert: {
           amount?: number
           benefits?: Json | null
           clinic_id: string
           created_at?: string
+          dunning_attempts?: number
           end_date?: string | null
           id?: string
           invoice_id?: string | null
+          last_benefits_card_at?: string | null
+          last_dunning_at?: string | null
           last_reminder_sent_at?: string | null
           next_maintenance_date?: string | null
           patient_id: string
@@ -2549,16 +2557,21 @@ export type Database = {
           plan_type?: string | null
           start_date?: string
           status?: string
+          suspended_at?: string | null
           updated_at?: string
+          usage_counters?: Json
         }
         Update: {
           amount?: number
           benefits?: Json | null
           clinic_id?: string
           created_at?: string
+          dunning_attempts?: number
           end_date?: string | null
           id?: string
           invoice_id?: string | null
+          last_benefits_card_at?: string | null
+          last_dunning_at?: string | null
           last_reminder_sent_at?: string | null
           next_maintenance_date?: string | null
           patient_id?: string
@@ -2566,7 +2579,9 @@ export type Database = {
           plan_type?: string | null
           start_date?: string
           status?: string
+          suspended_at?: string | null
           updated_at?: string
+          usage_counters?: Json
         }
         Relationships: [
           {
@@ -6299,6 +6314,10 @@ export type Database = {
           p_provider_payment_id?: string
           p_receipt_url?: string
         }
+        Returns: Json
+      }
+      membership_revenue_metrics: {
+        Args: { p_clinic_id: string }
         Returns: Json
       }
       platform_revenue_metrics: {
