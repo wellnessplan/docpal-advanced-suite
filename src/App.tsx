@@ -70,6 +70,7 @@ const AnalyticsHub = lazy(() => import("./pages/AnalyticsHub"));
 const FrontDesk = lazy(() => import("./pages/FrontDesk"));
 const PublicTreatmentPlanSign = lazy(() => import("./pages/PublicTreatmentPlanSign"));
 const PublicPrograms = lazy(() => import("./pages/PublicPrograms"));
+const PublicManagePrograms = lazy(() => import("./pages/PublicManagePrograms"));
 const PatientPrograms = lazy(() => import("./pages/PatientPrograms"));
 
 
