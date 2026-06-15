@@ -621,6 +621,12 @@ export default function Memberships() {
                                   <MessageCircle className="h-3.5 w-3.5" />
                                 </Button>
                               )}
+                              {m.status === "active" && m.patients?.phone && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7" title="Send benefits card on WhatsApp"
+                                  onClick={() => sendBenefitsCard.mutate(m)}>
+                                  <Award className="h-3.5 w-3.5 text-primary" />
+                                </Button>
+                              )}
                               <Button variant="ghost" size="icon" className="h-7 w-7" title="Renew" onClick={() => renewMembership.mutate(m)}>
                                 <RefreshCw className="h-3.5 w-3.5" />
                               </Button>
