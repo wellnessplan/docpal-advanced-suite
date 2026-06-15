@@ -173,11 +173,16 @@ export default function PatientPrograms() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground line-clamp-2">{p.message_template}</p>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <Badge variant="outline"><Users className="h-3 w-3 mr-1" />{enrollmentCount(p.id)} active</Badge>
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(p)}>
-                    <Settings2 className="h-4 w-4 mr-1" />Edit
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => setBulkFor(p)}>
+                      <Upload className="h-4 w-4 mr-1" />Bulk
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditing(p)}>
+                      <Settings2 className="h-4 w-4 mr-1" />Edit
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
