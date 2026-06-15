@@ -23,6 +23,7 @@ interface Program {
 interface Enrollment {
   id: string; full_name: string; phone: string; program_id: string;
   next_reminder_at: string; reminders_sent: number; status: string;
+  pause_until: string | null; opted_out_at: string | null;
   created_at: string;
 }
 
