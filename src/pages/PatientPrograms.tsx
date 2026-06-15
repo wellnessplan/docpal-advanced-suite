@@ -220,8 +220,12 @@ export default function PatientPrograms() {
           </CardContent>
         </Card>
 
-        <ProgramEngagementDashboard />
-        <ProgramContentLibrary programs={(programs ?? []).map((p) => ({ id: p.id, name: p.name, emoji: p.emoji }))} />
+        <ErrorBoundary name="Engagement Dashboard" inline>
+          <ProgramEngagementDashboard />
+        </ErrorBoundary>
+        <ErrorBoundary name="Content Library" inline>
+          <ProgramContentLibrary programs={(programs ?? []).map((p) => ({ id: p.id, name: p.name, emoji: p.emoji }))} />
+        </ErrorBoundary>
       </div>
 
       {bulkFor && (
