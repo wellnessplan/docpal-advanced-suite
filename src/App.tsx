@@ -42,6 +42,7 @@ const Revenue = lazy(() => import("./pages/Revenue"));
 const Performance = lazy(() => import("./pages/Performance"));
 const Leads = lazy(() => import("./pages/Leads"));
 const Reviews = lazy(() => import("./pages/Reviews"));
+const GoogleReviews = lazy(() => import("./pages/GoogleReviews"));
 const Referrals = lazy(() => import("./pages/Referrals"));
 const Memberships = lazy(() => import("./pages/Memberships"));
 const Staff = lazy(() => import("./pages/Staff"));
