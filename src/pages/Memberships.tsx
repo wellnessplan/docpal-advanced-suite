@@ -16,8 +16,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format, differenceInDays, addMonths } from "date-fns";
 
-type PlanForm = { plan_name: string; duration_months: string; discount_percent: string; amount: string; benefits: string };
-const blankPlan: PlanForm = { plan_name: "", duration_months: "12", discount_percent: "0", amount: "", benefits: "" };
+type PlanForm = { plan_name: string; duration_months: string; discount_percent: string; amount: string; benefits: string; visit_interval_months: string; allowed_services: string; maintenance_message: string };
+const blankPlan: PlanForm = { plan_name: "", duration_months: "12", discount_percent: "0", amount: "", benefits: "", visit_interval_months: "6", allowed_services: "", maintenance_message: "" };
 
 export default function Memberships() {
   const { clinicId } = useAuth();
