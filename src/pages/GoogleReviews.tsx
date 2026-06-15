@@ -109,13 +109,15 @@ export default function GoogleReviews() {
   const saveUrl = useMutation({
     mutationFn: async (value: string) => {
       if (!clinicId) throw new Error("No clinic");
+      const v = validateReviewUrl(value);
+      if (!v.ok) throw new Error(v.reason!);
       if (urlSetting?.id) {
         const { error } = await supabase.from("clinic_settings")
-          .update({ setting_value: value }).eq("id", urlSetting.id);
+          .update({ setting_value: value.trim() }).eq("id", urlSetting.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("clinic_settings")
-          .insert({ clinic_id: clinicId, setting_key: "google_review_url", setting_value: value });
+          .insert({ clinic_id: clinicId, setting_key: "google_review_url", setting_value: value.trim() });
         if (error) throw error;
       }
     },
