@@ -624,6 +624,13 @@ export default function Memberships() {
                   </Select>
                 </div>
               </div>
+              <div className="space-y-1.5"><Label>Next maintenance date</Label>
+                <Input type="date" value={editEnroll.next_maintenance_date || ""}
+                  onChange={e => setEditEnroll((p: any) => ({ ...p, next_maintenance_date: e.target.value }))} />
+                {editEnroll.paymentStatus && (
+                  <p className="text-xs text-muted-foreground">Linked invoice status: <strong className="capitalize">{editEnroll.paymentStatus}</strong></p>
+                )}
+              </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setEditEnroll(null)}>Cancel</Button>
                 <Button type="submit" disabled={saveEnroll.isPending}>{saveEnroll.isPending ? "Saving…" : "Save"}</Button>
