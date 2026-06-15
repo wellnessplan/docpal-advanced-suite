@@ -450,6 +450,59 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
                 </TabsContent>
               ))}
             </Tabs>
+
+            {/* Publish preview matrix: which platforms get which media */}
+            <div className="mt-4 rounded-md border p-3 bg-muted/30">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Send className="w-3.5 h-3.5 text-primary" />
+                <Label className="text-xs font-semibold">Publish preview {form.recycle_enabled && <span className="text-[10px] text-muted-foreground">· recycles every {form.recycle_interval_weeks}w</span>}</Label>
+              </div>
+              {form.platforms.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground">Select platforms above to see what will fire.</p>
+              ) : (form.media_urls.length === 0 && !form.image_url) ? (
+                <p className="text-[11px] text-muted-foreground">No media attached — text-only post will fire to {form.platforms.join(", ")}.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {(form.media_urls.length ? form.media_urls : [form.image_url]).map((url, idx) => {
+                    const isVid = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url);
+                    const eligible = form.platforms.filter(pl => {
+                      if (pl === "Twitter" && form.media_kind === "carousel" && idx > 3) return false;
+                      if (pl === "LinkedIn" && (form.media_kind === "reel" || form.media_kind === "short")) return false;
+                      return true;
+                    });
+                    const blocked = form.platforms.filter(pl => !eligible.includes(pl));
+                    return (
+                      <div key={url + idx} className="flex items-center gap-2 text-[11px] bg-background rounded p-1.5 border">
+                        {isVid ? (
+                          <div className="w-8 h-8 rounded bg-foreground/80 flex items-center justify-center shrink-0 text-background text-[9px] font-bold">VID</div>
+                        ) : (
+                          <img src={url} alt="" className="w-8 h-8 rounded object-cover border shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span className="text-muted-foreground">#{idx + 1}{idx === 0 && form.media_urls.length > 1 ? " (cover)" : ""} →</span>
+                            {eligible.map(pl => (
+                              <Badge key={pl} variant="secondary" className="text-[9px] px-1 py-0">{pl}</Badge>
+                            ))}
+                            {blocked.map(pl => (
+                              <Badge key={pl} variant="outline" className="text-[9px] px-1 py-0 line-through opacity-60">{pl}</Badge>
+                            ))}
+                          </div>
+                          {blocked.length > 0 && (
+                            <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                              Skipped on {blocked.join(", ")} — {form.media_kind === "carousel" ? "exceeds Twitter limit" : "format unsupported"}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p className="text-[10px] text-muted-foreground pt-1">
+                    Webhook fires once per platform; your automation tool publishes to the actual account.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
