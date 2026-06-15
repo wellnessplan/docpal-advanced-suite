@@ -99,7 +99,37 @@ export default function SocialCalendar() {
     setEditorOpen(true);
   };
 
-  // Drag-to-reschedule: keep the post's original time-of-day, swap the date
+  // Commit a reschedule + show undo toast
+  const commitReschedule = async (postId: string, prevIso: string, nextIso: string) => {
+    const { error } = await supabase
+      .from("social_posts")
+      .update({ scheduled_at: nextIso })
+      .eq("id", postId);
+    if (error) { toast.error("Reschedule failed: " + error.message); return; }
+    qc.invalidateQueries({ queryKey: ["social-posts"] });
+    refetch();
+    toast.success(`Moved to ${format(new Date(nextIso), "MMM d, HH:mm")}`, {
+      action: {
+        label: "Undo",
+        onClick: async () => {
+          const { error: e2 } = await supabase
+            .from("social_posts")
+            .update({ scheduled_at: prevIso })
+            .eq("id", postId);
+          if (e2) toast.error("Undo failed: " + e2.message);
+          else {
+            toast.success("Reschedule undone");
+            qc.invalidateQueries({ queryKey: ["social-posts"] });
+            refetch();
+          }
+        },
+      },
+      duration: 8000,
+    });
+  };
+
+  // Drag-to-reschedule: keep the post's original time-of-day, swap the date.
+  // Detects same-platform conflicts on the target day and asks before committing.
   const handleReschedule = async (postId: string, newDay: Date) => {
     const post = posts.find((p: any) => p.id === postId);
     if (!post) return;
@@ -107,14 +137,38 @@ export default function SocialCalendar() {
     const next = new Date(newDay);
     next.setHours(orig.getHours(), orig.getMinutes(), 0, 0);
     if (next.getTime() === orig.getTime()) return;
-    const { error } = await supabase
-      .from("social_posts")
-      .update({ scheduled_at: next.toISOString() })
-      .eq("id", postId);
-    if (error) { toast.error("Reschedule failed: " + error.message); return; }
-    toast.success(`Moved to ${format(next, "MMM d, HH:mm")}`);
-    qc.invalidateQueries({ queryKey: ["social-posts"] });
-    refetch();
+
+    // Conflict scan: other posts on same calendar day sharing any platform
+    const dayKey = format(next, "yyyy-MM-dd");
+    const sameDay = (postsByDay[dayKey] || []).filter((p: any) => p.id !== postId);
+    const myPlatforms: string[] = post.platforms || [];
+    const conflicts = sameDay.filter((p: any) =>
+      (p.platforms || []).some((pl: string) => myPlatforms.includes(pl))
+    );
+
+    if (conflicts.length > 0) {
+      const shared = Array.from(new Set(
+        conflicts.flatMap((c: any) => (c.platforms || []).filter((pl: string) => myPlatforms.includes(pl)))
+      )).join(", ");
+      const times = conflicts
+        .map((c: any) => format(new Date(c.scheduled_at), "HH:mm"))
+        .join(", ");
+      toast.warning(
+        `${conflicts.length} other post${conflicts.length > 1 ? "s" : ""} on ${format(next, "MMM d")} share ${shared} (${times})`,
+        {
+          description: "Multiple same-platform posts on one day can hurt reach.",
+          duration: 12000,
+          action: {
+            label: "Move anyway",
+            onClick: () => commitReschedule(postId, orig.toISOString(), next.toISOString()),
+          },
+          cancel: { label: "Cancel", onClick: () => {} },
+        }
+      );
+      return;
+    }
+
+    await commitReschedule(postId, orig.toISOString(), next.toISOString());
   };
 
   const navigate = (dir: 1 | -1) => {
