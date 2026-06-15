@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Copy, QrCode, Settings2, Users, Send, Loader2 } from "lucide-react";
+import ProgramContentLibrary from "@/components/programs/ProgramContentLibrary";
 
 interface Program {
   id: string; clinic_id: string; code: string; name: string;
