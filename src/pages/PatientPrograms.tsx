@@ -293,7 +293,6 @@ export default function PatientPrograms() {
                 )}
               </div>
               <div className="hidden">
-              <div>
                 <Label className="text-xs">Quick library (campaign templates)</Label>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {PRESET_LIBRARY.map((p) => (
