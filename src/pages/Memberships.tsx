@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Crown, Trash2, Users, Pencil, RefreshCw, XCircle, MessageCircle, Search, AlertTriangle } from "lucide-react";
+import { Plus, Crown, Trash2, Users, Pencil, RefreshCw, XCircle, MessageCircle, Search, AlertTriangle, TrendingUp, Award, Minus, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPaged } from "@/lib/supabase-paged";
@@ -79,6 +79,17 @@ export default function Memberships() {
       const map: Record<string, any> = {};
       (data || []).forEach((i: any) => { map[i.id] = i; });
       return map;
+    },
+  });
+
+  // Revenue metrics (MRR / Churn / LTV)
+  const { data: metrics } = useQuery({
+    queryKey: ["membership-revenue-metrics", clinicId],
+    enabled: !!clinicId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("membership_revenue_metrics", { p_clinic_id: clinicId });
+      if (error) throw error;
+      return data as any;
     },
   });
 
@@ -300,7 +311,51 @@ export default function Memberships() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const sendBenefitsCard = useMutation({
+    mutationFn: async (m: any) => {
+      if (!m.patients?.phone) throw new Error("No phone on file");
+      const benefits: string[] = Array.isArray(m.benefits) ? m.benefits : [];
+      const usage = (m.usage_counters || {}) as Record<string, number>;
+      const since = m.start_date ? format(new Date(m.start_date), "MMM yyyy") : "—";
+      const lines = benefits.length
+        ? benefits.map(b => {
+            const key = b.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+            const used = usage[key] || 0;
+            return `• ${b}${used ? ` — ${used} used` : ""}`;
+          }).join("\n")
+        : "• Member benefits included";
+      const body = `🏆 ${m.plan_name} Member\n${m.patients.full_name} — since ${since}\n\n${lines}\n\nValid till ${m.end_date ? format(new Date(m.end_date), "dd MMM yyyy") : "—"}.`;
+      const { error } = await supabase.from("whatsapp_logs").insert({
+        clinic_id: m.clinic_id,
+        patient_id: m.patient_id,
+        template_name: "membership_benefits_card",
+        phone: m.patients.phone,
+        message_body: body,
+        status: "queued",
+        delivery_status: "queued",
+        sent_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      await supabase.from("memberships").update({ last_benefits_card_at: new Date().toISOString() }).eq("id", m.id);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberships"] }); toast.success("Benefits card sent"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const adjustUsage = useMutation({
+    mutationFn: async ({ m, key, delta }: { m: any; key: string; delta: number }) => {
+      const current = { ...(m.usage_counters || {}) } as Record<string, number>;
+      const next = Math.max(0, (current[key] || 0) + delta);
+      current[key] = next;
+      const { error } = await supabase.from("memberships").update({ usage_counters: current }).eq("id", m.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["memberships"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const statusBadge = (m: any) => {
+    if (m.status === "suspended") return <Badge variant="destructive">Suspended</Badge>;
     if (m.status === "cancelled") return <Badge variant="secondary">Cancelled</Badge>;
     if (m.status === "expired" || m.isExpired) return <Badge variant="destructive">Expired</Badge>;
     if (m.isExpiring) return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Expiring in {m.daysLeft}d</Badge>;
@@ -428,6 +483,39 @@ export default function Memberships() {
           <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Revenue</p><p className="text-2xl font-bold mt-1 text-green-600">Rs {totalRevenue.toLocaleString()}</p></CardContent></Card>
         </div>
 
+        {/* Revenue intelligence: MRR / Churn / LTV */}
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <h2 className="font-semibold text-sm">Membership revenue intelligence</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">MRR</p>
+                <p className="text-xl font-bold font-mono">Rs {(metrics?.mrr ?? 0).toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">ARR ≈ Rs {(metrics?.arr ?? 0).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Churn (30d)</p>
+                <p className={`text-xl font-bold font-mono ${(metrics?.churn_pct ?? 0) > 10 ? "text-destructive" : "text-foreground"}`}>{(metrics?.churn_pct ?? 0).toFixed(1)}%</p>
+                <p className="text-[10px] text-muted-foreground">{metrics?.churned_30d ?? 0} lost / 30d</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">LTV</p>
+                <p className="text-xl font-bold font-mono">Rs {(metrics?.ltv ?? 0).toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">avg lifespan {(metrics?.avg_lifetime_months ?? 0).toFixed(1)}mo</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">All-time</p>
+                <p className="text-xl font-bold font-mono">Rs {(metrics?.lifetime_revenue ?? 0).toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">{metrics?.total_members_ever ?? 0} members ever</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Plans */}
           <Card className="lg:col-span-1">
@@ -490,6 +578,7 @@ export default function Memberships() {
                     <SelectItem value="expiring">Expiring ≤30d</SelectItem>
                     <SelectItem value="expired">Expired</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -530,6 +619,12 @@ export default function Memberships() {
                                 <Button variant="ghost" size="icon" className="h-7 w-7" title="Send renewal reminder"
                                   onClick={() => sendRenewalReminder.mutate(m)}>
                                   <MessageCircle className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              {m.status === "active" && m.patients?.phone && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7" title="Send benefits card on WhatsApp"
+                                  onClick={() => sendBenefitsCard.mutate(m)}>
+                                  <Award className="h-3.5 w-3.5 text-primary" />
                                 </Button>
                               )}
                               <Button variant="ghost" size="icon" className="h-7 w-7" title="Renew" onClick={() => renewMembership.mutate(m)}>
@@ -631,6 +726,44 @@ export default function Memberships() {
                   <p className="text-xs text-muted-foreground">Linked invoice status: <strong className="capitalize">{editEnroll.paymentStatus}</strong></p>
                 )}
               </div>
+
+              {Array.isArray(editEnroll.benefits) && editEnroll.benefits.length > 0 && (
+                <div className="rounded-md border p-3 space-y-2 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold">Benefit usage</p>
+                    {editEnroll.patients?.phone && (
+                      <Button type="button" size="sm" variant="outline" className="h-7 gap-1 text-xs"
+                        onClick={() => sendBenefitsCard.mutate(editEnroll)}>
+                        <Send className="h-3 w-3" /> Send card
+                      </Button>
+                    )}
+                  </div>
+                  {editEnroll.benefits.map((b: string) => {
+                    const key = b.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+                    const used = (editEnroll.usage_counters || {})[key] || 0;
+                    return (
+                      <div key={key} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="truncate flex-1">{b}</span>
+                        <div className="flex items-center gap-1">
+                          <Button type="button" size="icon" variant="outline" className="h-6 w-6"
+                            onClick={async () => { await adjustUsage.mutateAsync({ m: editEnroll, key, delta: -1 }); setEditEnroll((p: any) => ({ ...p, usage_counters: { ...(p.usage_counters || {}), [key]: Math.max(0, used - 1) } })); }}>
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="font-mono text-sm w-6 text-center">{used}</span>
+                          <Button type="button" size="icon" variant="outline" className="h-6 w-6"
+                            onClick={async () => { await adjustUsage.mutateAsync({ m: editEnroll, key, delta: 1 }); setEditEnroll((p: any) => ({ ...p, usage_counters: { ...(p.usage_counters || {}), [key]: used + 1 } })); }}>
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {editEnroll.dunning_attempts > 0 && (
+                    <p className="text-[11px] text-amber-700 pt-1 border-t">Dunning attempts: {editEnroll.dunning_attempts} / 3</p>
+                  )}
+                </div>
+              )}
+
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setEditEnroll(null)}>Cancel</Button>
                 <Button type="submit" disabled={saveEnroll.isPending}>{saveEnroll.isPending ? "Saving…" : "Save"}</Button>
