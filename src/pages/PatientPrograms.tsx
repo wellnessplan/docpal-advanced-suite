@@ -257,6 +257,42 @@ export default function PatientPrograms() {
                 <Label>Reminder message — use {`{{name}}`} for personalization</Label>
                 <Textarea rows={4} value={editing.message_template} onChange={(e) => setEditing({ ...editing, message_template: e.target.value })} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Send rule</Label>
+                  <select className="w-full border rounded-md h-10 px-2 bg-background text-sm"
+                    value={editing.send_rule}
+                    onChange={(e) => setEditing({ ...editing, send_rule: e.target.value })}>
+                    <option value="day_of_month">Fixed day of month</option>
+                    <option value="weekday">Same weekday each month</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Timezone</Label>
+                  <select className="w-full border rounded-md h-10 px-2 bg-background text-sm"
+                    value={editing.timezone}
+                    onChange={(e) => setEditing({ ...editing, timezone: e.target.value })}>
+                    {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+                  </select>
+                </div>
+                {editing.send_rule === "day_of_month" ? (
+                  <div>
+                    <Label>Day of month (1–28)</Label>
+                    <Input type="number" min={1} max={28} value={editing.send_day_of_month}
+                      onChange={(e) => setEditing({ ...editing, send_day_of_month: Math.min(28, Math.max(1, parseInt(e.target.value) || 1)) })} />
+                  </div>
+                ) : (
+                  <div>
+                    <Label>Weekday</Label>
+                    <select className="w-full border rounded-md h-10 px-2 bg-background text-sm"
+                      value={editing.send_weekday ?? 1}
+                      onChange={(e) => setEditing({ ...editing, send_weekday: parseInt(e.target.value) })}>
+                      {WEEKDAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+              <div className="hidden">
               <div>
                 <Label className="text-xs">Quick library (campaign templates)</Label>
                 <div className="flex flex-wrap gap-2 mt-1">
