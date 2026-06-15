@@ -137,8 +137,8 @@ Deno.serve(async (req) => {
     });
   }
 
-  const events = normalize(body);
-  if (!events.length) {
+  const { statuses, replies } = normalize(body);
+  if (!statuses.length && !replies.length) {
     return new Response(JSON.stringify({ ok: true, count: 0 }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -149,25 +149,60 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Idempotent insert — UNIQUE(provider_message_id, status) drops duplicates
-  const { error: insertErr } = await supabase
-    .from("whatsapp_delivery_status")
-    .upsert(
-      events.map((e) => ({ provider_message_id: e.id, status: e.status, raw: e.raw })),
-      { onConflict: "provider_message_id,status", ignoreDuplicates: true },
-    );
-  if (insertErr) console.error("dlv insert", insertErr);
+  // ── Status events ─────────────────────────────────────────────────────
+  if (statuses.length) {
+    const { error: insertErr } = await supabase
+      .from("whatsapp_delivery_status")
+      .upsert(
+        statuses.map((e) => ({ provider_message_id: e.id, status: e.status, raw: e.raw })),
+        { onConflict: "provider_message_id,status", ignoreDuplicates: true },
+      );
+    if (insertErr) console.error("dlv insert", insertErr);
 
-  // Latest status wins for the parent log row.
-  // We update once per unique provider_message_id with the *last* event in the batch
-  // (Meta callbacks arrive ordered).
-  const latest = new Map<string, string>();
-  for (const e of events) latest.set(e.id, e.status);
-  for (const [id, status] of latest) {
-    await supabase.from("whatsapp_logs").update({ delivery_status: status }).eq("provider_message_id", id);
+    const latest = new Map<string, string>();
+    for (const e of statuses) latest.set(e.id, e.status);
+    for (const [id, status] of latest) {
+      await supabase.from("whatsapp_logs")
+        .update({ delivery_status: status })
+        .eq("provider_message_id", id);
+    }
   }
 
-  return new Response(JSON.stringify({ ok: true, count: events.length }), {
+  // ── Inbound replies → mark the most recent outbound msg as 'replied' ──
+  let repliedMatched = 0;
+  if (replies.length) {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const seen = new Set<string>();
+    for (const r of replies) {
+      const digits = normalizePhone(r.from);
+      if (!digits || seen.has(digits)) continue;
+      seen.add(digits);
+
+      // Match by trailing 10 digits to be tolerant of country-code variants
+      const tail = digits.slice(-10);
+      const { data: rows } = await supabase
+        .from("whatsapp_logs")
+        .select("id, phone")
+        .gte("sent_at", since)
+        .like("phone", `%${tail}`)
+        .order("sent_at", { ascending: false })
+        .limit(1);
+      const target = rows?.[0];
+      if (target) {
+        await supabase.from("whatsapp_logs")
+          .update({ delivery_status: "replied" })
+          .eq("id", target.id);
+        repliedMatched++;
+      }
+    }
+  }
+
+  return new Response(JSON.stringify({
+    ok: true,
+    statuses: statuses.length,
+    replies: replies.length,
+    replied_matched: repliedMatched,
+  }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
