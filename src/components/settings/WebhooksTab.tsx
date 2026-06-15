@@ -39,6 +39,7 @@ const WEBHOOK_EVENTS = [
 
 const WEBHOOK_TYPES: { value: WebhookConfig["type"]; label: string; icon: React.ReactNode; placeholder: string }[] = [
   { value: "zapier", label: "Zapier", icon: <Zap className="w-4 h-4 text-orange-500" />, placeholder: "https://hooks.zapier.com/hooks/catch/..." },
+  { value: "make", label: "Make.com", icon: <Workflow className="w-4 h-4 text-purple-600" />, placeholder: "https://hook.eu2.make.com/..." },
   { value: "n8n", label: "n8n", icon: <Workflow className="w-4 h-4 text-red-500" />, placeholder: "https://your-n8n.app/webhook/..." },
   { value: "google_sheets", label: "Google Apps Script", icon: <Sheet className="w-4 h-4 text-green-600" />, placeholder: "https://script.google.com/macros/s/.../exec" },
   { value: "custom", label: "Custom URL", icon: <Globe className="w-4 h-4 text-primary" />, placeholder: "https://your-api.com/webhook" },
