@@ -99,6 +99,24 @@ export default function SocialCalendar() {
     setEditorOpen(true);
   };
 
+  // Drag-to-reschedule: keep the post's original time-of-day, swap the date
+  const handleReschedule = async (postId: string, newDay: Date) => {
+    const post = posts.find((p: any) => p.id === postId);
+    if (!post) return;
+    const orig = new Date(post.scheduled_at);
+    const next = new Date(newDay);
+    next.setHours(orig.getHours(), orig.getMinutes(), 0, 0);
+    if (next.getTime() === orig.getTime()) return;
+    const { error } = await supabase
+      .from("social_posts")
+      .update({ scheduled_at: next.toISOString() })
+      .eq("id", postId);
+    if (error) { toast.error("Reschedule failed: " + error.message); return; }
+    toast.success(`Moved to ${format(next, "MMM d, HH:mm")}`);
+    qc.invalidateQueries({ queryKey: ["social-posts"] });
+    refetch();
+  };
+
   const navigate = (dir: 1 | -1) => {
     if (view === "month") setCursor(c => dir === 1 ? addMonths(c, 1) : subMonths(c, 1));
     else if (view === "week") setCursor(c => dir === 1 ? addWeeks(c, 1) : subWeeks(c, 1));
