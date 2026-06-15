@@ -258,10 +258,7 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
         </DialogContent>
       </Dialog>
 
-      <SendTestDialog />
     </Card>
   );
 }
 
-// === Send test dialog ===
-function SendTestDialog() { return null; }
