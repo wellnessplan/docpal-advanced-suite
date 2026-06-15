@@ -5027,13 +5027,20 @@ export type Database = {
           id: string
           image_url: string | null
           impressions: number
+          last_recycled_at: string | null
+          media_kind: string
           media_type: string | null
           media_url: string | null
+          media_urls: string[]
           notes: string | null
           platforms: string[]
           posted_at: string | null
+          recycle_count: number
+          recycle_enabled: boolean
+          recycle_interval_weeks: number
           rejection_reason: string | null
           scheduled_at: string
+          source_post_id: string | null
           status: string
           target_audience: string | null
           updated_at: string
@@ -5056,13 +5063,20 @@ export type Database = {
           id?: string
           image_url?: string | null
           impressions?: number
+          last_recycled_at?: string | null
+          media_kind?: string
           media_type?: string | null
           media_url?: string | null
+          media_urls?: string[]
           notes?: string | null
           platforms?: string[]
           posted_at?: string | null
+          recycle_count?: number
+          recycle_enabled?: boolean
+          recycle_interval_weeks?: number
           rejection_reason?: string | null
           scheduled_at: string
+          source_post_id?: string | null
           status?: string
           target_audience?: string | null
           updated_at?: string
@@ -5085,13 +5099,20 @@ export type Database = {
           id?: string
           image_url?: string | null
           impressions?: number
+          last_recycled_at?: string | null
+          media_kind?: string
           media_type?: string | null
           media_url?: string | null
+          media_urls?: string[]
           notes?: string | null
           platforms?: string[]
           posted_at?: string | null
+          recycle_count?: number
+          recycle_enabled?: boolean
+          recycle_interval_weeks?: number
           rejection_reason?: string | null
           scheduled_at?: string
+          source_post_id?: string | null
           status?: string
           target_audience?: string | null
           updated_at?: string
@@ -6165,6 +6186,10 @@ export type Database = {
         Args: { p_clinic_id: string }
         Returns: number
       }
+      clone_social_post_for_recycle: {
+        Args: { p_new_scheduled_at: string; p_post_id: string }
+        Returns: string
+      }
       compute_next_program_send_date: {
         Args: { p_program_id: string }
         Returns: string
@@ -6365,6 +6390,7 @@ export type Database = {
         Returns: Json
       }
       start_impersonation: { Args: { p_clinic_id: string }; Returns: Json }
+      suggest_best_post_times: { Args: { p_clinic_id: string }; Returns: Json }
       switch_active_branch: {
         Args: { p_clinic_id: string }
         Returns: undefined
