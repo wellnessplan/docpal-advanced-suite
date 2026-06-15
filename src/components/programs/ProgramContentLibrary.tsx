@@ -11,7 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, CalendarClock, BookOpen, Send, Trash2, Repeat, Loader2 } from "lucide-react";
+import { Plus, CalendarClock, BookOpen, Send, Trash2, Repeat, Loader2, Eye, TestTube2 } from "lucide-react";
+
+const VARIABLES = [
+  { token: "{{name}}", label: "Patient name", sample: "Priya Sharma" },
+  { token: "{{program}}", label: "Program name", sample: "Change Your Brush" },
+  { token: "{{clinic}}", label: "Clinic name", sample: "Smile Dental" },
+  { token: "{{next_date}}", label: "Next reminder date", sample: "15 Mar 2026" },
+];
+const renderPreview = (body: string) =>
+  VARIABLES.reduce((acc, v) => acc.split(v.token).join(v.sample), body || "");
+
 
 interface Program { id: string; name: string; emoji: string | null; }
 interface ContentItem {
