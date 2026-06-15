@@ -73,8 +73,11 @@ export default function PublicPrograms() {
             </div>
             <h1 className="text-2xl font-semibold">You're subscribed!</h1>
             <p className="text-muted-foreground">
-              {brand?.name} will send you {done.count} program{done.count > 1 ? "s" : ""} of friendly reminders on WhatsApp. Reply STOP anytime to opt out.
+              {brand?.name} will send you {done.count} program{done.count > 1 ? "s" : ""} of friendly reminders on WhatsApp.
             </p>
+            <a href={`/programs/${clinicId}/manage`} className="text-sm underline" style={{ color: accent }}>
+              Manage or pause your subscriptions →
+            </a>
           </CardContent>
         </Card>
       </div>
