@@ -47,6 +47,7 @@ export default function PatientPrograms() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Program | null>(null);
   const [qrFor, setQrFor] = useState<string | null>(null);
+  const [bulkFor, setBulkFor] = useState<Program | null>(null);
 
   const publicUrl = useMemo(
     () => clinicId ? `${window.location.origin}/programs/${clinicId}` : "",
