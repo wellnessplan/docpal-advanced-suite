@@ -354,6 +354,25 @@ export default function Memberships() {
                     <Label>Benefits (comma-separated)</Label>
                     <Input value={planForm.benefits} onChange={e => setPlanForm(f => ({ ...f, benefits: e.target.value }))} placeholder="2 Cleaning, 1 Filling, 10% off treatments" />
                   </div>
+                  <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+                    <p className="text-xs font-semibold text-muted-foreground">Maintenance rules (optional)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5"><Label className="text-xs">Visit interval (months)</Label>
+                        <Input type="number" min={1} value={planForm.visit_interval_months}
+                          onChange={e => setPlanForm(f => ({ ...f, visit_interval_months: e.target.value }))} placeholder="6" />
+                      </div>
+                      <div className="space-y-1.5"><Label className="text-xs">Allowed services</Label>
+                        <Input value={planForm.allowed_services}
+                          onChange={e => setPlanForm(f => ({ ...f, allowed_services: e.target.value }))} placeholder="Cleaning, Polishing, X-Ray" />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5"><Label className="text-xs">WhatsApp maintenance message</Label>
+                      <Input value={planForm.maintenance_message}
+                        onChange={e => setPlanForm(f => ({ ...f, maintenance_message: e.target.value }))}
+                        placeholder="Hi {{name}}, your {{plan}} maintenance visit is due on {{date}}." />
+                      <p className="text-[10px] text-muted-foreground">Use {"{{name}}"}, {"{{plan}}"}, {"{{date}}"}.</p>
+                    </div>
+                  </div>
                   <Button type="submit" className="w-full" disabled={savePlan.isPending}>
                     {savePlan.isPending ? "Saving…" : (editingPlanId ? "Save Plan" : "Create Plan")}
                   </Button>
