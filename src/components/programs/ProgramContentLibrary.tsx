@@ -265,7 +265,3 @@ export default function ProgramContentLibrary({ programs }: { programs: Program[
 
 // === Send test dialog ===
 function SendTestDialog() { return null; }
-
-    </Card>
-  );
-}
