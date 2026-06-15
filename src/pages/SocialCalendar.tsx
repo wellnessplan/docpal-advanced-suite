@@ -421,7 +421,18 @@ export default function SocialCalendar() {
                   const k = format(d, "yyyy-MM-dd");
                   const dayPosts = postsByDay[k] || [];
                   return (
-                    <div key={k} className="min-h-[400px] p-2">
+                    <div
+                      key={k}
+                      className="min-h-[400px] p-2 transition-colors"
+                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
+                      onDragLeave={(e) => e.currentTarget.classList.remove("bg-primary/10")}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove("bg-primary/10");
+                        const id = e.dataTransfer.getData("text/post-id");
+                        if (id) handleReschedule(id, d);
+                      }}
+                    >
                       <div className={`text-xs font-medium mb-2 ${isToday(d) ? "text-primary" : ""}`}>
                         {format(d, "EEE d")}
                       </div>
@@ -432,8 +443,10 @@ export default function SocialCalendar() {
                           return (
                             <div
                               key={p.id}
+                              draggable
+                              onDragStart={(e) => { e.dataTransfer.setData("text/post-id", p.id); e.dataTransfer.effectAllowed = "move"; }}
                               onClick={() => openEdit(p.id)}
-                              className={`text-xs rounded cursor-pointer overflow-hidden ${STATUS_COLORS[p.status]}`}
+                              className={`text-xs rounded cursor-grab active:cursor-grabbing overflow-hidden ${STATUS_COLORS[p.status]}`}
                             >
                               {thumb && !isVideo ? (
                                 <img src={thumb} alt="" loading="lazy" className="w-full h-20 object-cover" />
