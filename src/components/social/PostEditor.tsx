@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -7,16 +7,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 import { PostPreview } from "./PostPreview";
-import { MediaUploader } from "./MediaUploader";
+import { MediaUploader, type MediaKind } from "./MediaUploader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Trash2, Send, Save, CheckCircle2, ShieldCheck, ShieldX, AlertCircle } from "lucide-react";
+import { Trash2, Send, Save, CheckCircle2, ShieldCheck, ShieldX, AlertCircle, Sparkles, Recycle } from "lucide-react";
 
 const PLATFORMS = ["Facebook", "Instagram", "Twitter", "LinkedIn"];
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 interface PostEditorProps {
   open: boolean;
@@ -39,8 +42,8 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     caption: "",
     hashtags: "",
     image_url: "",
-    media_url: "",
-    media_type: "",
+    media_urls: [] as string[],
+    media_kind: "image" as MediaKind,
     campaign_name: "",
     cta_link: "",
     target_audience: "",
@@ -49,8 +52,26 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     approval_status: "pending",
     rejection_reason: "",
     status: "draft",
+    recycle_enabled: false,
+    recycle_interval_weeks: 4,
   });
   const [previewPlatform, setPreviewPlatform] = useState("Instagram");
+
+  // Best-time suggestions
+  const { data: bestTimes } = useQuery({
+    queryKey: ["best-post-times", clinicId],
+    enabled: open && !!clinicId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("suggest_best_post_times", { p_clinic_id: clinicId });
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+  });
+
+  const platformSuggestions = useMemo(() => {
+    if (!bestTimes) return [];
+    return bestTimes.filter((s: any) => form.platforms.includes(s.platform));
+  }, [bestTimes, form.platforms]);
 
   useEffect(() => {
     if (!open) return;
@@ -58,33 +79,41 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
       (async () => {
         const { data } = await supabase.from("social_posts").select("*").eq("id", postId).single();
         if (data) {
+          const d = data as any;
+          const urls: string[] = d.media_urls?.length ? d.media_urls
+            : d.media_url ? [d.media_url]
+            : d.image_url ? [d.image_url]
+            : [];
           setForm({
-            platforms: data.platforms || [],
-            scheduled_at: format(new Date(data.scheduled_at), "yyyy-MM-dd'T'HH:mm"),
-            caption: data.caption || "",
-            hashtags: data.hashtags || "",
-            image_url: data.image_url || "",
-            media_url: (data as any).media_url || "",
-            media_type: (data as any).media_type || "",
-            campaign_name: data.campaign_name || "",
-            cta_link: data.cta_link || "",
-            target_audience: data.target_audience || "",
-            boost_budget: data.boost_budget || 0,
-            notes: data.notes || "",
-            approval_status: data.approval_status || "pending",
-            rejection_reason: (data as any).rejection_reason || "",
-            status: data.status || "draft",
+            platforms: d.platforms || [],
+            scheduled_at: format(new Date(d.scheduled_at), "yyyy-MM-dd'T'HH:mm"),
+            caption: d.caption || "",
+            hashtags: d.hashtags || "",
+            image_url: d.image_url || "",
+            media_urls: urls,
+            media_kind: (d.media_kind || (urls.length > 1 ? "carousel" : d.media_type === "video" ? "video" : "image")) as MediaKind,
+            campaign_name: d.campaign_name || "",
+            cta_link: d.cta_link || "",
+            target_audience: d.target_audience || "",
+            boost_budget: d.boost_budget || 0,
+            notes: d.notes || "",
+            approval_status: d.approval_status || "pending",
+            rejection_reason: d.rejection_reason || "",
+            status: d.status || "draft",
+            recycle_enabled: !!d.recycle_enabled,
+            recycle_interval_weeks: d.recycle_interval_weeks || 4,
           });
-          if (data.platforms?.[0]) setPreviewPlatform(data.platforms[0]);
+          if (d.platforms?.[0]) setPreviewPlatform(d.platforms[0]);
         }
       })();
     } else {
       setForm({
         platforms: [],
         scheduled_at: defaultDate ? format(defaultDate, "yyyy-MM-dd'T'HH:mm") : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-        caption: "", hashtags: "", image_url: "", media_url: "", media_type: "",
+        caption: "", hashtags: "", image_url: "", media_urls: [], media_kind: "image",
         campaign_name: "", cta_link: "", target_audience: "", boost_budget: 0,
         notes: "", approval_status: "pending", rejection_reason: "", status: "draft",
+        recycle_enabled: false, recycle_interval_weeks: 4,
       });
     }
   }, [open, postId, defaultDate]);
@@ -97,6 +126,18 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     if (!form.platforms.includes(p)) setPreviewPlatform(p);
   };
 
+  const applySuggestion = (s: any) => {
+    // Find the next occurrence of weekday s.weekday at hour s.hour
+    const now = new Date();
+    const result = new Date(now);
+    result.setHours(s.hour, 0, 0, 0);
+    const targetDow = s.weekday;
+    const diff = (targetDow - result.getDay() + 7) % 7 || (result <= now ? 7 : 0);
+    result.setDate(result.getDate() + diff);
+    setForm(f => ({ ...f, scheduled_at: format(result, "yyyy-MM-dd'T'HH:mm") }));
+    toast.success(`Set to ${DOW[s.weekday]} ${String(s.hour).padStart(2, "0")}:00`);
+  };
+
   const handleSave = async (publish = false) => {
     if (!form.platforms.length) { toast.error("Select at least one platform"); return; }
     if (!form.caption.trim()) { toast.error("Caption is required"); return; }
@@ -106,14 +147,29 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     }
     setLoading(true);
     try {
-      const { rejection_reason, ...rest } = form;
+      const cover = form.media_urls[0] || form.image_url || null;
+      const isVid = cover ? /\.(mp4|mov|webm|m4v)(\?|$)/i.test(cover) : false;
       const payload: any = {
-        ...rest,
         clinic_id: clinicId,
+        platforms: form.platforms,
         scheduled_at: new Date(form.scheduled_at).toISOString(),
+        caption: form.caption,
+        hashtags: form.hashtags,
+        image_url: form.image_url || null,
+        media_urls: form.media_urls,
+        media_url: cover,
+        media_type: isVid ? "video" : "image",
+        media_kind: form.media_kind,
+        campaign_name: form.campaign_name || null,
+        cta_link: form.cta_link || null,
+        target_audience: form.target_audience || null,
         boost_budget: Number(form.boost_budget) || 0,
+        notes: form.notes || null,
+        approval_status: form.approval_status,
+        rejection_reason: form.approval_status === "rejected" ? form.rejection_reason : null,
         status: publish ? "scheduled" : form.status,
-        rejection_reason: form.approval_status === "rejected" ? rejection_reason : null,
+        recycle_enabled: form.recycle_enabled,
+        recycle_interval_weeks: Math.max(1, Number(form.recycle_interval_weeks) || 4),
       };
       let savedId = postId;
       if (postId) {
@@ -148,10 +204,8 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     if (!isManager) { toast.error("Only managers can approve"); return; }
     setLoading(true);
     const { error } = await supabase.from("social_posts").update({
-      approval_status: "approved",
-      approved_by: profile?.user_id,
-      approved_at: new Date().toISOString(),
-      rejection_reason: null,
+      approval_status: "approved", approved_by: profile?.user_id,
+      approved_at: new Date().toISOString(), rejection_reason: null,
     }).eq("id", postId);
     if (error) toast.error(error.message);
     else { toast.success("Post approved"); setForm(f => ({ ...f, approval_status: "approved" })); onSaved(); }
@@ -165,10 +219,8 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
     if (reason === null) return;
     setLoading(true);
     const { error } = await supabase.from("social_posts").update({
-      approval_status: "rejected",
-      rejection_reason: reason,
-      approved_by: profile?.user_id,
-      approved_at: new Date().toISOString(),
+      approval_status: "rejected", rejection_reason: reason,
+      approved_by: profile?.user_id, approved_at: new Date().toISOString(),
     }).eq("id", postId);
     if (error) toast.error(error.message);
     else { toast.success("Post rejected"); setForm(f => ({ ...f, approval_status: "rejected", rejection_reason: reason })); onSaved(); }
@@ -200,7 +252,6 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
           <DialogTitle>{postId ? "Edit Post" : "New Post"}</DialogTitle>
         </DialogHeader>
 
-        {/* Approval banner */}
         <div className={`rounded-lg p-3 flex items-center gap-2 text-sm ${
           form.approval_status === "approved" ? "bg-green-500/10 text-green-700 dark:text-green-300" :
           form.approval_status === "rejected" ? "bg-destructive/10 text-destructive" :
@@ -231,7 +282,6 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Form side */}
           <div className="space-y-4">
             <div>
               <Label className="mb-2 block">Platforms</Label>
@@ -264,6 +314,27 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
               </div>
             </div>
 
+            {platformSuggestions.length > 0 && (
+              <div className="rounded-md border bg-primary/5 p-2.5">
+                <div className="flex items-center gap-1.5 text-xs font-medium mb-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" /> Best times from your analytics
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {platformSuggestions.map((s: any, i: number) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => applySuggestion(s)}
+                      className="text-[11px] px-2 py-1 rounded-full bg-background border hover:bg-primary hover:text-primary-foreground transition"
+                      title={`${s.samples} samples · score ${s.score}${s.engagement_rate_pct ? ` · ${s.engagement_rate_pct}%` : ""}`}
+                    >
+                      <span className="font-semibold">{s.platform}</span> · {DOW[s.weekday]} {String(s.hour).padStart(2, "0")}:00
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <Label>Caption</Label>
               <Textarea rows={4} value={form.caption} onChange={e => setForm(f => ({ ...f, caption: e.target.value }))} placeholder="What's the message?" />
@@ -276,17 +347,17 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
             </div>
 
             <div>
-              <Label>Media (image or video)</Label>
+              <Label>Media</Label>
               <MediaUploader
                 clinicId={clinicId}
-                mediaUrl={form.media_url}
-                mediaType={form.media_type}
-                onChange={(url, type) => setForm(f => ({ ...f, media_url: url || "", media_type: type || "" }))}
+                mediaUrls={form.media_urls}
+                mediaKind={form.media_kind}
+                onChange={(urls, kind) => setForm(f => ({ ...f, media_urls: urls, media_kind: kind }))}
               />
             </div>
 
             <div>
-              <Label>Or paste image URL</Label>
+              <Label>Or paste image URL (single)</Label>
               <Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." />
             </div>
 
@@ -317,6 +388,27 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
               <Textarea rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
 
+            {/* Recycle evergreen */}
+            <div className="rounded-md border p-3 space-y-2 bg-muted/30">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5 flex-1">
+                  <Label className="flex items-center gap-1.5"><Recycle className="w-3.5 h-3.5" /> Recycle as evergreen</Label>
+                  <p className="text-[11px] text-muted-foreground">Auto-clone & repost this top performer on a schedule. Runs weekly cron.</p>
+                </div>
+                <Switch checked={form.recycle_enabled} onCheckedChange={v => setForm(f => ({ ...f, recycle_enabled: v }))} />
+              </div>
+              {form.recycle_enabled && (
+                <div className="grid grid-cols-2 gap-2 items-end">
+                  <div>
+                    <Label className="text-xs">Repeat every (weeks)</Label>
+                    <Input type="number" min={1} max={52} value={form.recycle_interval_weeks}
+                      onChange={e => setForm(f => ({ ...f, recycle_interval_weeks: Number(e.target.value) }))} />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground pb-2">Cloned posts schedule 3 days out and auto-fire the webhook.</p>
+                </div>
+              )}
+            </div>
+
             <div>
               <Label>Approval</Label>
               <Select value={form.approval_status} onValueChange={v => setForm(f => ({ ...f, approval_status: v }))}>
@@ -330,7 +422,6 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
             </div>
           </div>
 
-          {/* Preview side */}
           <div>
             <Label className="mb-2 block">Preview</Label>
             <Tabs value={previewPlatform} onValueChange={setPreviewPlatform}>
@@ -343,11 +434,19 @@ export function PostEditor({ open, onClose, postId, clinicId, clinicName, clinic
                     platform={p}
                     caption={form.caption}
                     hashtags={form.hashtags}
-                    image_url={form.media_url || form.image_url}
+                    image_url={form.media_urls[0] || form.image_url}
                     cta_link={form.cta_link}
                     clinic_name={clinicName}
                     clinic_logo={clinicLogo}
                   />
+                  {form.media_urls.length > 1 && (
+                    <div className="mt-2 flex gap-1 overflow-x-auto">
+                      {form.media_urls.map((u, i) => (
+                        <img key={u} src={u} alt={`slide ${i + 1}`} className="w-12 h-12 rounded object-cover border" />
+                      ))}
+                      <Badge variant="secondary" className="self-center text-[10px]">{form.media_urls.length} slides</Badge>
+                    </div>
+                  )}
                 </TabsContent>
               ))}
             </Tabs>

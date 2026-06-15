@@ -99,6 +99,24 @@ export default function SocialCalendar() {
     setEditorOpen(true);
   };
 
+  // Drag-to-reschedule: keep the post's original time-of-day, swap the date
+  const handleReschedule = async (postId: string, newDay: Date) => {
+    const post = posts.find((p: any) => p.id === postId);
+    if (!post) return;
+    const orig = new Date(post.scheduled_at);
+    const next = new Date(newDay);
+    next.setHours(orig.getHours(), orig.getMinutes(), 0, 0);
+    if (next.getTime() === orig.getTime()) return;
+    const { error } = await supabase
+      .from("social_posts")
+      .update({ scheduled_at: next.toISOString() })
+      .eq("id", postId);
+    if (error) { toast.error("Reschedule failed: " + error.message); return; }
+    toast.success(`Moved to ${format(next, "MMM d, HH:mm")}`);
+    qc.invalidateQueries({ queryKey: ["social-posts"] });
+    refetch();
+  };
+
   const navigate = (dir: 1 | -1) => {
     if (view === "month") setCursor(c => dir === 1 ? addMonths(c, 1) : subMonths(c, 1));
     else if (view === "week") setCursor(c => dir === 1 ? addWeeks(c, 1) : subWeeks(c, 1));
@@ -338,6 +356,14 @@ export default function SocialCalendar() {
                       key={i}
                       className={`min-h-[110px] border-b border-r border-border p-1.5 cursor-pointer hover:bg-accent/30 ${!inMonth ? "bg-muted/20 opacity-60" : ""}`}
                       onClick={() => openNew(d)}
+                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
+                      onDragLeave={(e) => e.currentTarget.classList.remove("bg-primary/10")}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove("bg-primary/10");
+                        const id = e.dataTransfer.getData("text/post-id");
+                        if (id) handleReschedule(id, d);
+                      }}
                     >
                       <div className={`text-xs font-medium mb-1 ${isToday(d) ? "text-primary" : ""}`}>
                         {format(d, "d")}
@@ -349,8 +375,10 @@ export default function SocialCalendar() {
                           return (
                             <div
                               key={p.id}
+                              draggable
+                              onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("text/post-id", p.id); e.dataTransfer.effectAllowed = "move"; }}
                               onClick={(e) => { e.stopPropagation(); openEdit(p.id); }}
-                              className={`text-[10px] px-1 py-0.5 rounded flex items-center gap-1 ${STATUS_COLORS[p.status] || ''}`}
+                              className={`text-[10px] px-1 py-0.5 rounded flex items-center gap-1 cursor-grab active:cursor-grabbing ${STATUS_COLORS[p.status] || ''}`}
                             >
                               {thumb && !isVideo ? (
                                 <img src={thumb} alt="" loading="lazy" className="w-7 h-7 rounded object-cover shrink-0 bg-muted" />
@@ -393,7 +421,18 @@ export default function SocialCalendar() {
                   const k = format(d, "yyyy-MM-dd");
                   const dayPosts = postsByDay[k] || [];
                   return (
-                    <div key={k} className="min-h-[400px] p-2">
+                    <div
+                      key={k}
+                      className="min-h-[400px] p-2 transition-colors"
+                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
+                      onDragLeave={(e) => e.currentTarget.classList.remove("bg-primary/10")}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove("bg-primary/10");
+                        const id = e.dataTransfer.getData("text/post-id");
+                        if (id) handleReschedule(id, d);
+                      }}
+                    >
                       <div className={`text-xs font-medium mb-2 ${isToday(d) ? "text-primary" : ""}`}>
                         {format(d, "EEE d")}
                       </div>
@@ -404,8 +443,10 @@ export default function SocialCalendar() {
                           return (
                             <div
                               key={p.id}
+                              draggable
+                              onDragStart={(e) => { e.dataTransfer.setData("text/post-id", p.id); e.dataTransfer.effectAllowed = "move"; }}
                               onClick={() => openEdit(p.id)}
-                              className={`text-xs rounded cursor-pointer overflow-hidden ${STATUS_COLORS[p.status]}`}
+                              className={`text-xs rounded cursor-grab active:cursor-grabbing overflow-hidden ${STATUS_COLORS[p.status]}`}
                             >
                               {thumb && !isVideo ? (
                                 <img src={thumb} alt="" loading="lazy" className="w-full h-20 object-cover" />
