@@ -19,7 +19,7 @@ interface WebhookConfig {
   id: string;
   name: string;
   url: string;
-  type: "zapier" | "n8n" | "google_sheets" | "custom";
+  type: "zapier" | "make" | "n8n" | "google_sheets" | "custom";
   enabled: boolean;
   events: string[];
   lastStatus?: "success" | "error" | null;
@@ -39,6 +39,7 @@ const WEBHOOK_EVENTS = [
 
 const WEBHOOK_TYPES: { value: WebhookConfig["type"]; label: string; icon: React.ReactNode; placeholder: string }[] = [
   { value: "zapier", label: "Zapier", icon: <Zap className="w-4 h-4 text-orange-500" />, placeholder: "https://hooks.zapier.com/hooks/catch/..." },
+  { value: "make", label: "Make.com", icon: <Workflow className="w-4 h-4 text-purple-600" />, placeholder: "https://hook.eu2.make.com/..." },
   { value: "n8n", label: "n8n", icon: <Workflow className="w-4 h-4 text-red-500" />, placeholder: "https://your-n8n.app/webhook/..." },
   { value: "google_sheets", label: "Google Apps Script", icon: <Sheet className="w-4 h-4 text-green-600" />, placeholder: "https://script.google.com/macros/s/.../exec" },
   { value: "custom", label: "Custom URL", icon: <Globe className="w-4 h-4 text-primary" />, placeholder: "https://your-api.com/webhook" },
@@ -317,6 +318,7 @@ export default function WebhooksTab({ clinicId }: { clinicId: string }) {
           <p className="font-medium text-sm mb-2">How to set up:</p>
           <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
             <li><strong>Zapier:</strong> Create a Zap → Trigger: "Webhooks by Zapier" → "Catch Hook" → Copy the webhook URL</li>
+            <li><strong>Make.com:</strong> Create a scenario → add "Webhooks → Custom webhook" module → Copy the generated URL</li>
             <li><strong>n8n:</strong> Add a Webhook node → Copy the Production URL</li>
             <li><strong>Google Sheets:</strong> Use Google Apps Script with a doPost function, deploy as web app, and paste the URL</li>
             <li><strong>Custom:</strong> Any HTTP endpoint that accepts POST with JSON body</li>
