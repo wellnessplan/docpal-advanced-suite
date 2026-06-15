@@ -82,6 +82,17 @@ export default function Memberships() {
     },
   });
 
+  // Revenue metrics (MRR / Churn / LTV)
+  const { data: metrics } = useQuery({
+    queryKey: ["membership-revenue-metrics", clinicId],
+    enabled: !!clinicId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("membership_revenue_metrics", { p_clinic_id: clinicId });
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
   // Derived status: expired / expiring-soon flags + payment
   const today = new Date();
   const enriched = useMemo(() => memberships.map((m: any) => {
