@@ -356,6 +356,14 @@ export default function SocialCalendar() {
                       key={i}
                       className={`min-h-[110px] border-b border-r border-border p-1.5 cursor-pointer hover:bg-accent/30 ${!inMonth ? "bg-muted/20 opacity-60" : ""}`}
                       onClick={() => openNew(d)}
+                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
+                      onDragLeave={(e) => e.currentTarget.classList.remove("bg-primary/10")}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove("bg-primary/10");
+                        const id = e.dataTransfer.getData("text/post-id");
+                        if (id) handleReschedule(id, d);
+                      }}
                     >
                       <div className={`text-xs font-medium mb-1 ${isToday(d) ? "text-primary" : ""}`}>
                         {format(d, "d")}
@@ -367,8 +375,10 @@ export default function SocialCalendar() {
                           return (
                             <div
                               key={p.id}
+                              draggable
+                              onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("text/post-id", p.id); e.dataTransfer.effectAllowed = "move"; }}
                               onClick={(e) => { e.stopPropagation(); openEdit(p.id); }}
-                              className={`text-[10px] px-1 py-0.5 rounded flex items-center gap-1 ${STATUS_COLORS[p.status] || ''}`}
+                              className={`text-[10px] px-1 py-0.5 rounded flex items-center gap-1 cursor-grab active:cursor-grabbing ${STATUS_COLORS[p.status] || ''}`}
                             >
                               {thumb && !isVideo ? (
                                 <img src={thumb} alt="" loading="lazy" className="w-7 h-7 rounded object-cover shrink-0 bg-muted" />
