@@ -19,7 +19,7 @@ interface WebhookConfig {
   id: string;
   name: string;
   url: string;
-  type: "zapier" | "n8n" | "google_sheets" | "custom";
+  type: "zapier" | "make" | "n8n" | "google_sheets" | "custom";
   enabled: boolean;
   events: string[];
   lastStatus?: "success" | "error" | null;
