@@ -578,6 +578,7 @@ export default function Memberships() {
                     <SelectItem value="expiring">Expiring ≤30d</SelectItem>
                     <SelectItem value="expired">Expired</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
