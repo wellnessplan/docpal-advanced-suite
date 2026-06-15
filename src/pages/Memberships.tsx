@@ -311,7 +311,51 @@ export default function Memberships() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const sendBenefitsCard = useMutation({
+    mutationFn: async (m: any) => {
+      if (!m.patients?.phone) throw new Error("No phone on file");
+      const benefits: string[] = Array.isArray(m.benefits) ? m.benefits : [];
+      const usage = (m.usage_counters || {}) as Record<string, number>;
+      const since = m.start_date ? format(new Date(m.start_date), "MMM yyyy") : "—";
+      const lines = benefits.length
+        ? benefits.map(b => {
+            const key = b.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+            const used = usage[key] || 0;
+            return `• ${b}${used ? ` — ${used} used` : ""}`;
+          }).join("\n")
+        : "• Member benefits included";
+      const body = `🏆 ${m.plan_name} Member\n${m.patients.full_name} — since ${since}\n\n${lines}\n\nValid till ${m.end_date ? format(new Date(m.end_date), "dd MMM yyyy") : "—"}.`;
+      const { error } = await supabase.from("whatsapp_logs").insert({
+        clinic_id: m.clinic_id,
+        patient_id: m.patient_id,
+        template_name: "membership_benefits_card",
+        phone: m.patients.phone,
+        message_body: body,
+        status: "queued",
+        delivery_status: "queued",
+        sent_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      await supabase.from("memberships").update({ last_benefits_card_at: new Date().toISOString() }).eq("id", m.id);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberships"] }); toast.success("Benefits card sent"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const adjustUsage = useMutation({
+    mutationFn: async ({ m, key, delta }: { m: any; key: string; delta: number }) => {
+      const current = { ...(m.usage_counters || {}) } as Record<string, number>;
+      const next = Math.max(0, (current[key] || 0) + delta);
+      current[key] = next;
+      const { error } = await supabase.from("memberships").update({ usage_counters: current }).eq("id", m.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["memberships"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const statusBadge = (m: any) => {
+    if (m.status === "suspended") return <Badge variant="destructive">Suspended</Badge>;
     if (m.status === "cancelled") return <Badge variant="secondary">Cancelled</Badge>;
     if (m.status === "expired" || m.isExpired) return <Badge variant="destructive">Expired</Badge>;
     if (m.isExpiring) return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Expiring in {m.daysLeft}d</Badge>;
