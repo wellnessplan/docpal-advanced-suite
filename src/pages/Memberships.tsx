@@ -556,11 +556,34 @@ export default function Memberships() {
           </Card>
         </div>
 
+        {upcomingMaintenance.length > 0 && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <RefreshCw className="h-4 w-4 text-primary" />
+                <h2 className="font-semibold text-base">Upcoming maintenance (next 30 days)</h2>
+                <Badge variant="secondary" className="ml-auto">{upcomingMaintenance.length}</Badge>
+              </div>
+              <div className="space-y-1.5">
+                {upcomingMaintenance.slice(0, 8).map((m: any) => (
+                  <div key={m.id} className="flex items-center justify-between text-sm border-b last:border-0 py-1.5">
+                    <div>
+                      <span className="font-medium">{m.patients?.full_name || "—"}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{m.plan_name}</span>
+                    </div>
+                    <span className="text-xs font-medium">{format(new Date(m.next_maintenance_date), "dd MMM yyyy")}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {expiringCount > 0 && (
           <Card className="border-amber-200 bg-amber-50/40">
             <CardContent className="p-3 flex items-center gap-2 text-sm">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <span><strong>{expiringCount}</strong> membership{expiringCount > 1 ? "s" : ""} expiring within 30 days. Use the chat icon to send a WhatsApp renewal nudge.</span>
+              <span><strong>{expiringCount}</strong> membership{expiringCount > 1 ? "s" : ""} expiring within 30 days. Daily auto-reminders run at 9 AM IST; use the chat icon for an instant nudge.</span>
             </CardContent>
           </Card>
         )}
