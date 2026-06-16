@@ -159,6 +159,135 @@ export default function WebhooksTab({ clinicId }: { clinicId: string }) {
     }
   };
 
+  const SAMPLE_PAYLOADS: Record<string, any> = {
+    "appointment.created": {
+      event: "appointment.created",
+      clinic_id: clinicId,
+      timestamp: new Date().toISOString(),
+      data: {
+        appointment_id: "apt_demo_123",
+        patient: { id: "pat_demo_99", name: "Riya Sharma", phone: "9876543210", email: "riya@example.com" },
+        doctor: { id: "doc_demo_1", name: "Dr. Mehta" },
+        scheduled_at: "2026-06-20T10:30:00+05:30",
+        duration_min: 30,
+        type: "Consultation",
+        status: "scheduled",
+      },
+    },
+    "invoice.paid": {
+      event: "invoice.paid",
+      clinic_id: clinicId,
+      timestamp: new Date().toISOString(),
+      data: {
+        invoice_id: "inv_demo_555",
+        patient: { id: "pat_demo_99", name: "Riya Sharma", phone: "9876543210" },
+        amount: 4500, currency: "INR", tax: 0, discount: 500,
+        payment_mode: "UPI", paid_at: new Date().toISOString(),
+        items: [{ name: "RCT - 36", qty: 1, price: 5000 }],
+      },
+    },
+    "reminder.sent": {
+      event: "reminder.sent",
+      clinic_id: clinicId,
+      timestamp: new Date().toISOString(),
+      data: {
+        reminder_id: "rem_demo_77",
+        channel: "whatsapp",
+        template: "appointment_reminder_24h",
+        patient: { id: "pat_demo_99", name: "Riya Sharma", phone: "9876543210" },
+        appointment_id: "apt_demo_123",
+        scheduled_at: "2026-06-20T10:30:00+05:30",
+        status: "delivered",
+      },
+    },
+    "social.post.publish": {
+      event: "social.post.publish",
+      clinic_id: clinicId,
+      timestamp: new Date().toISOString(),
+      data: {
+        post_id: "post_demo_42",
+        caption: "Smile makeovers that change lives ✨ Book your consult today!",
+        hashtags: ["#dentalcare", "#smilemakeover", "#doctorsbuddy"],
+        platforms: ["instagram", "facebook"],
+        media: [{ type: "image", url: "https://example.com/media/smile.jpg" }],
+        scheduled_at: new Date(Date.now() + 3600000).toISOString(),
+      },
+    },
+  };
+
+  const MAKE_TEMPLATES = [
+    {
+      key: "appointment.created",
+      title: "New Appointment → Google Calendar + WhatsApp",
+      description: "When a booking happens, create a Google Calendar event and send a WhatsApp confirmation to the patient.",
+      modules: ["Webhooks → Custom webhook", "Google Calendar → Create event", "WhatsApp Business → Send template"],
+    },
+    {
+      key: "invoice.paid",
+      title: "Invoice Paid → Sheets + Slack + Drive",
+      description: "Log paid invoices to a revenue sheet, post a celebration in Slack, and archive the PDF receipt to Drive.",
+      modules: ["Webhooks → Custom webhook", "Google Sheets → Add row", "Slack → Send message", "Google Drive → Upload file"],
+    },
+    {
+      key: "reminder.sent",
+      title: "Reminder Sent → Audit Log + Re-engage",
+      description: "Track every reminder in an audit sheet and, if status=failed, branch to an SMS fallback via Twilio.",
+      modules: ["Webhooks → Custom webhook", "Router", "Google Sheets → Add row", "Twilio → Send SMS"],
+    },
+    {
+      key: "social.post.publish",
+      title: "Social Post → Instagram + Facebook + LinkedIn",
+      description: "Fan-out the same post to Instagram, Facebook Page and LinkedIn with platform-specific formatting.",
+      modules: ["Webhooks → Custom webhook", "Iterator (platforms)", "Instagram for Business → Create photo post", "Facebook Pages → Create post", "LinkedIn → Share update"],
+    },
+  ];
+
+  const handlePreTest = async () => {
+    if (!newHook.url.trim()) {
+      toast.error("Paste a webhook URL first");
+      return;
+    }
+    setPreTesting(true);
+    setPreTestResult(null);
+    try {
+      const sampleEvent = newHook.events[0] && SAMPLE_PAYLOADS[newHook.events[0]]
+        ? SAMPLE_PAYLOADS[newHook.events[0]]
+        : { event: "test", clinic_id: clinicId, timestamp: new Date().toISOString(), data: { message: "Pre-save connectivity test from DoctorsBuddy" } };
+      await fetch(newHook.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        mode: "no-cors",
+        body: JSON.stringify(sampleEvent),
+      });
+      setPreTestResult("success");
+      toast.success("Test payload sent — open Make.com 'Run once' to confirm receipt.");
+    } catch {
+      setPreTestResult("error");
+      toast.error("Could not reach the webhook URL");
+    } finally {
+      setPreTesting(false);
+    }
+  };
+
+  const copyTemplate = (tpl: typeof MAKE_TEMPLATES[number]) => {
+    const payload = SAMPLE_PAYLOADS[tpl.key];
+    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    toast.success(`Copied sample "${tpl.key}" payload — paste into Make.com 'Run once'`);
+  };
+
+  const useTemplate = (tpl: typeof MAKE_TEMPLATES[number]) => {
+    setAdding(true);
+    setNewHook({
+      name: tpl.title,
+      url: "",
+      type: "make",
+      enabled: true,
+      events: [tpl.key],
+    });
+    setPreTestResult(null);
+    setTimeout(() => window.scrollTo({ top: 200, behavior: "smooth" }), 50);
+  };
+
   const typeInfo = (type: WebhookConfig["type"]) => WEBHOOK_TYPES.find(t => t.value === type)!;
 
   if (isLoading) {
