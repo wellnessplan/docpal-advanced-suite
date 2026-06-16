@@ -49,6 +49,8 @@ export default function WebhooksTab({ clinicId }: { clinicId: string }) {
   const queryClient = useQueryClient();
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
   const [testing, setTesting] = useState<string | null>(null);
+  const [preTesting, setPreTesting] = useState(false);
+  const [preTestResult, setPreTestResult] = useState<"success" | "error" | null>(null);
   const [adding, setAdding] = useState(false);
   const [newHook, setNewHook] = useState<Omit<WebhookConfig, "id" | "lastStatus" | "lastTriggered">>({
     name: "", url: "", type: "zapier", enabled: true, events: [],
