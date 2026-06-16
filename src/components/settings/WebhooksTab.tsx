@@ -464,6 +464,42 @@ export default function WebhooksTab({ clinicId }: { clinicId: string }) {
         ))
       )}
 
+      {/* Make.com prebuilt scenario templates */}
+      <Card className="shadow-card border-0">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <Sparkles className="h-4 w-4 text-purple-600" /> Make.com Scenario Templates
+          </CardTitle>
+          <CardDescription className="text-xs">
+            One-click prebuilt scenarios. "Use this" prefills a webhook; "Copy payload" copies a sample JSON to paste into Make.com's <em>Run once</em>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          {MAKE_TEMPLATES.map(tpl => (
+            <div key={tpl.key} className="rounded-xl border border-border/60 p-3 bg-card hover:border-purple-300 transition-colors">
+              <div className="flex items-start justify-between gap-2 mb-1.5">
+                <p className="font-medium text-sm leading-snug">{tpl.title}</p>
+                <Badge variant="outline" className="text-[10px] shrink-0">{tpl.key}</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">{tpl.description}</p>
+              <div className="flex flex-wrap gap-1 mb-3">
+                {tpl.modules.map(m => (
+                  <Badge key={m} variant="secondary" className="text-[10px] font-normal px-1.5 py-0">{m}</Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="default" className="text-xs h-8" onClick={() => useTemplate(tpl)}>
+                  <Plus className="w-3 h-3 mr-1" /> Use this
+                </Button>
+                <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => copyTemplate(tpl)}>
+                  <Copy className="w-3 h-3 mr-1" /> Copy payload
+                </Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       {/* Help section */}
       <Card className="shadow-card border-0">
         <CardContent className="py-4">
