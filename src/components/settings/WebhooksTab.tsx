@@ -373,11 +373,32 @@ export default function WebhooksTab({ clinicId }: { clinicId: string }) {
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               <Button onClick={handleAdd} disabled={saveMutation.isPending}>
                 <Save className="w-4 h-4 mr-2" /> Save Webhook
               </Button>
-              <Button variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
+              <Button
+                variant="outline"
+                onClick={handlePreTest}
+                disabled={preTesting || !newHook.url.trim()}
+                title="Send a sample payload to verify connectivity before saving"
+              >
+                {preTesting
+                  ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  : <TestTube className="w-4 h-4 mr-2" />}
+                Test {newHook.type === "make" ? "Make.com" : ""} webhook
+              </Button>
+              {preTestResult === "success" && (
+                <span className="text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Sent — check "Run once" in Make.com
+                </span>
+              )}
+              {preTestResult === "error" && (
+                <span className="text-xs text-destructive flex items-center gap-1">
+                  <XCircle className="w-3.5 h-3.5" /> URL unreachable
+                </span>
+              )}
+              <Button variant="outline" onClick={() => { setAdding(false); setPreTestResult(null); }}>Cancel</Button>
             </div>
           </CardContent>
         </Card>
