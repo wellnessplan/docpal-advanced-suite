@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   Webhook, Plus, Trash2, Save, TestTube, Loader2, CheckCircle2, XCircle,
-  Sheet, Zap, Workflow, Globe
+  Sheet, Zap, Workflow, Globe, Copy, Sparkles
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
