@@ -6,10 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import {
   CheckCircle2, UserPlus, ExternalLink, User, Phone, Mail, Cake, MapPin, FileText,
   ShieldCheck, CalendarClock, Timer, Hourglass, ArrowLeft, Loader2, Download, FileDown,
+  CalendarDays, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TokenShareActions from "@/components/patients/TokenShareActions";
@@ -30,6 +33,7 @@ interface RegSettings {
   banner_image_url: string | null; brand_color: string;
   thank_you_heading: string; thank_you_message: string;
   show_logo: boolean; action_links: ActionLink[];
+  require_phone_verification: boolean;
 }
 interface ClinicBrand { name: string; logo_url: string | null; brand_color: string; }
 
@@ -42,6 +46,7 @@ const DEFAULT_SETTINGS: RegSettings = {
   thank_you_message: "Thank you for registering. Please wait for your token to be called.",
   show_logo: true,
   action_links: [],
+  require_phone_verification: true,
 };
 
 interface Slot { value: string; date: string; time: string; label: string; sublabel: string; duration: number; }
@@ -60,32 +65,43 @@ function buildSlots(now: Date, hours: WorkingHour[], booked: Set<string>): Slot[
   const out: Slot[] = [];
   for (let dayOffset = 0; dayOffset < 7 && out.length < SLOTS_TO_SHOW; dayOffset++) {
     const d = new Date(today.getTime() + dayOffset * 86_400_000);
-    const dow = d.getDay();
-    const wh = hours.find((h) => h.day_of_week === dow);
-    if (!wh || wh.is_closed) continue;
-    const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const slotMin = wh.slot_duration_minutes || 30;
-    const openMin = toMinutes(wh.open_time);
-    const closeMin = toMinutes(wh.close_time);
-    const brkStart = wh.break_start ? toMinutes(wh.break_start) : null;
-    const brkEnd = wh.break_end ? toMinutes(wh.break_end) : null;
-    let startMin = openMin;
-    if (dayOffset === 0) {
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      if (nowMin > startMin) {
-        const remainder = (nowMin - openMin) % slotMin;
-        startMin = nowMin + (remainder === 0 ? 0 : slotMin - remainder);
-      }
+    out.push(...buildSlotsForDate(d, now, hours, booked));
+  }
+  return out.slice(0, SLOTS_TO_SHOW);
+}
+
+function buildSlotsForDate(d: Date, now: Date, hours: WorkingHour[], booked: Set<string>): Slot[] {
+  if (!hours.length) return [];
+  const today = new Date(now); today.setHours(0, 0, 0, 0);
+  const target = new Date(d); target.setHours(0, 0, 0, 0);
+  const dayOffset = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  if (dayOffset < 0) return [];
+  const dow = target.getDay();
+  const wh = hours.find((h) => h.day_of_week === dow);
+  if (!wh || wh.is_closed) return [];
+  const dateStr = `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`;
+  const slotMin = wh.slot_duration_minutes || 30;
+  const openMin = toMinutes(wh.open_time);
+  const closeMin = toMinutes(wh.close_time);
+  const brkStart = wh.break_start ? toMinutes(wh.break_start) : null;
+  const brkEnd = wh.break_end ? toMinutes(wh.break_end) : null;
+  let startMin = openMin;
+  if (dayOffset === 0) {
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin > startMin) {
+      const remainder = (nowMin - openMin) % slotMin;
+      startMin = nowMin + (remainder === 0 ? 0 : slotMin - remainder);
     }
-    for (let m = startMin; m + slotMin <= closeMin && out.length < SLOTS_TO_SHOW; m += slotMin) {
-      if (brkStart != null && brkEnd != null && m >= brkStart && m < brkEnd) continue;
-      const hh = Math.floor(m / 60), mm = m % 60;
-      const time = `${pad(hh)}:${pad(mm)}`;
-      if (booked.has(`${dateStr}|${time}`)) continue;
-      const label = fmt12(hh, mm);
-      const sublabel = dayOffset === 0 ? "Today" : dayOffset === 1 ? "Tomorrow" : DAYS_SHORT[dow];
-      out.push({ value: `${dateStr}|${time}`, date: dateStr, time, label, sublabel, duration: slotMin });
-    }
+  }
+  const out: Slot[] = [];
+  for (let m = startMin; m + slotMin <= closeMin; m += slotMin) {
+    if (brkStart != null && brkEnd != null && m >= brkStart && m < brkEnd) continue;
+    const hh = Math.floor(m / 60), mm = m % 60;
+    const time = `${pad(hh)}:${pad(mm)}`;
+    if (booked.has(`${dateStr}|${time}`)) continue;
+    const label = fmt12(hh, mm);
+    const sublabel = dayOffset === 0 ? "Today" : dayOffset === 1 ? "Tomorrow" : DAYS_SHORT[dow];
+    out.push({ value: `${dateStr}|${time}`, date: dateStr, time, label, sublabel, duration: slotMin });
   }
   return out;
 }
@@ -110,7 +126,9 @@ export default function PatientSelfRegister() {
   const [dob, setDob] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [selectedSlot, setSelectedSlot] = useState<string>("now");
+  const [selectedSlot, setSelectedSlot] = useState<string>("");
+  const [slotPickerOpen, setSlotPickerOpen] = useState(false);
+  const [pickerDate, setPickerDate] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
 
   // OTP state
   const [otpSent, setOtpSent] = useState(false);
@@ -164,6 +182,7 @@ export default function PatientSelfRegister() {
           thank_you_message: rsRes.data.thank_you_message ?? DEFAULT_SETTINGS.thank_you_message,
           show_logo: rsRes.data.show_logo ?? true,
           action_links: Array.isArray(rsRes.data.action_links) ? rsRes.data.action_links : [],
+          require_phone_verification: rsRes.data.require_phone_verification ?? true,
         });
       } else if (brand?.brand_color) {
         setSettings((s) => ({ ...s, brand_color: brand.brand_color }));
@@ -187,6 +206,10 @@ export default function PatientSelfRegister() {
   }, [otpResendIn]);
 
   const slots = useMemo(() => buildSlots(new Date(), hours, bookedSet), [hours, bookedSet]);
+  const pickerSlots = useMemo(
+    () => buildSlotsForDate(pickerDate, new Date(), hours, bookedSet),
+    [pickerDate, hours, bookedSet]
+  );
   const nextSlot = slots[0];
   const slotDuration = nextSlot?.duration ?? hours.find(h => !h.is_closed)?.slot_duration_minutes ?? 30;
   const isOpenNow = useMemo(() => {
@@ -203,22 +226,21 @@ export default function PatientSelfRegister() {
     return true;
   }, [hours]);
 
-  useEffect(() => {
-    if (!isOpenNow && slots.length > 0 && selectedSlot === "now") setSelectedSlot(slots[0].value);
-  }, [isOpenNow, slots, selectedSlot]);
-
   // If the user's selected slot got booked while idle, drop it
   useEffect(() => {
-    if (selectedSlot && selectedSlot !== "now" && bookedSet.has(selectedSlot)) {
-      setSelectedSlot(slots[0]?.value ?? (isOpenNow ? "now" : ""));
+    if (selectedSlot && bookedSet.has(selectedSlot)) {
+      setSelectedSlot("");
       toast.warning("That slot was just booked — please pick another.");
     }
-  }, [bookedSet, selectedSlot, slots, isOpenNow]);
+  }, [bookedSet, selectedSlot]);
 
   const brand = settings.brand_color;
-  const selectedSlotObj = slots.find((s) => s.value === selectedSlot);
-  const slotLabel = selectedSlot === "now" ? "Walk-in (Right now)"
-    : selectedSlotObj ? `${selectedSlotObj.sublabel} at ${selectedSlotObj.label}` : "—";
+  const allSlotsForLookup = useMemo(
+    () => [...slots, ...pickerSlots],
+    [slots, pickerSlots]
+  );
+  const selectedSlotObj = allSlotsForLookup.find((s) => s.value === selectedSlot);
+  const slotLabel = selectedSlotObj ? `${selectedSlotObj.sublabel} at ${selectedSlotObj.label}` : "—";
 
   // ---------- OTP ----------
   const sendOtp = async () => {
@@ -256,14 +278,14 @@ export default function PatientSelfRegister() {
     if (!gender) { toast.error("Please select gender."); return false; }
     if (phone && phone.length !== 10) { toast.error("Phone must be 10 digits."); return false; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email."); return false; }
-    if (!isOpenNow && !selectedSlotObj) { toast.error("Please pick an available slot."); return false; }
+    if (!selectedSlotObj) { toast.error("Please book a slot to continue."); return false; }
     return true;
   };
   const handleFormNext = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
     // If phone provided and not yet verified, force OTP step
-    if (phone && !otpVerified) { setStage("otp"); return; }
+    if (phone && !otpVerified && settings.require_phone_verification) { setStage("otp"); return; }
     setStage("confirm");
   };
 
@@ -273,7 +295,7 @@ export default function PatientSelfRegister() {
     setLoading(true);
     let aDate: string | null = null;
     let aTime: string | null = null;
-    if (selectedSlot && selectedSlot !== "now") {
+    if (selectedSlot) {
       const [d, t] = selectedSlot.split("|"); aDate = d; aTime = t;
     }
     const { data, error } = await (supabase as any).rpc("self_register_patient", {
@@ -641,67 +663,108 @@ export default function PatientSelfRegister() {
                 </div>
               </div>
 
-              {/* Preferred time */}
+              {/* Book a slot */}
               <div className="space-y-2 rounded-2xl bg-slate-50/70 p-3 ring-1 ring-slate-200/60">
-                <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                    <CalendarClock className="h-3.5 w-3.5" /> Preferred Time
-                  </Label>
-                  <button type="button" onClick={refetchAppointments}
-                    className="text-[10px] font-medium text-slate-500 underline-offset-2 hover:underline">
-                    Refresh
-                  </button>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {slots.length} slot{slots.length === 1 ? "" : "s"} available · {slotDuration} min each
-                </p>
-                {!isOpenNow && slots.length > 0 && (
-                  <p className="rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700 border border-amber-200">
-                    Clinic is currently closed — pick the next available slot below.
+                <Label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                  <CalendarClock className="h-3.5 w-3.5" /> Appointment Slot <span style={{ color: brand }}>*</span>
+                </Label>
+
+                <Popover open={slotPickerOpen} onOpenChange={setSlotPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <button type="button"
+                      className={cn(
+                        "w-full rounded-xl border bg-white px-4 py-3 text-left flex items-center justify-between gap-3 transition-all",
+                        selectedSlotObj ? "border-2 shadow-sm" : "border-slate-200 hover:border-slate-300"
+                      )}
+                      style={selectedSlotObj ? { borderColor: brand } : undefined}>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                          style={{ background: `${brand}18`, color: brand }}>
+                          <CalendarDays className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          {selectedSlotObj ? (
+                            <>
+                              <div className="text-sm font-semibold text-slate-900 truncate">
+                                {selectedSlotObj.sublabel} · {selectedSlotObj.label}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground">
+                                {selectedSlotObj.duration} min slot · tap to change
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-sm font-semibold text-slate-900">Book Slot</div>
+                              <div className="text-[11px] text-muted-foreground">Pick a date & time that works for you</div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-[11px] font-semibold" style={{ color: brand }}>
+                        {selectedSlotObj ? "Change" : "Choose"}
+                      </div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[320px] p-0 pointer-events-auto" sideOffset={6}>
+                    <div className="border-b px-3 py-2 flex items-center justify-between bg-slate-50 rounded-t-md">
+                      <div className="text-xs font-semibold text-slate-700">Pick date & time</div>
+                      <button type="button" onClick={refetchAppointments}
+                        className="text-[10px] font-medium text-slate-500 hover:underline">Refresh</button>
+                    </div>
+                    <Calendar
+                      mode="single"
+                      selected={pickerDate}
+                      onSelect={(d) => d && setPickerDate(d)}
+                      disabled={(d) => {
+                        const t = new Date(); t.setHours(0,0,0,0);
+                        if (d < t) return true;
+                        const max = new Date(t.getTime() + 30 * 86_400_000);
+                        if (d > max) return true;
+                        const wh = hours.find((h) => h.day_of_week === d.getDay());
+                        return !wh || wh.is_closed;
+                      }}
+                      className="p-2 pointer-events-auto"
+                    />
+                    <div className="border-t px-3 py-2 max-h-[180px] overflow-y-auto">
+                      {pickerSlots.length === 0 ? (
+                        <p className="text-center text-[11px] text-muted-foreground py-4">
+                          No available times on this day. Try another date.
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {pickerSlots.map((s) => {
+                            const active = selectedSlot === s.value;
+                            return (
+                              <button key={s.value} type="button"
+                                onClick={() => { setSelectedSlot(s.value); setSlotPickerOpen(false); }}
+                                className={cn(
+                                  "rounded-lg border px-1 py-1.5 text-[11px] font-semibold transition-all",
+                                  active ? "text-white shadow-sm" : "bg-white border-slate-200 hover:border-slate-300"
+                                )}
+                                style={active ? { background: brand, borderColor: brand } : undefined}>
+                                {s.label}
+                                {active && <Check className="inline h-3 w-3 ml-0.5 -mt-0.5" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {nextSlot && !selectedSlotObj && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Next free: <strong style={{ color: brand }}>{nextSlot.sublabel} at {nextSlot.label}</strong>
                   </p>
                 )}
-                <div className="grid grid-cols-3 gap-1.5">
-                  {isOpenNow && (
-                    <button type="button" onClick={() => setSelectedSlot("now")}
-                      className={cn("rounded-xl border p-2.5 text-xs font-medium transition-all text-center",
-                        selectedSlot === "now"
-                          ? "text-white shadow-md scale-[1.02]"
-                          : "bg-white border-slate-200 hover:border-slate-300 active:scale-95")}
-                      style={selectedSlot === "now" ? { background: brand, borderColor: brand } : undefined}>
-                      <div className="font-bold">Walk-in</div>
-                      <div className="text-[10px] opacity-80 mt-0.5">Right now</div>
-                    </button>
-                  )}
-                  {slots.map((s) => (
-                    <button key={s.value} type="button" onClick={() => setSelectedSlot(s.value)}
-                      className={cn("rounded-xl border p-2.5 text-xs font-medium transition-all text-center",
-                        selectedSlot === s.value
-                          ? "text-white shadow-md scale-[1.02]"
-                          : "bg-white border-slate-200 hover:border-slate-300 active:scale-95")}
-                      style={selectedSlot === s.value ? { background: brand, borderColor: brand } : undefined}>
-                      <div className="font-bold">{s.label}</div>
-                      <div className="text-[10px] opacity-80 mt-0.5">{s.sublabel}</div>
-                    </button>
-                  ))}
-                  {slots.length === 0 && (
-                    <div className="col-span-3 rounded-xl border border-dashed border-slate-300 bg-white/60 p-4 text-center">
-                      <p className="text-xs font-semibold text-slate-700">No slots available</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        The clinic is fully booked for the next 7 days. Please call to be added to the waitlist.
-                      </p>
-                      <button type="button" onClick={refetchAppointments}
-                        className="mt-2 text-[11px] font-semibold underline" style={{ color: brand }}>
-                        Check again
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
+
 
               <Button type="submit" className="w-full h-12 text-base font-semibold text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
                 style={{ background: `linear-gradient(135deg, ${brand}, ${brand}d0)` }}
-                disabled={loading || !!phoneError || !gender || (!isOpenNow && slots.length === 0)}>
-                {phone && !otpVerified ? "Verify Phone & Continue" : "Review & Confirm"}
+                disabled={loading || !!phoneError || !gender || !selectedSlotObj}>
+                {phone && !otpVerified && settings.require_phone_verification ? "Verify Phone & Continue" : "Review & Confirm"}
               </Button>
               {!gender && (
                 <p className="text-center text-[11px] text-muted-foreground">Please select gender to continue</p>

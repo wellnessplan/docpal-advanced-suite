@@ -25,6 +25,7 @@ interface RegSettings {
   thank_you_message: string;
   show_logo: boolean;
   action_links: ActionLink[];
+  require_phone_verification: boolean;
 }
 
 const DEFAULTS: RegSettings = {
@@ -36,6 +37,7 @@ const DEFAULTS: RegSettings = {
   thank_you_message: "Thank you for registering. Please wait for your token to be called.",
   show_logo: true,
   action_links: [],
+  require_phone_verification: true,
 };
 
 export default function RegistrationPageBuilderTab({ clinicId }: { clinicId: string }) {
@@ -66,6 +68,7 @@ export default function RegistrationPageBuilderTab({ clinicId }: { clinicId: str
         thank_you_message: data.thank_you_message ?? DEFAULTS.thank_you_message,
         show_logo: data.show_logo ?? true,
         action_links: Array.isArray(data.action_links) ? data.action_links : [],
+        require_phone_verification: data.require_phone_verification ?? true,
       });
     }
   }, [data]);
@@ -148,6 +151,20 @@ export default function RegistrationPageBuilderTab({ clinicId }: { clinicId: str
             <div>
               <p className="text-sm font-semibold">Show clinic logo</p>
               <p className="text-xs text-muted-foreground">Display your uploaded clinic logo at the top of the registration page</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-lg border p-3">
+            <Switch
+              checked={form.require_phone_verification}
+              onCheckedChange={(v) => setForm({ ...form, require_phone_verification: v })}
+            />
+            <div>
+              <p className="text-sm font-semibold">Require phone verification (OTP)</p>
+              <p className="text-xs text-muted-foreground">
+                When on, patients who enter a phone number must verify it via a WhatsApp OTP to prevent duplicate sign-ups.
+                Turn off for quick walk-in registration without verification.
+              </p>
             </div>
           </div>
         </CardContent>
