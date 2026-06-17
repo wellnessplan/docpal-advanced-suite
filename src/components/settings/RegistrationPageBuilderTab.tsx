@@ -153,6 +153,20 @@ export default function RegistrationPageBuilderTab({ clinicId }: { clinicId: str
               <p className="text-xs text-muted-foreground">Display your uploaded clinic logo at the top of the registration page</p>
             </div>
           </div>
+
+          <div className="flex items-center gap-3 rounded-lg border p-3">
+            <Switch
+              checked={form.require_phone_verification}
+              onCheckedChange={(v) => setForm({ ...form, require_phone_verification: v })}
+            />
+            <div>
+              <p className="text-sm font-semibold">Require phone verification (OTP)</p>
+              <p className="text-xs text-muted-foreground">
+                When on, patients who enter a phone number must verify it via a WhatsApp OTP to prevent duplicate sign-ups.
+                Turn off for quick walk-in registration without verification.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
