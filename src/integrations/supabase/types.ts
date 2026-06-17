@@ -6354,33 +6354,20 @@ export type Database = {
         Args: { p_clinic_id: string }
         Returns: undefined
       }
-      self_register_patient:
-        | {
-            Args: {
-              p_appointment_date?: string
-              p_appointment_time?: string
-              p_clinic_id: string
-              p_dob?: string
-              p_email?: string
-              p_full_name: string
-              p_phone?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_address?: string
-              p_appointment_date?: string
-              p_appointment_time?: string
-              p_clinic_id: string
-              p_dob?: string
-              p_email?: string
-              p_full_name: string
-              p_gender?: string
-              p_phone?: string
-            }
-            Returns: Json
-          }
+      self_register_patient: {
+        Args: {
+          p_address?: string
+          p_appointment_date?: string
+          p_appointment_time?: string
+          p_clinic_id: string
+          p_dob?: string
+          p_email?: string
+          p_full_name: string
+          p_gender?: string
+          p_phone?: string
+        }
+        Returns: Json
+      }
       send_program_content_test: {
         Args: {
           p_content_id: string

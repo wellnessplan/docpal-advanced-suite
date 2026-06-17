@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.self_register_patient(uuid, text, text, text, date, date, time without time zone);
