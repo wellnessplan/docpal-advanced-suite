@@ -126,7 +126,9 @@ export default function PatientSelfRegister() {
   const [dob, setDob] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [selectedSlot, setSelectedSlot] = useState<string>("now");
+  const [selectedSlot, setSelectedSlot] = useState<string>("");
+  const [slotPickerOpen, setSlotPickerOpen] = useState(false);
+  const [pickerDate, setPickerDate] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
 
   // OTP state
   const [otpSent, setOtpSent] = useState(false);
