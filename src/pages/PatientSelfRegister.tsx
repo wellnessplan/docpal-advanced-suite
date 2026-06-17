@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle2, UserPlus, Clock, ExternalLink } from "lucide-react";
+import { CheckCircle2, UserPlus, Clock, ExternalLink, User, Phone, Mail, Cake, MapPin, FileText, ShieldCheck, CalendarClock, Timer, Hourglass } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TokenShareActions from "@/components/patients/TokenShareActions";
 
