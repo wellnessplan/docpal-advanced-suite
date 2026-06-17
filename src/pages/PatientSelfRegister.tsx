@@ -65,32 +65,43 @@ function buildSlots(now: Date, hours: WorkingHour[], booked: Set<string>): Slot[
   const out: Slot[] = [];
   for (let dayOffset = 0; dayOffset < 7 && out.length < SLOTS_TO_SHOW; dayOffset++) {
     const d = new Date(today.getTime() + dayOffset * 86_400_000);
-    const dow = d.getDay();
-    const wh = hours.find((h) => h.day_of_week === dow);
-    if (!wh || wh.is_closed) continue;
-    const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const slotMin = wh.slot_duration_minutes || 30;
-    const openMin = toMinutes(wh.open_time);
-    const closeMin = toMinutes(wh.close_time);
-    const brkStart = wh.break_start ? toMinutes(wh.break_start) : null;
-    const brkEnd = wh.break_end ? toMinutes(wh.break_end) : null;
-    let startMin = openMin;
-    if (dayOffset === 0) {
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      if (nowMin > startMin) {
-        const remainder = (nowMin - openMin) % slotMin;
-        startMin = nowMin + (remainder === 0 ? 0 : slotMin - remainder);
-      }
+    out.push(...buildSlotsForDate(d, now, hours, booked));
+  }
+  return out.slice(0, SLOTS_TO_SHOW);
+}
+
+function buildSlotsForDate(d: Date, now: Date, hours: WorkingHour[], booked: Set<string>): Slot[] {
+  if (!hours.length) return [];
+  const today = new Date(now); today.setHours(0, 0, 0, 0);
+  const target = new Date(d); target.setHours(0, 0, 0, 0);
+  const dayOffset = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  if (dayOffset < 0) return [];
+  const dow = target.getDay();
+  const wh = hours.find((h) => h.day_of_week === dow);
+  if (!wh || wh.is_closed) return [];
+  const dateStr = `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`;
+  const slotMin = wh.slot_duration_minutes || 30;
+  const openMin = toMinutes(wh.open_time);
+  const closeMin = toMinutes(wh.close_time);
+  const brkStart = wh.break_start ? toMinutes(wh.break_start) : null;
+  const brkEnd = wh.break_end ? toMinutes(wh.break_end) : null;
+  let startMin = openMin;
+  if (dayOffset === 0) {
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin > startMin) {
+      const remainder = (nowMin - openMin) % slotMin;
+      startMin = nowMin + (remainder === 0 ? 0 : slotMin - remainder);
     }
-    for (let m = startMin; m + slotMin <= closeMin && out.length < SLOTS_TO_SHOW; m += slotMin) {
-      if (brkStart != null && brkEnd != null && m >= brkStart && m < brkEnd) continue;
-      const hh = Math.floor(m / 60), mm = m % 60;
-      const time = `${pad(hh)}:${pad(mm)}`;
-      if (booked.has(`${dateStr}|${time}`)) continue;
-      const label = fmt12(hh, mm);
-      const sublabel = dayOffset === 0 ? "Today" : dayOffset === 1 ? "Tomorrow" : DAYS_SHORT[dow];
-      out.push({ value: `${dateStr}|${time}`, date: dateStr, time, label, sublabel, duration: slotMin });
-    }
+  }
+  const out: Slot[] = [];
+  for (let m = startMin; m + slotMin <= closeMin; m += slotMin) {
+    if (brkStart != null && brkEnd != null && m >= brkStart && m < brkEnd) continue;
+    const hh = Math.floor(m / 60), mm = m % 60;
+    const time = `${pad(hh)}:${pad(mm)}`;
+    if (booked.has(`${dateStr}|${time}`)) continue;
+    const label = fmt12(hh, mm);
+    const sublabel = dayOffset === 0 ? "Today" : dayOffset === 1 ? "Tomorrow" : DAYS_SHORT[dow];
+    out.push({ value: `${dateStr}|${time}`, date: dateStr, time, label, sublabel, duration: slotMin });
   }
   return out;
 }
