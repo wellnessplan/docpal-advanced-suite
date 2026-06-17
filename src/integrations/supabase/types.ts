@@ -456,6 +456,7 @@ export type Database = {
           brand_color: string | null
           clinic_id: string
           created_at: string
+          require_phone_verification: boolean
           show_logo: boolean
           thank_you_heading: string | null
           thank_you_message: string | null
@@ -469,6 +470,7 @@ export type Database = {
           brand_color?: string | null
           clinic_id: string
           created_at?: string
+          require_phone_verification?: boolean
           show_logo?: boolean
           thank_you_heading?: string | null
           thank_you_message?: string | null
@@ -482,6 +484,7 @@ export type Database = {
           brand_color?: string | null
           clinic_id?: string
           created_at?: string
+          require_phone_verification?: boolean
           show_logo?: boolean
           thank_you_heading?: string | null
           thank_you_message?: string | null
