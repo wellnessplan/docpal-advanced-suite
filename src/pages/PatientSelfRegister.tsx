@@ -206,6 +206,10 @@ export default function PatientSelfRegister() {
   }, [otpResendIn]);
 
   const slots = useMemo(() => buildSlots(new Date(), hours, bookedSet), [hours, bookedSet]);
+  const pickerSlots = useMemo(
+    () => buildSlotsForDate(pickerDate, new Date(), hours, bookedSet),
+    [pickerDate, hours, bookedSet]
+  );
   const nextSlot = slots[0];
   const slotDuration = nextSlot?.duration ?? hours.find(h => !h.is_closed)?.slot_duration_minutes ?? 30;
   const isOpenNow = useMemo(() => {
@@ -222,22 +226,21 @@ export default function PatientSelfRegister() {
     return true;
   }, [hours]);
 
-  useEffect(() => {
-    if (!isOpenNow && slots.length > 0 && selectedSlot === "now") setSelectedSlot(slots[0].value);
-  }, [isOpenNow, slots, selectedSlot]);
-
   // If the user's selected slot got booked while idle, drop it
   useEffect(() => {
-    if (selectedSlot && selectedSlot !== "now" && bookedSet.has(selectedSlot)) {
-      setSelectedSlot(slots[0]?.value ?? (isOpenNow ? "now" : ""));
+    if (selectedSlot && bookedSet.has(selectedSlot)) {
+      setSelectedSlot("");
       toast.warning("That slot was just booked — please pick another.");
     }
-  }, [bookedSet, selectedSlot, slots, isOpenNow]);
+  }, [bookedSet, selectedSlot]);
 
   const brand = settings.brand_color;
-  const selectedSlotObj = slots.find((s) => s.value === selectedSlot);
-  const slotLabel = selectedSlot === "now" ? "Walk-in (Right now)"
-    : selectedSlotObj ? `${selectedSlotObj.sublabel} at ${selectedSlotObj.label}` : "—";
+  const allSlotsForLookup = useMemo(
+    () => [...slots, ...pickerSlots],
+    [slots, pickerSlots]
+  );
+  const selectedSlotObj = allSlotsForLookup.find((s) => s.value === selectedSlot);
+  const slotLabel = selectedSlotObj ? `${selectedSlotObj.sublabel} at ${selectedSlotObj.label}` : "—";
 
   // ---------- OTP ----------
   const sendOtp = async () => {
