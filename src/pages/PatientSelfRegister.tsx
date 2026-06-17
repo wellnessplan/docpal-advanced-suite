@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle2, UserPlus, Clock, ExternalLink } from "lucide-react";
+import { CheckCircle2, UserPlus, Clock, ExternalLink, User, Phone, Mail, Cake, MapPin, FileText, ShieldCheck, CalendarClock, Timer, Hourglass } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TokenShareActions from "@/components/patients/TokenShareActions";
 
@@ -40,8 +39,8 @@ const DEFAULT_SETTINGS: RegSettings = {
   action_links: [],
 };
 
-interface Slot { value: string; date: string; label: string; sublabel: string; }
-const SLOTS_TO_SHOW = 6;
+interface Slot { value: string; date: string; time: string; label: string; sublabel: string; duration: number; }
+const SLOTS_TO_SHOW = 9;
 const DAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const toMinutes = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -50,7 +49,7 @@ const fmt12 = (h: number, m: number) => {
   return `${h12}:${pad(m)} ${ampm}`;
 };
 
-function buildSlots(now: Date, hours: WorkingHour[]): Slot[] {
+function buildSlots(now: Date, hours: WorkingHour[], booked: Set<string>): Slot[] {
   if (!hours.length) return [];
   const today = new Date(now); today.setHours(0, 0, 0, 0);
   const out: Slot[] = [];
@@ -77,9 +76,10 @@ function buildSlots(now: Date, hours: WorkingHour[]): Slot[] {
       if (brkStart != null && brkEnd != null && m >= brkStart && m < brkEnd) continue;
       const hh = Math.floor(m / 60), mm = m % 60;
       const time = `${pad(hh)}:${pad(mm)}`;
+      if (booked.has(`${dateStr}|${time}`)) continue;
       const label = fmt12(hh, mm);
       const sublabel = dayOffset === 0 ? "Today" : dayOffset === 1 ? "Tomorrow" : DAYS_SHORT[dow];
-      out.push({ value: `${dateStr}|${time}`, date: dateStr, label, sublabel });
+      out.push({ value: `${dateStr}|${time}`, date: dateStr, time, label, sublabel, duration: slotMin });
     }
   }
   return out;
@@ -104,18 +104,32 @@ export default function PatientSelfRegister() {
   const [selectedSlot, setSelectedSlot] = useState<string>("now");
 
   const [hours, setHours] = useState<WorkingHour[]>([]);
+  const [bookedSet, setBookedSet] = useState<Set<string>>(new Set());
   const [settings, setSettings] = useState<RegSettings>(DEFAULT_SETTINGS);
   const [clinic, setClinic] = useState<ClinicBrand | null>(null);
 
   useEffect(() => {
     if (!clinicId) return;
     (async () => {
-      const [whRes, rsRes, brandRes] = await Promise.all([
+      const todayIso = new Date().toISOString().split("T")[0];
+      const weekAhead = new Date(Date.now() + 7 * 86_400_000).toISOString().split("T")[0];
+      const [whRes, rsRes, brandRes, apRes] = await Promise.all([
         (supabase as any).from("clinic_working_hours").select("*").eq("clinic_id", clinicId).order("day_of_week"),
         (supabase as any).from("clinic_registration_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
         (supabase as any).rpc("get_public_clinic_brand", { p_clinic_id: clinicId }),
+        (supabase as any).from("appointments").select("appointment_date,appointment_time,status")
+          .eq("clinic_id", clinicId).gte("appointment_date", todayIso).lte("appointment_date", weekAhead)
+          .neq("status", "cancelled"),
       ]);
       if (whRes.data) setHours(whRes.data);
+      if (apRes?.data) {
+        const s = new Set<string>();
+        for (const a of apRes.data as Array<{ appointment_date: string; appointment_time: string }>) {
+          const t = (a.appointment_time || "").slice(0, 5);
+          if (a.appointment_date && t) s.add(`${a.appointment_date}|${t}`);
+        }
+        setBookedSet(s);
+      }
       const brand = (brandRes?.data ?? null) as ClinicBrand | null;
       if (brand) setClinic(brand);
       if (rsRes.data) {
@@ -123,7 +137,6 @@ export default function PatientSelfRegister() {
           welcome_heading: rsRes.data.welcome_heading ?? DEFAULT_SETTINGS.welcome_heading,
           welcome_subheading: rsRes.data.welcome_subheading ?? DEFAULT_SETTINGS.welcome_subheading,
           banner_image_url: rsRes.data.banner_image_url,
-          // Prefer clinic's theme color, fall back to registration brand_color, then default
           brand_color: brand?.brand_color ?? rsRes.data.brand_color ?? DEFAULT_SETTINGS.brand_color,
           thank_you_heading: rsRes.data.thank_you_heading ?? DEFAULT_SETTINGS.thank_you_heading,
           thank_you_message: rsRes.data.thank_you_message ?? DEFAULT_SETTINGS.thank_you_message,
@@ -136,7 +149,9 @@ export default function PatientSelfRegister() {
     })();
   }, [clinicId]);
 
-  const slots = useMemo(() => buildSlots(new Date(), hours), [hours]);
+  const slots = useMemo(() => buildSlots(new Date(), hours, bookedSet), [hours, bookedSet]);
+  const nextSlot = slots[0];
+  const slotDuration = nextSlot?.duration ?? hours.find(h => !h.is_closed)?.slot_duration_minutes ?? 30;
   const isOpenNow = useMemo(() => {
     if (!hours.length) return true;
     const now = new Date();
@@ -165,6 +180,7 @@ export default function PatientSelfRegister() {
 
     const trimmedName = fullName.trim();
     if (!trimmedName || trimmedName.length > 200) { toast.error("Enter your name."); return; }
+    if (!gender) { toast.error("Please select gender."); return; }
     if (phone && phone.length !== 10) { toast.error("Phone must be 10 digits."); return; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email."); return; }
 
@@ -262,114 +278,208 @@ export default function PatientSelfRegister() {
 
   const today = new Date().toISOString().split("T")[0];
 
-  return (
-    <div className="flex min-h-screen items-center justify-center p-4"
-      style={{ background: `linear-gradient(135deg, ${brand}15, ${brand}05)` }}>
-      <div className="w-full max-w-md">
-        {settings.banner_image_url && (
-          <img src={settings.banner_image_url} alt="Banner" loading="lazy" decoding="async"
-            className="w-full h-32 object-cover rounded-xl mb-4 shadow" />
-        )}
+  const GENDERS: Array<{ value: string; label: string }> = [
+    { value: "male", label: "Male" },
+    { value: "female", label: "Female" },
+    { value: "other", label: "Other" },
+  ];
 
-        <div className="mb-6 text-center">
-          {settings.show_logo && clinic?.logo_url ? (
-            <img src={clinic.logo_url} alt={`${clinic.name} logo`} loading="lazy" decoding="async"
-              className="mx-auto mb-3 h-16 object-contain" />
-          ) : (
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl"
-              style={{ background: brand }}>
-              <UserPlus className="h-7 w-7 text-white" />
+  const fieldWrap = "relative";
+  const iconCls = "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground";
+  const inputPad = "h-12 pl-10 rounded-xl bg-white/80 backdrop-blur border-slate-200/80 focus-visible:ring-2";
+
+  return (
+    <div
+      className="min-h-screen p-4 sm:p-6"
+      style={{
+        background: `radial-gradient(1200px 600px at 0% -10%, ${brand}22, transparent 60%),
+                     radial-gradient(900px 500px at 110% 10%, ${brand}18, transparent 55%),
+                     linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)`,
+      }}
+    >
+      <div className="mx-auto w-full max-w-md">
+        {/* Brand Header */}
+        <div className="mb-5 overflow-hidden rounded-3xl shadow-xl border border-white/60 bg-white/70 backdrop-blur-xl">
+          <div className="px-6 pt-6 pb-5 text-center relative" style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}>
+            {settings.show_logo && clinic?.logo_url ? (
+              <img src={clinic.logo_url} alt={`${clinic.name} logo`} loading="lazy"
+                className="mx-auto mb-2 h-14 w-14 rounded-2xl object-contain bg-white p-1.5 shadow-lg ring-2 ring-white/40" />
+            ) : (
+              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/95 shadow-lg ring-2 ring-white/40">
+                <UserPlus className="h-7 w-7" style={{ color: brand }} />
+              </div>
+            )}
+            {clinic?.name && <p className="text-xs text-white/85 font-medium tracking-wide">{clinic.name.toUpperCase()}</p>}
+            <h1 className="mt-1 text-xl font-bold text-white">{settings.welcome_heading}</h1>
+            <p className="text-xs text-white/85 mt-0.5">{settings.welcome_subheading}</p>
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-medium text-white backdrop-blur">
+              <ShieldCheck className="h-3 w-3" /> Secure clinic intake
             </div>
-          )}
-          {clinic?.name && <p className="text-xs text-muted-foreground mb-1">{clinic.name}</p>}
-          <h1 className="text-2xl font-bold text-foreground">{settings.welcome_heading}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{settings.welcome_subheading}</p>
+          </div>
+
+          {/* Availability strip */}
+          <div className="grid grid-cols-3 gap-px bg-slate-100/60">
+            <div className="bg-white/70 px-3 py-2.5 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                <span className={cn("h-1.5 w-1.5 rounded-full", isOpenNow ? "bg-emerald-500" : "bg-amber-500")} />
+                {isOpenNow ? "Open Now" : "Closed"}
+              </div>
+              <div className="mt-0.5 text-xs font-semibold text-foreground">
+                {isOpenNow ? "Walk-in OK" : "Book ahead"}
+              </div>
+            </div>
+            <div className="bg-white/70 px-3 py-2.5 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                <Timer className="h-3 w-3" /> Slot
+              </div>
+              <div className="mt-0.5 text-xs font-semibold text-foreground">{slotDuration} min</div>
+            </div>
+            <div className="bg-white/70 px-3 py-2.5 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                <Hourglass className="h-3 w-3" /> Next free
+              </div>
+              <div className="mt-0.5 text-xs font-semibold" style={{ color: brand }}>
+                {nextSlot ? `${nextSlot.sublabel} ${nextSlot.label}` : "—"}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Card className="shadow-lg border-0">
-          <CardContent className="pt-6">
-            <form onSubmit={handleRegister} className="space-y-4">
+        {settings.banner_image_url && (
+          <img src={settings.banner_image_url} alt="Banner" loading="lazy"
+            className="w-full h-28 object-cover rounded-2xl mb-4 shadow-md" />
+        )}
+
+        <Card className="rounded-3xl border-white/60 bg-white/85 backdrop-blur-xl shadow-xl">
+          <CardContent className="p-5 sm:p-6">
+            <form onSubmit={handleRegister} className="space-y-4" noValidate>
+              {/* Full name */}
               <div className="space-y-1.5">
-                <Label>Full Name <span style={{ color: brand }}>*</span></Label>
-                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required
-                  maxLength={100} placeholder="Patient full name" autoComplete="name" enterKeyHint="next" className="h-11" />
+                <Label htmlFor="full_name" className="text-xs font-semibold text-slate-700">Full Name <span style={{ color: brand }}>*</span></Label>
+                <div className={fieldWrap}>
+                  <User className={iconCls} />
+                  <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} required
+                    maxLength={100} placeholder="e.g. Priya Sharma" autoComplete="name" enterKeyHint="next"
+                    className={inputPad} />
+                </div>
               </div>
 
+              {/* Phone */}
+              <div className="space-y-1.5">
+                <Label htmlFor="phone" className="text-xs font-semibold text-slate-700">Mobile Number</Label>
+                <div className={fieldWrap}>
+                  <Phone className={iconCls} />
+                  <Input id="phone" value={phone} onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setPhone(v);
+                      setPhoneError(v && v.length !== 10 ? "Must be 10 digits" : "");
+                    }} placeholder="9876543210" maxLength={10} inputMode="numeric"
+                    autoComplete="tel" enterKeyHint="next"
+                    aria-invalid={!!phoneError}
+                    className={cn(inputPad, phoneError && "border-destructive focus-visible:ring-destructive/40")} />
+                </div>
+                {phoneError && <p role="alert" className="text-xs text-destructive">{phoneError}</p>}
+              </div>
+
+              {/* Gender — segmented control */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-700">Gender <span style={{ color: brand }}>*</span></Label>
+                <div role="radiogroup" aria-label="Gender" aria-required="true"
+                  className="grid grid-cols-3 gap-1.5 rounded-xl bg-slate-100/80 p-1">
+                  {GENDERS.map((g) => {
+                    const active = gender === g.value;
+                    return (
+                      <button key={g.value} type="button" role="radio" aria-checked={active}
+                        onClick={() => setGender(g.value)}
+                        className={cn(
+                          "h-10 rounded-lg text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+                          active ? "text-white shadow-md" : "text-slate-600 hover:bg-white/80"
+                        )}
+                        style={active ? { background: brand } : undefined}>
+                        {g.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* DOB + Email */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Phone (10 digits)</Label>
-                  <Input value={phone} onChange={(e) => {
-                    const v = e.target.value.replace(/\D/g, "").slice(0, 10);
-                    setPhone(v);
-                    setPhoneError(v && v.length !== 10 ? "Must be 10 digits" : "");
-                  }} placeholder="9876543210" maxLength={10} inputMode="numeric"
-                    autoComplete="tel" enterKeyHint="next" className="h-11" />
-                  {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
+                  <Label htmlFor="dob" className="text-xs font-semibold text-slate-700">Date of Birth</Label>
+                  <div className={fieldWrap}>
+                    <Cake className={iconCls} />
+                    <Input id="dob" type="date" max={today} min="1900-01-01" value={dob}
+                      onChange={(e) => setDob(e.target.value)} className={inputPad} />
+                  </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Gender</Label>
-                  <Select value={gender} onValueChange={setGender}>
-                    <SelectTrigger className="h-11"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="email" className="text-xs font-semibold text-slate-700">Email</Label>
+                  <div className={fieldWrap}>
+                    <Mail className={iconCls} />
+                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="optional" inputMode="email" autoComplete="email" className={inputPad} />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Date of Birth</Label>
-                  <Input type="date" max={today} min="1900-01-01" value={dob}
-                    onChange={(e) => setDob(e.target.value)} className="h-11" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Email</Label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    placeholder="optional" inputMode="email" autoComplete="email" className="h-11" />
-                </div>
-              </div>
-
+              {/* Address */}
               <div className="space-y-1.5">
-                <Label>Address</Label>
-                <Input value={address} onChange={(e) => setAddress(e.target.value)}
-                  placeholder="optional" className="h-11" />
+                <Label htmlFor="address" className="text-xs font-semibold text-slate-700">Address</Label>
+                <div className={fieldWrap}>
+                  <MapPin className={iconCls} />
+                  <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)}
+                    placeholder="optional" className={inputPad} />
+                </div>
               </div>
 
+              {/* Notes */}
               <div className="space-y-1.5">
-                <Label>Notes</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-                  rows={2} placeholder="Any notes for the clinic" />
+                <Label htmlFor="notes" className="text-xs font-semibold text-slate-700">Notes</Label>
+                <div className="relative">
+                  <FileText className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}
+                    rows={2} placeholder="Any concerns or notes for the clinic"
+                    className="pl-10 rounded-xl bg-white/80 border-slate-200/80" />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" /> Preferred Time
-                </Label>
+              {/* Preferred time */}
+              <div className="space-y-2 rounded-2xl bg-slate-50/70 p-3 ring-1 ring-slate-200/60">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                    <CalendarClock className="h-3.5 w-3.5" /> Preferred Time
+                  </Label>
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    {slots.length} slot{slots.length === 1 ? "" : "s"} · {slotDuration} min each
+                  </span>
+                </div>
                 {!isOpenNow && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
-                    Clinic is currently closed. Pick the next available slot.
+                  <p className="rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700 border border-amber-200">
+                    Clinic is currently closed — pick the next available slot below.
                   </p>
                 )}
                 <div className="grid grid-cols-3 gap-1.5">
                   {isOpenNow && (
                     <button type="button" onClick={() => setSelectedSlot("now")}
-                      className={cn("rounded-md border p-2 text-xs font-medium transition-all text-center",
-                        selectedSlot === "now" ? "text-white shadow" : "bg-card border-border hover:opacity-80 active:scale-95")}
+                      className={cn("rounded-xl border p-2.5 text-xs font-medium transition-all text-center",
+                        selectedSlot === "now"
+                          ? "text-white shadow-md scale-[1.02]"
+                          : "bg-white border-slate-200 hover:border-slate-300 active:scale-95")}
                       style={selectedSlot === "now" ? { background: brand, borderColor: brand } : undefined}>
                       <div className="font-bold">Walk-in</div>
-                      <div className="text-[10px] opacity-80">Now</div>
+                      <div className="text-[10px] opacity-80 mt-0.5">Right now</div>
                     </button>
                   )}
                   {slots.map((s) => (
                     <button key={s.value} type="button" onClick={() => setSelectedSlot(s.value)}
-                      className={cn("rounded-md border p-2 text-xs font-medium transition-all text-center",
-                        selectedSlot === s.value ? "text-white shadow" : "bg-card border-border hover:opacity-80 active:scale-95")}
+                      className={cn("rounded-xl border p-2.5 text-xs font-medium transition-all text-center",
+                        selectedSlot === s.value
+                          ? "text-white shadow-md scale-[1.02]"
+                          : "bg-white border-slate-200 hover:border-slate-300 active:scale-95")}
                       style={selectedSlot === s.value ? { background: brand, borderColor: brand } : undefined}>
                       <div className="font-bold">{s.label}</div>
-                      <div className="text-[10px] opacity-80">{s.sublabel}</div>
+                      <div className="text-[10px] opacity-80 mt-0.5">{s.sublabel}</div>
                     </button>
                   ))}
                   {slots.length === 0 && !isOpenNow && (
@@ -380,14 +490,21 @@ export default function PatientSelfRegister() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-12 text-base text-white border-0"
-                style={{ background: brand }}
-                disabled={loading || !!phoneError || (!isOpenNow && slots.length === 0)}>
+              <Button type="submit" className="w-full h-12 text-base font-semibold text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
+                style={{ background: `linear-gradient(135deg, ${brand}, ${brand}d0)` }}
+                disabled={loading || !!phoneError || !gender || (!isOpenNow && slots.length === 0)}>
                 {loading ? "Registering..." : selectedSlot === "now" ? "Register & Get Token" : "Book Appointment & Get Token"}
               </Button>
+              {!gender && (
+                <p className="text-center text-[11px] text-muted-foreground">Please select gender to continue</p>
+              )}
             </form>
           </CardContent>
         </Card>
+
+        <p className="mt-4 text-center text-[10px] text-muted-foreground flex items-center justify-center gap-1">
+          <ShieldCheck className="h-3 w-3" /> Your information is encrypted & shared only with the clinic
+        </p>
       </div>
     </div>
   );
