@@ -763,8 +763,8 @@ export default function PatientSelfRegister() {
 
               <Button type="submit" className="w-full h-12 text-base font-semibold text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
                 style={{ background: `linear-gradient(135deg, ${brand}, ${brand}d0)` }}
-                disabled={loading || !!phoneError || !gender || (!isOpenNow && slots.length === 0)}>
-                {phone && !otpVerified ? "Verify Phone & Continue" : "Review & Confirm"}
+                disabled={loading || !!phoneError || !gender || !selectedSlotObj}>
+                {phone && !otpVerified && settings.require_phone_verification ? "Verify Phone & Continue" : "Review & Confirm"}
               </Button>
               {!gender && (
                 <p className="text-center text-[11px] text-muted-foreground">Please select gender to continue</p>
