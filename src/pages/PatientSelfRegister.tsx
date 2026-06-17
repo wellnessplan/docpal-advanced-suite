@@ -104,18 +104,32 @@ export default function PatientSelfRegister() {
   const [selectedSlot, setSelectedSlot] = useState<string>("now");
 
   const [hours, setHours] = useState<WorkingHour[]>([]);
+  const [bookedSet, setBookedSet] = useState<Set<string>>(new Set());
   const [settings, setSettings] = useState<RegSettings>(DEFAULT_SETTINGS);
   const [clinic, setClinic] = useState<ClinicBrand | null>(null);
 
   useEffect(() => {
     if (!clinicId) return;
     (async () => {
-      const [whRes, rsRes, brandRes] = await Promise.all([
+      const todayIso = new Date().toISOString().split("T")[0];
+      const weekAhead = new Date(Date.now() + 7 * 86_400_000).toISOString().split("T")[0];
+      const [whRes, rsRes, brandRes, apRes] = await Promise.all([
         (supabase as any).from("clinic_working_hours").select("*").eq("clinic_id", clinicId).order("day_of_week"),
         (supabase as any).from("clinic_registration_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
         (supabase as any).rpc("get_public_clinic_brand", { p_clinic_id: clinicId }),
+        (supabase as any).from("appointments").select("appointment_date,appointment_time,status")
+          .eq("clinic_id", clinicId).gte("appointment_date", todayIso).lte("appointment_date", weekAhead)
+          .neq("status", "cancelled"),
       ]);
       if (whRes.data) setHours(whRes.data);
+      if (apRes?.data) {
+        const s = new Set<string>();
+        for (const a of apRes.data as Array<{ appointment_date: string; appointment_time: string }>) {
+          const t = (a.appointment_time || "").slice(0, 5);
+          if (a.appointment_date && t) s.add(`${a.appointment_date}|${t}`);
+        }
+        setBookedSet(s);
+      }
       const brand = (brandRes?.data ?? null) as ClinicBrand | null;
       if (brand) setClinic(brand);
       if (rsRes.data) {
@@ -123,7 +137,6 @@ export default function PatientSelfRegister() {
           welcome_heading: rsRes.data.welcome_heading ?? DEFAULT_SETTINGS.welcome_heading,
           welcome_subheading: rsRes.data.welcome_subheading ?? DEFAULT_SETTINGS.welcome_subheading,
           banner_image_url: rsRes.data.banner_image_url,
-          // Prefer clinic's theme color, fall back to registration brand_color, then default
           brand_color: brand?.brand_color ?? rsRes.data.brand_color ?? DEFAULT_SETTINGS.brand_color,
           thank_you_heading: rsRes.data.thank_you_heading ?? DEFAULT_SETTINGS.thank_you_heading,
           thank_you_message: rsRes.data.thank_you_message ?? DEFAULT_SETTINGS.thank_you_message,
@@ -136,7 +149,9 @@ export default function PatientSelfRegister() {
     })();
   }, [clinicId]);
 
-  const slots = useMemo(() => buildSlots(new Date(), hours), [hours]);
+  const slots = useMemo(() => buildSlots(new Date(), hours, bookedSet), [hours, bookedSet]);
+  const nextSlot = slots[0];
+  const slotDuration = nextSlot?.duration ?? hours.find(h => !h.is_closed)?.slot_duration_minutes ?? 30;
   const isOpenNow = useMemo(() => {
     if (!hours.length) return true;
     const now = new Date();
