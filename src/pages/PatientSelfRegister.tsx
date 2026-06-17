@@ -280,7 +280,7 @@ export default function PatientSelfRegister() {
     e.preventDefault();
     if (!validateForm()) return;
     // If phone provided and not yet verified, force OTP step
-    if (phone && !otpVerified) { setStage("otp"); return; }
+    if (phone && !otpVerified && settings.require_phone_verification) { setStage("otp"); return; }
     setStage("confirm");
   };
 
