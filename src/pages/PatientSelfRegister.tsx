@@ -180,6 +180,7 @@ export default function PatientSelfRegister() {
           thank_you_message: rsRes.data.thank_you_message ?? DEFAULT_SETTINGS.thank_you_message,
           show_logo: rsRes.data.show_logo ?? true,
           action_links: Array.isArray(rsRes.data.action_links) ? rsRes.data.action_links : [],
+          require_phone_verification: rsRes.data.require_phone_verification ?? true,
         });
       } else if (brand?.brand_color) {
         setSettings((s) => ({ ...s, brand_color: brand.brand_color }));
