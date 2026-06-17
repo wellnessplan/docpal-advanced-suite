@@ -278,7 +278,7 @@ export default function PatientSelfRegister() {
     if (!gender) { toast.error("Please select gender."); return false; }
     if (phone && phone.length !== 10) { toast.error("Phone must be 10 digits."); return false; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email."); return false; }
-    if (!isOpenNow && !selectedSlotObj) { toast.error("Please pick an available slot."); return false; }
+    if (!selectedSlotObj) { toast.error("Please book a slot to continue."); return false; }
     return true;
   };
   const handleFormNext = (e: React.FormEvent) => {
