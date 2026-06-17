@@ -39,8 +39,8 @@ const DEFAULT_SETTINGS: RegSettings = {
   action_links: [],
 };
 
-interface Slot { value: string; date: string; label: string; sublabel: string; }
-const SLOTS_TO_SHOW = 6;
+interface Slot { value: string; date: string; time: string; label: string; sublabel: string; duration: number; }
+const SLOTS_TO_SHOW = 9;
 const DAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const toMinutes = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -49,7 +49,7 @@ const fmt12 = (h: number, m: number) => {
   return `${h12}:${pad(m)} ${ampm}`;
 };
 
-function buildSlots(now: Date, hours: WorkingHour[]): Slot[] {
+function buildSlots(now: Date, hours: WorkingHour[], booked: Set<string>): Slot[] {
   if (!hours.length) return [];
   const today = new Date(now); today.setHours(0, 0, 0, 0);
   const out: Slot[] = [];
@@ -76,9 +76,10 @@ function buildSlots(now: Date, hours: WorkingHour[]): Slot[] {
       if (brkStart != null && brkEnd != null && m >= brkStart && m < brkEnd) continue;
       const hh = Math.floor(m / 60), mm = m % 60;
       const time = `${pad(hh)}:${pad(mm)}`;
+      if (booked.has(`${dateStr}|${time}`)) continue;
       const label = fmt12(hh, mm);
       const sublabel = dayOffset === 0 ? "Today" : dayOffset === 1 ? "Tomorrow" : DAYS_SHORT[dow];
-      out.push({ value: `${dateStr}|${time}`, date: dateStr, label, sublabel });
+      out.push({ value: `${dateStr}|${time}`, date: dateStr, time, label, sublabel, duration: slotMin });
     }
   }
   return out;
