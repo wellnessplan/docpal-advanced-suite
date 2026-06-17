@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle2, UserPlus, Clock, ExternalLink, User, Phone, Mail, Cake, MapPin, FileText, ShieldCheck, CalendarClock, Timer, Hourglass } from "lucide-react";
+import {
+  CheckCircle2, UserPlus, ExternalLink, User, Phone, Mail, Cake, MapPin, FileText,
+  ShieldCheck, CalendarClock, Timer, Hourglass, ArrowLeft, Loader2, Download, FileDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import TokenShareActions from "@/components/patients/TokenShareActions";
+import QRCode from "qrcode";
+import jsPDF from "jspdf";
 
 const QRCodeGenerator = lazy(() => import("./PatientSelfRegisterQR"));
 
@@ -40,7 +45,7 @@ const DEFAULT_SETTINGS: RegSettings = {
 };
 
 interface Slot { value: string; date: string; time: string; label: string; sublabel: string; duration: number; }
-const SLOTS_TO_SHOW = 9;
+const SLOTS_TO_SHOW = 12;
 const DAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const toMinutes = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -85,14 +90,18 @@ function buildSlots(now: Date, hours: WorkingHour[], booked: Set<string>): Slot[
   return out;
 }
 
+type Stage = "form" | "otp" | "confirm";
+
 export default function PatientSelfRegister() {
   const [searchParams] = useSearchParams();
   const clinicId = searchParams.get("clinic");
   const [loading, setLoading] = useState(false);
   const [tokenNumber, setTokenNumber] = useState<number | null>(null);
+  const [opNumber, setOpNumber] = useState<string | null>(null);
   const [registered, setRegistered] = useState(false);
+  const [stage, setStage] = useState<Stage>("form");
 
-  // Form fields — mirror the in-clinic "Add Patient" intake
+  // Form fields
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
@@ -103,33 +112,46 @@ export default function PatientSelfRegister() {
   const [notes, setNotes] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<string>("now");
 
+  // OTP state
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpResendIn, setOtpResendIn] = useState(0);
+
   const [hours, setHours] = useState<WorkingHour[]>([]);
   const [bookedSet, setBookedSet] = useState<Set<string>>(new Set());
   const [settings, setSettings] = useState<RegSettings>(DEFAULT_SETTINGS);
   const [clinic, setClinic] = useState<ClinicBrand | null>(null);
 
+  const refetchAppointments = useCallback(async () => {
+    if (!clinicId) return;
+    const todayIso = new Date().toISOString().split("T")[0];
+    const weekAhead = new Date(Date.now() + 7 * 86_400_000).toISOString().split("T")[0];
+    const { data } = await (supabase as any).from("appointments")
+      .select("appointment_date,appointment_time,status")
+      .eq("clinic_id", clinicId).gte("appointment_date", todayIso).lte("appointment_date", weekAhead)
+      .neq("status", "cancelled");
+    if (data) {
+      const s = new Set<string>();
+      for (const a of data as Array<{ appointment_date: string; appointment_time: string }>) {
+        const t = (a.appointment_time || "").slice(0, 5);
+        if (a.appointment_date && t) s.add(`${a.appointment_date}|${t}`);
+      }
+      setBookedSet(s);
+    }
+  }, [clinicId]);
+
   useEffect(() => {
     if (!clinicId) return;
     (async () => {
-      const todayIso = new Date().toISOString().split("T")[0];
-      const weekAhead = new Date(Date.now() + 7 * 86_400_000).toISOString().split("T")[0];
-      const [whRes, rsRes, brandRes, apRes] = await Promise.all([
+      const [whRes, rsRes, brandRes] = await Promise.all([
         (supabase as any).from("clinic_working_hours").select("*").eq("clinic_id", clinicId).order("day_of_week"),
         (supabase as any).from("clinic_registration_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
         (supabase as any).rpc("get_public_clinic_brand", { p_clinic_id: clinicId }),
-        (supabase as any).from("appointments").select("appointment_date,appointment_time,status")
-          .eq("clinic_id", clinicId).gte("appointment_date", todayIso).lte("appointment_date", weekAhead)
-          .neq("status", "cancelled"),
       ]);
       if (whRes.data) setHours(whRes.data);
-      if (apRes?.data) {
-        const s = new Set<string>();
-        for (const a of apRes.data as Array<{ appointment_date: string; appointment_time: string }>) {
-          const t = (a.appointment_time || "").slice(0, 5);
-          if (a.appointment_date && t) s.add(`${a.appointment_date}|${t}`);
-        }
-        setBookedSet(s);
-      }
       const brand = (brandRes?.data ?? null) as ClinicBrand | null;
       if (brand) setClinic(brand);
       if (rsRes.data) {
@@ -147,7 +169,22 @@ export default function PatientSelfRegister() {
         setSettings((s) => ({ ...s, brand_color: brand.brand_color }));
       }
     })();
-  }, [clinicId]);
+    refetchAppointments();
+  }, [clinicId, refetchAppointments]);
+
+  // Auto-refresh slots every 45s while on form/confirm stages to avoid stale conflicts
+  useEffect(() => {
+    if (registered) return;
+    const id = setInterval(refetchAppointments, 45_000);
+    return () => clearInterval(id);
+  }, [registered, refetchAppointments]);
+
+  // OTP resend countdown
+  useEffect(() => {
+    if (otpResendIn <= 0) return;
+    const id = setInterval(() => setOtpResendIn((v) => Math.max(0, v - 1)), 1000);
+    return () => clearInterval(id);
+  }, [otpResendIn]);
 
   const slots = useMemo(() => buildSlots(new Date(), hours, bookedSet), [hours, bookedSet]);
   const nextSlot = slots[0];
@@ -170,30 +207,78 @@ export default function PatientSelfRegister() {
     if (!isOpenNow && slots.length > 0 && selectedSlot === "now") setSelectedSlot(slots[0].value);
   }, [isOpenNow, slots, selectedSlot]);
 
+  // If the user's selected slot got booked while idle, drop it
+  useEffect(() => {
+    if (selectedSlot && selectedSlot !== "now" && bookedSet.has(selectedSlot)) {
+      setSelectedSlot(slots[0]?.value ?? (isOpenNow ? "now" : ""));
+      toast.warning("That slot was just booked — please pick another.");
+    }
+  }, [bookedSet, selectedSlot, slots, isOpenNow]);
+
   const brand = settings.brand_color;
+  const selectedSlotObj = slots.find((s) => s.value === selectedSlot);
+  const slotLabel = selectedSlot === "now" ? "Walk-in (Right now)"
+    : selectedSlotObj ? `${selectedSlotObj.sublabel} at ${selectedSlotObj.label}` : "—";
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!clinicId) { toast.error("Invalid registration link."); return; }
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(clinicId)) { toast.error("Invalid clinic ID."); return; }
+  // ---------- OTP ----------
+  const sendOtp = async () => {
+    if (!clinicId || phone.length !== 10) return;
+    setOtpSending(true);
+    const { error } = await (supabase as any).rpc("request_patient_otp", { p_clinic_id: clinicId, p_phone: phone });
+    setOtpSending(false);
+    if (error) { toast.error(error.message || "Could not send code"); return; }
+    setOtpSent(true);
+    setOtpResendIn(30);
+    toast.success("Verification code sent via WhatsApp");
+  };
+  const verifyOtp = async () => {
+    if (!clinicId || otpCode.length !== 6) return;
+    setOtpVerifying(true);
+    const { data, error } = await (supabase as any).rpc("verify_patient_otp", {
+      p_clinic_id: clinicId, p_phone: phone, p_code: otpCode,
+    });
+    setOtpVerifying(false);
+    if (error) { toast.error(error.message); return; }
+    if (data?.verified) { setOtpVerified(true); toast.success("Phone verified"); setStage("confirm"); }
+    else {
+      const reason = data?.reason;
+      toast.error(reason === "expired" ? "Code expired — request a new one"
+        : reason === "locked" ? "Too many attempts — request a new code"
+        : "Incorrect code");
+    }
+  };
 
+  // ---------- Validate & advance ----------
+  const validateForm = (): boolean => {
+    if (!clinicId) { toast.error("Invalid registration link."); return false; }
     const trimmedName = fullName.trim();
-    if (!trimmedName || trimmedName.length > 200) { toast.error("Enter your name."); return; }
-    if (!gender) { toast.error("Please select gender."); return; }
-    if (phone && phone.length !== 10) { toast.error("Phone must be 10 digits."); return; }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email."); return; }
+    if (!trimmedName || trimmedName.length > 200) { toast.error("Enter your name."); return false; }
+    if (!gender) { toast.error("Please select gender."); return false; }
+    if (phone && phone.length !== 10) { toast.error("Phone must be 10 digits."); return false; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email."); return false; }
+    if (!isOpenNow && !selectedSlotObj) { toast.error("Please pick an available slot."); return false; }
+    return true;
+  };
+  const handleFormNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    // If phone provided and not yet verified, force OTP step
+    if (phone && !otpVerified) { setStage("otp"); return; }
+    setStage("confirm");
+  };
 
+  // ---------- Final submit ----------
+  const handleRegister = async () => {
+    if (!clinicId) return;
     setLoading(true);
     let aDate: string | null = null;
     let aTime: string | null = null;
     if (selectedSlot && selectedSlot !== "now") {
       const [d, t] = selectedSlot.split("|"); aDate = d; aTime = t;
     }
-
     const { data, error } = await (supabase as any).rpc("self_register_patient", {
       p_clinic_id: clinicId,
-      p_full_name: trimmedName,
+      p_full_name: fullName.trim(),
       p_phone: phone || null,
       p_email: email || null,
       p_dob: dob || null,
@@ -202,13 +287,95 @@ export default function PatientSelfRegister() {
       p_gender: gender || null,
       p_address: address || null,
     });
-    if (error) { toast.error("Registration failed: " + error.message); setLoading(false); return; }
-
+    setLoading(false);
+    if (error) {
+      // Likely a booking conflict — refresh slots and bounce back
+      toast.error("Registration failed: " + error.message);
+      await refetchAppointments();
+      setStage("form");
+      return;
+    }
     const result = data as { token_number: number; reused?: boolean; op_number?: string };
     if (result?.reused) toast.success(`Welcome back! UHID ${result.op_number}`);
     setTokenNumber(result.token_number);
+    setOpNumber(result.op_number ?? null);
     setRegistered(true);
-    setLoading(false);
+  };
+
+  // ---------- Token PDF ----------
+  const buildTokenPdf = useCallback(async (): Promise<jsPDF> => {
+    const doc = new jsPDF({ unit: "mm", format: "a5" });
+    const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
+    // brand band
+    const rgb = hexToRgb(brand);
+    doc.setFillColor(rgb.r, rgb.g, rgb.b);
+    doc.rect(0, 0, W, 18, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(clinic?.name || "Clinic", W / 2, 11, { align: "center" });
+    // body
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(settings.thank_you_heading, W / 2, 30, { align: "center" });
+    // Token box
+    const boxX = 20, boxY = 38, boxW = W - 40, boxH = 46;
+    doc.setDrawColor(rgb.r, rgb.g, rgb.b);
+    doc.setFillColor(rgb.r, rgb.g, rgb.b, 0.08 as any);
+    doc.roundedRect(boxX, boxY, boxW, boxH, 4, 4, "S");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text("YOUR TOKEN", W / 2, boxY + 10, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(40);
+    doc.setTextColor(rgb.r, rgb.g, rgb.b);
+    doc.text(String(tokenNumber ?? ""), W / 2, boxY + 34, { align: "center" });
+
+    // Patient details
+    let y = boxY + boxH + 10;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    const rows: Array<[string, string]> = [
+      ["Name", fullName],
+      ["Gender", gender ? gender[0].toUpperCase() + gender.slice(1) : "—"],
+      ["Phone", phone || "—"],
+      ["Slot", slotLabel],
+    ];
+    if (opNumber) rows.unshift(["UHID", opNumber]);
+    for (const [k, v] of rows) {
+      doc.setTextColor(100, 116, 139); doc.text(`${k}:`, 20, y);
+      doc.setTextColor(15, 23, 42); doc.text(v, 45, y);
+      y += 7;
+    }
+
+    // QR code (verification url)
+    try {
+      const verifyUrl = `${window.location.origin}/r/status?clinic=${clinicId}${phone ? `&phone=${phone}` : ""}`;
+      const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 256, margin: 1 });
+      const qrSize = 32;
+      doc.addImage(qrDataUrl, "PNG", W - 20 - qrSize, y - 6, qrSize, qrSize);
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text("Scan to track", W - 20 - qrSize / 2, y + qrSize, { align: "center" });
+    } catch { /* ignore */ }
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Generated ${new Date().toLocaleString()}`, W / 2, H - 8, { align: "center" });
+    return doc;
+  }, [brand, clinic, settings, tokenNumber, opNumber, fullName, gender, phone, slotLabel, clinicId]);
+
+  const downloadTokenPdf = async () => {
+    try {
+      const doc = await buildTokenPdf();
+      doc.save(`token-${tokenNumber}-${fullName.replace(/\s+/g, "_")}.pdf`);
+    } catch (e: any) {
+      toast.error("PDF failed: " + (e?.message ?? "unknown"));
+    }
   };
 
   if (!clinicId) return (
@@ -217,8 +384,8 @@ export default function PatientSelfRegister() {
     </Suspense>
   );
 
+  // ============= Success screen =============
   if (registered && tokenNumber !== null) {
-    const selected = slots.find((s) => s.value === selectedSlot);
     return (
       <div className="flex min-h-screen items-center justify-center p-4"
         style={{ background: `linear-gradient(135deg, ${brand}15, ${brand}05)` }}>
@@ -232,21 +399,28 @@ export default function PatientSelfRegister() {
             <div className="rounded-2xl p-6" style={{ background: `${brand}15` }}>
               <p className="text-sm text-muted-foreground mb-1">Your Token Number</p>
               <p className="text-6xl font-bold" style={{ color: brand }}>{tokenNumber}</p>
+              {opNumber && <p className="text-xs text-muted-foreground mt-2">UHID: <strong>{opNumber}</strong></p>}
             </div>
-            {selected && (
+            {selectedSlotObj && (
               <p className="text-sm text-muted-foreground">
-                Appointment for <strong>{selected.sublabel} at {selected.label}</strong>
+                Appointment for <strong>{selectedSlotObj.sublabel} at {selectedSlotObj.label}</strong>
               </p>
             )}
             <p className="text-sm text-muted-foreground">{settings.thank_you_message}</p>
             <p className="text-sm font-semibold">Thank you, {fullName}!</p>
+
+            <button type="button" onClick={downloadTokenPdf}
+              className="flex items-center justify-center gap-2 w-full rounded-lg py-2.5 text-sm font-semibold text-white shadow active:scale-95 transition-transform"
+              style={{ background: brand }}>
+              <FileDown className="h-4 w-4" /> Download Token PDF
+            </button>
 
             <TokenShareActions
               tokenNumber={tokenNumber}
               patientName={fullName}
               clinicName={clinic?.name}
               clinicLogoUrl={settings.show_logo ? clinic?.logo_url ?? null : null}
-              slotLabel={selected ? `${selected.sublabel} at ${selected.label}` : "Walk-in"}
+              slotLabel={selectedSlotObj ? `${selectedSlotObj.sublabel} at ${selectedSlotObj.label}` : "Walk-in"}
               brandColor={brand}
               thankYouHeading={settings.thank_you_heading}
             />
@@ -277,13 +451,11 @@ export default function PatientSelfRegister() {
   }
 
   const today = new Date().toISOString().split("T")[0];
-
-  const GENDERS: Array<{ value: string; label: string }> = [
+  const GENDERS = [
     { value: "male", label: "Male" },
     { value: "female", label: "Female" },
     { value: "other", label: "Other" },
   ];
-
   const fieldWrap = "relative";
   const iconCls = "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground";
   const inputPad = "h-12 pl-10 rounded-xl bg-white/80 backdrop-blur border-slate-200/80 focus-visible:ring-2";
@@ -317,6 +489,29 @@ export default function PatientSelfRegister() {
             </div>
           </div>
 
+          {/* Stepper */}
+          <div className="flex items-center justify-between gap-1 px-4 py-2 bg-white/80">
+            {[
+              { key: "form", label: "1. Details" },
+              { key: "otp", label: "2. Verify" },
+              { key: "confirm", label: "3. Confirm" },
+            ].map((s) => {
+              const idx = ["form", "otp", "confirm"].indexOf(stage);
+              const myIdx = ["form", "otp", "confirm"].indexOf(s.key);
+              const active = myIdx === idx;
+              const done = myIdx < idx;
+              return (
+                <div key={s.key} className="flex-1 text-center">
+                  <div className={cn("h-1 rounded-full", active || done ? "" : "bg-slate-200")}
+                    style={(active || done) ? { background: brand } : undefined} />
+                  <div className={cn("mt-1 text-[10px] font-semibold",
+                    active ? "" : done ? "text-slate-500" : "text-slate-400")}
+                    style={active ? { color: brand } : undefined}>{s.label}</div>
+                </div>
+              );
+            })}
+          </div>
+
           {/* Availability strip */}
           <div className="grid grid-cols-3 gap-px bg-slate-100/60">
             <div className="bg-white/70 px-3 py-2.5 text-center">
@@ -345,15 +540,16 @@ export default function PatientSelfRegister() {
           </div>
         </div>
 
-        {settings.banner_image_url && (
+        {settings.banner_image_url && stage === "form" && (
           <img src={settings.banner_image_url} alt="Banner" loading="lazy"
             className="w-full h-28 object-cover rounded-2xl mb-4 shadow-md" />
         )}
 
+        {/* ============= FORM STAGE ============= */}
+        {stage === "form" && (
         <Card className="rounded-3xl border-white/60 bg-white/85 backdrop-blur-xl shadow-xl">
           <CardContent className="p-5 sm:p-6">
-            <form onSubmit={handleRegister} className="space-y-4" noValidate>
-              {/* Full name */}
+            <form onSubmit={handleFormNext} className="space-y-4" noValidate>
               <div className="space-y-1.5">
                 <Label htmlFor="full_name" className="text-xs font-semibold text-slate-700">Full Name <span style={{ color: brand }}>*</span></Label>
                 <div className={fieldWrap}>
@@ -364,24 +560,28 @@ export default function PatientSelfRegister() {
                 </div>
               </div>
 
-              {/* Phone */}
               <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-xs font-semibold text-slate-700">Mobile Number</Label>
+                <Label htmlFor="phone" className="text-xs font-semibold text-slate-700">
+                  Mobile Number {otpVerified && <span className="text-emerald-600">✓ verified</span>}
+                </Label>
                 <div className={fieldWrap}>
                   <Phone className={iconCls} />
                   <Input id="phone" value={phone} onChange={(e) => {
                       const v = e.target.value.replace(/\D/g, "").slice(0, 10);
                       setPhone(v);
                       setPhoneError(v && v.length !== 10 ? "Must be 10 digits" : "");
+                      setOtpVerified(false); setOtpSent(false); setOtpCode("");
                     }} placeholder="9876543210" maxLength={10} inputMode="numeric"
                     autoComplete="tel" enterKeyHint="next"
                     aria-invalid={!!phoneError}
                     className={cn(inputPad, phoneError && "border-destructive focus-visible:ring-destructive/40")} />
                 </div>
                 {phoneError && <p role="alert" className="text-xs text-destructive">{phoneError}</p>}
+                {phone.length === 10 && !otpVerified && (
+                  <p className="text-[11px] text-muted-foreground">We'll send a 6-digit code via WhatsApp to prevent duplicate sign-ups.</p>
+                )}
               </div>
 
-              {/* Gender — segmented control */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-700">Gender <span style={{ color: brand }}>*</span></Label>
                 <div role="radiogroup" aria-label="Gender" aria-required="true"
@@ -403,7 +603,6 @@ export default function PatientSelfRegister() {
                 </div>
               </div>
 
-              {/* DOB + Email */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="dob" className="text-xs font-semibold text-slate-700">Date of Birth</Label>
@@ -423,7 +622,6 @@ export default function PatientSelfRegister() {
                 </div>
               </div>
 
-              {/* Address */}
               <div className="space-y-1.5">
                 <Label htmlFor="address" className="text-xs font-semibold text-slate-700">Address</Label>
                 <div className={fieldWrap}>
@@ -433,7 +631,6 @@ export default function PatientSelfRegister() {
                 </div>
               </div>
 
-              {/* Notes */}
               <div className="space-y-1.5">
                 <Label htmlFor="notes" className="text-xs font-semibold text-slate-700">Notes</Label>
                 <div className="relative">
@@ -450,11 +647,15 @@ export default function PatientSelfRegister() {
                   <Label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                     <CalendarClock className="h-3.5 w-3.5" /> Preferred Time
                   </Label>
-                  <span className="text-[10px] font-medium text-muted-foreground">
-                    {slots.length} slot{slots.length === 1 ? "" : "s"} · {slotDuration} min each
-                  </span>
+                  <button type="button" onClick={refetchAppointments}
+                    className="text-[10px] font-medium text-slate-500 underline-offset-2 hover:underline">
+                    Refresh
+                  </button>
                 </div>
-                {!isOpenNow && (
+                <p className="text-[10px] text-muted-foreground">
+                  {slots.length} slot{slots.length === 1 ? "" : "s"} available · {slotDuration} min each
+                </p>
+                {!isOpenNow && slots.length > 0 && (
                   <p className="rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700 border border-amber-200">
                     Clinic is currently closed — pick the next available slot below.
                   </p>
@@ -482,10 +683,17 @@ export default function PatientSelfRegister() {
                       <div className="text-[10px] opacity-80 mt-0.5">{s.sublabel}</div>
                     </button>
                   ))}
-                  {slots.length === 0 && !isOpenNow && (
-                    <p className="col-span-3 text-xs text-muted-foreground italic text-center py-3">
-                      No slots available this week. Please contact the clinic.
-                    </p>
+                  {slots.length === 0 && (
+                    <div className="col-span-3 rounded-xl border border-dashed border-slate-300 bg-white/60 p-4 text-center">
+                      <p className="text-xs font-semibold text-slate-700">No slots available</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        The clinic is fully booked for the next 7 days. Please call to be added to the waitlist.
+                      </p>
+                      <button type="button" onClick={refetchAppointments}
+                        className="mt-2 text-[11px] font-semibold underline" style={{ color: brand }}>
+                        Check again
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -493,7 +701,7 @@ export default function PatientSelfRegister() {
               <Button type="submit" className="w-full h-12 text-base font-semibold text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
                 style={{ background: `linear-gradient(135deg, ${brand}, ${brand}d0)` }}
                 disabled={loading || !!phoneError || !gender || (!isOpenNow && slots.length === 0)}>
-                {loading ? "Registering..." : selectedSlot === "now" ? "Register & Get Token" : "Book Appointment & Get Token"}
+                {phone && !otpVerified ? "Verify Phone & Continue" : "Review & Confirm"}
               </Button>
               {!gender && (
                 <p className="text-center text-[11px] text-muted-foreground">Please select gender to continue</p>
@@ -501,6 +709,107 @@ export default function PatientSelfRegister() {
             </form>
           </CardContent>
         </Card>
+        )}
+
+        {/* ============= OTP STAGE ============= */}
+        {stage === "otp" && (
+        <Card className="rounded-3xl border-white/60 bg-white/85 backdrop-blur-xl shadow-xl">
+          <CardContent className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setStage("form")}
+                className="text-slate-500 hover:text-slate-800"><ArrowLeft className="h-4 w-4" /></button>
+              <h2 className="text-base font-bold text-slate-900">Verify your phone</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              We'll send a 6-digit code to <strong className="text-slate-800">+91 {phone}</strong> via WhatsApp.
+              This prevents duplicate registrations.
+            </p>
+
+            {!otpSent ? (
+              <Button type="button" onClick={sendOtp} disabled={otpSending}
+                className="w-full h-12 text-white" style={{ background: brand }}>
+                {otpSending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Send code via WhatsApp
+              </Button>
+            ) : (
+              <div className="space-y-3">
+                <Label className="text-xs font-semibold text-slate-700">Enter the 6-digit code</Label>
+                <Input value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  inputMode="numeric" maxLength={6} placeholder="••••••"
+                  className="h-14 text-center text-2xl tracking-[0.6em] rounded-xl bg-white" autoFocus />
+                <Button type="button" onClick={verifyOtp} disabled={otpCode.length !== 6 || otpVerifying}
+                  className="w-full h-12 text-white" style={{ background: brand }}>
+                  {otpVerifying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Verify code
+                </Button>
+                <div className="flex items-center justify-between text-xs">
+                  <button type="button" onClick={sendOtp} disabled={otpResendIn > 0 || otpSending}
+                    className="text-slate-600 disabled:opacity-50 underline">
+                    {otpResendIn > 0 ? `Resend in ${otpResendIn}s` : "Resend code"}
+                  </button>
+                  <span className="text-muted-foreground">Code valid 10 min</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        )}
+
+        {/* ============= CONFIRM STAGE ============= */}
+        {stage === "confirm" && (
+        <Card className="rounded-3xl border-white/60 bg-white/85 backdrop-blur-xl shadow-xl">
+          <CardContent className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setStage("form")}
+                className="text-slate-500 hover:text-slate-800"><ArrowLeft className="h-4 w-4" /></button>
+              <h2 className="text-base font-bold text-slate-900">Confirm your details</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Please review before submitting. You'll receive a token number after confirmation.
+            </p>
+
+            <div className="rounded-2xl bg-slate-50/70 ring-1 ring-slate-200/60 divide-y divide-slate-200/70">
+              {[
+                ["Name", fullName],
+                ["Gender", gender ? gender[0].toUpperCase() + gender.slice(1) : "—"],
+                ["Phone", phone ? `+91 ${phone}${otpVerified ? "  ✓" : ""}` : "Not provided"],
+                ["Email", email || "—"],
+                ["Date of Birth", dob || "—"],
+                ["Address", address || "—"],
+                ["Preferred Slot", slotLabel],
+                ["Duration", `${slotDuration} min`],
+              ].map(([k, v]) => (
+                <div key={k} className="flex items-start justify-between gap-3 px-3 py-2.5">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{k}</span>
+                  <span className="text-sm font-medium text-slate-800 text-right">{v}</span>
+                </div>
+              ))}
+            </div>
+
+            {notes && (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+                <strong>Notes for clinic:</strong> {notes}
+              </div>
+            )}
+
+            <p className="text-[11px] text-muted-foreground text-center">
+              By confirming, you agree to share these details with {clinic?.name || "the clinic"}.
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" onClick={() => setStage("form")} className="h-12 rounded-xl">
+                Edit
+              </Button>
+              <Button type="button" onClick={handleRegister} disabled={loading}
+                className="h-12 text-white rounded-xl" style={{ background: brand }}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Confirm & Get Token
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        )}
 
         <p className="mt-4 text-center text-[10px] text-muted-foreground flex items-center justify-center gap-1">
           <ShieldCheck className="h-3 w-3" /> Your information is encrypted & shared only with the clinic
@@ -508,4 +817,11 @@ export default function PatientSelfRegister() {
       </div>
     </div>
   );
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full || "2563eb", 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }

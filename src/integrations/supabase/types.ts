@@ -6350,6 +6350,10 @@ export type Database = {
         Returns: Json
       }
       receive_purchase_order: { Args: { p_po_id: string }; Returns: undefined }
+      request_patient_otp: {
+        Args: { p_clinic_id: string; p_phone: string }
+        Returns: Json
+      }
       seed_default_patient_programs: {
         Args: { p_clinic_id: string }
         Returns: undefined
@@ -6389,6 +6393,10 @@ export type Database = {
           p_enrollment_id: string
           p_phone: string
         }
+        Returns: Json
+      }
+      verify_patient_otp: {
+        Args: { p_clinic_id: string; p_code: string; p_phone: string }
         Returns: Json
       }
     }
