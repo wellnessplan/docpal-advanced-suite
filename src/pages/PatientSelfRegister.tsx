@@ -180,6 +180,7 @@ export default function PatientSelfRegister() {
 
     const trimmedName = fullName.trim();
     if (!trimmedName || trimmedName.length > 200) { toast.error("Enter your name."); return; }
+    if (!gender) { toast.error("Please select gender."); return; }
     if (phone && phone.length !== 10) { toast.error("Phone must be 10 digits."); return; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email."); return; }
 
