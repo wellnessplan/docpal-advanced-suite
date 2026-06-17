@@ -295,7 +295,7 @@ export default function PatientSelfRegister() {
     setLoading(true);
     let aDate: string | null = null;
     let aTime: string | null = null;
-    if (selectedSlot && selectedSlot !== "now") {
+    if (selectedSlot) {
       const [d, t] = selectedSlot.split("|"); aDate = d; aTime = t;
     }
     const { data, error } = await (supabase as any).rpc("self_register_patient", {
