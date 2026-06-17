@@ -68,6 +68,7 @@ export default function RegistrationPageBuilderTab({ clinicId }: { clinicId: str
         thank_you_message: data.thank_you_message ?? DEFAULTS.thank_you_message,
         show_logo: data.show_logo ?? true,
         action_links: Array.isArray(data.action_links) ? data.action_links : [],
+        require_phone_verification: data.require_phone_verification ?? true,
       });
     }
   }, [data]);
