@@ -658,62 +658,103 @@ export default function PatientSelfRegister() {
                 </div>
               </div>
 
-              {/* Preferred time */}
+              {/* Book a slot */}
               <div className="space-y-2 rounded-2xl bg-slate-50/70 p-3 ring-1 ring-slate-200/60">
-                <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                    <CalendarClock className="h-3.5 w-3.5" /> Preferred Time
-                  </Label>
-                  <button type="button" onClick={refetchAppointments}
-                    className="text-[10px] font-medium text-slate-500 underline-offset-2 hover:underline">
-                    Refresh
-                  </button>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {slots.length} slot{slots.length === 1 ? "" : "s"} available · {slotDuration} min each
-                </p>
-                {!isOpenNow && slots.length > 0 && (
-                  <p className="rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700 border border-amber-200">
-                    Clinic is currently closed — pick the next available slot below.
+                <Label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                  <CalendarClock className="h-3.5 w-3.5" /> Appointment Slot <span style={{ color: brand }}>*</span>
+                </Label>
+
+                <Popover open={slotPickerOpen} onOpenChange={setSlotPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <button type="button"
+                      className={cn(
+                        "w-full rounded-xl border bg-white px-4 py-3 text-left flex items-center justify-between gap-3 transition-all",
+                        selectedSlotObj ? "border-2 shadow-sm" : "border-slate-200 hover:border-slate-300"
+                      )}
+                      style={selectedSlotObj ? { borderColor: brand } : undefined}>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                          style={{ background: `${brand}18`, color: brand }}>
+                          <CalendarDays className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          {selectedSlotObj ? (
+                            <>
+                              <div className="text-sm font-semibold text-slate-900 truncate">
+                                {selectedSlotObj.sublabel} · {selectedSlotObj.label}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground">
+                                {selectedSlotObj.duration} min slot · tap to change
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-sm font-semibold text-slate-900">Book Slot</div>
+                              <div className="text-[11px] text-muted-foreground">Pick a date & time that works for you</div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-[11px] font-semibold" style={{ color: brand }}>
+                        {selectedSlotObj ? "Change" : "Choose"}
+                      </div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[320px] p-0 pointer-events-auto" sideOffset={6}>
+                    <div className="border-b px-3 py-2 flex items-center justify-between bg-slate-50 rounded-t-md">
+                      <div className="text-xs font-semibold text-slate-700">Pick date & time</div>
+                      <button type="button" onClick={refetchAppointments}
+                        className="text-[10px] font-medium text-slate-500 hover:underline">Refresh</button>
+                    </div>
+                    <Calendar
+                      mode="single"
+                      selected={pickerDate}
+                      onSelect={(d) => d && setPickerDate(d)}
+                      disabled={(d) => {
+                        const t = new Date(); t.setHours(0,0,0,0);
+                        if (d < t) return true;
+                        const max = new Date(t.getTime() + 30 * 86_400_000);
+                        if (d > max) return true;
+                        const wh = hours.find((h) => h.day_of_week === d.getDay());
+                        return !wh || wh.is_closed;
+                      }}
+                      className="p-2 pointer-events-auto"
+                    />
+                    <div className="border-t px-3 py-2 max-h-[180px] overflow-y-auto">
+                      {pickerSlots.length === 0 ? (
+                        <p className="text-center text-[11px] text-muted-foreground py-4">
+                          No available times on this day. Try another date.
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {pickerSlots.map((s) => {
+                            const active = selectedSlot === s.value;
+                            return (
+                              <button key={s.value} type="button"
+                                onClick={() => { setSelectedSlot(s.value); setSlotPickerOpen(false); }}
+                                className={cn(
+                                  "rounded-lg border px-1 py-1.5 text-[11px] font-semibold transition-all",
+                                  active ? "text-white shadow-sm" : "bg-white border-slate-200 hover:border-slate-300"
+                                )}
+                                style={active ? { background: brand, borderColor: brand } : undefined}>
+                                {s.label}
+                                {active && <Check className="inline h-3 w-3 ml-0.5 -mt-0.5" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {nextSlot && !selectedSlotObj && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Next free: <strong style={{ color: brand }}>{nextSlot.sublabel} at {nextSlot.label}</strong>
                   </p>
                 )}
-                <div className="grid grid-cols-3 gap-1.5">
-                  {isOpenNow && (
-                    <button type="button" onClick={() => setSelectedSlot("now")}
-                      className={cn("rounded-xl border p-2.5 text-xs font-medium transition-all text-center",
-                        selectedSlot === "now"
-                          ? "text-white shadow-md scale-[1.02]"
-                          : "bg-white border-slate-200 hover:border-slate-300 active:scale-95")}
-                      style={selectedSlot === "now" ? { background: brand, borderColor: brand } : undefined}>
-                      <div className="font-bold">Walk-in</div>
-                      <div className="text-[10px] opacity-80 mt-0.5">Right now</div>
-                    </button>
-                  )}
-                  {slots.map((s) => (
-                    <button key={s.value} type="button" onClick={() => setSelectedSlot(s.value)}
-                      className={cn("rounded-xl border p-2.5 text-xs font-medium transition-all text-center",
-                        selectedSlot === s.value
-                          ? "text-white shadow-md scale-[1.02]"
-                          : "bg-white border-slate-200 hover:border-slate-300 active:scale-95")}
-                      style={selectedSlot === s.value ? { background: brand, borderColor: brand } : undefined}>
-                      <div className="font-bold">{s.label}</div>
-                      <div className="text-[10px] opacity-80 mt-0.5">{s.sublabel}</div>
-                    </button>
-                  ))}
-                  {slots.length === 0 && (
-                    <div className="col-span-3 rounded-xl border border-dashed border-slate-300 bg-white/60 p-4 text-center">
-                      <p className="text-xs font-semibold text-slate-700">No slots available</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        The clinic is fully booked for the next 7 days. Please call to be added to the waitlist.
-                      </p>
-                      <button type="button" onClick={refetchAppointments}
-                        className="mt-2 text-[11px] font-semibold underline" style={{ color: brand }}>
-                        Check again
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
+
 
               <Button type="submit" className="w-full h-12 text-base font-semibold text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
                 style={{ background: `linear-gradient(135deg, ${brand}, ${brand}d0)` }}
