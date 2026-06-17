@@ -33,6 +33,7 @@ interface RegSettings {
   banner_image_url: string | null; brand_color: string;
   thank_you_heading: string; thank_you_message: string;
   show_logo: boolean; action_links: ActionLink[];
+  require_phone_verification: boolean;
 }
 interface ClinicBrand { name: string; logo_url: string | null; brand_color: string; }
 
@@ -45,6 +46,7 @@ const DEFAULT_SETTINGS: RegSettings = {
   thank_you_message: "Thank you for registering. Please wait for your token to be called.",
   show_logo: true,
   action_links: [],
+  require_phone_verification: true,
 };
 
 interface Slot { value: string; date: string; time: string; label: string; sublabel: string; duration: number; }
