@@ -25,6 +25,7 @@ interface RegSettings {
   thank_you_message: string;
   show_logo: boolean;
   action_links: ActionLink[];
+  require_phone_verification: boolean;
 }
 
 const DEFAULTS: RegSettings = {
@@ -36,6 +37,7 @@ const DEFAULTS: RegSettings = {
   thank_you_message: "Thank you for registering. Please wait for your token to be called.",
   show_logo: true,
   action_links: [],
+  require_phone_verification: true,
 };
 
 export default function RegistrationPageBuilderTab({ clinicId }: { clinicId: string }) {
