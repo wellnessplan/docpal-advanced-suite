@@ -16,7 +16,7 @@ export default defineTool({
     notes: z.string().optional().describe("Optional note for the front desk or doctor."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-  needsApproval: true,
+  
   handler: async (input, ctx) => {
     const scope = await requireClinic(ctx);
     if ("error" in scope) return scope.error;
