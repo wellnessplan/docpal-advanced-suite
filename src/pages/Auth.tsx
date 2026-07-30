@@ -17,6 +17,10 @@ export default function AuthPage() {
   const { session, profile, loading: authLoading } = useAuth();
   const searchParams = new URLSearchParams(window.location.search);
   const defaultMode = searchParams.get("mode") === "signup" ? "signup" : "login";
+  // Preserve an intended same-origin destination (e.g. the OAuth consent screen)
+  const rawNext = searchParams.get("next") ?? "";
+  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "";
+  const afterAuthPath = nextPath || "/dashboard";
   const [mode, setMode] = useState<Mode>(defaultMode);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -26,10 +30,9 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (!authLoading && session) {
-      // Always send to dashboard — clinic auto-creates if missing.
-      navigate("/dashboard", { replace: true });
+      navigate(afterAuthPath, { replace: true });
     }
-  }, [session, profile, authLoading, navigate]);
+  }, [session, profile, authLoading, navigate, afterAuthPath]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +42,7 @@ export default function AuthPage() {
       toast.error(error.message);
     } else {
       toast.success("Welcome back!");
-      navigate("/dashboard");
+      navigate(afterAuthPath);
     }
     setLoading(false);
   };
@@ -52,7 +55,7 @@ export default function AuthPage() {
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}${afterAuthPath}`,
       },
     });
     if (error) {
@@ -87,7 +90,9 @@ export default function AuthPage() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: nextPath
+        ? `${window.location.origin}/auth?next=${encodeURIComponent(nextPath)}`
+        : window.location.origin,
     });
     if (result.error) {
       toast.error("Google sign-in failed. Please try again.");
@@ -95,7 +100,7 @@ export default function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    navigate("/dashboard");
+    navigate(afterAuthPath);
     setLoading(false);
   };
 
