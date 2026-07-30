@@ -11,6 +11,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 
 const Auth = lazy(() => import("./pages/Auth"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Patients = lazy(() => import("./pages/Patients"));
@@ -135,6 +136,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />

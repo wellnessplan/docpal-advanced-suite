@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "sdk_version": "0.25.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://nzfeoecmuhoblndzalll.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "doctorsbuddy-mcp",
+      "version": "0.1.0",
+      "title": "DoctorsBuddy"
+    },
+    "tools": [
+      {
+        "name": "clinic_snapshot",
+        "title": "Clinic snapshot",
+        "description": "Today's operating snapshot for the signed-in user's clinic: appointment counts, live queue, patients added and revenue collected.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_patients",
+        "title": "List patients",
+        "description": "Search or list patients in the signed-in user's clinic. Optionally filter by name, phone or OP number.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "search": {
+              "description": "Name, phone or OP number fragment to search for.",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Maximum patients to return (default 20, max 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_patient",
+        "title": "Get patient record",
+        "description": "Fetch one patient's profile with their recent appointments, invoices and treatment plans.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "patient_id": {
+              "type": "string",
+              "description": "The patient UUID, from list_patients."
+            }
+          },
+          "required": [
+            "patient_id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_appointments",
+        "title": "List appointments",
+        "description": "List appointments for the clinic within a date range, optionally filtered by status. Defaults to today.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "from_date": {
+              "description": "Start date, YYYY-MM-DD. Defaults to today.",
+              "type": "string"
+            },
+            "to_date": {
+              "description": "End date, YYYY-MM-DD. Defaults to from_date.",
+              "type": "string"
+            },
+            "status": {
+              "description": "Filter by status, e.g. scheduled, completed, cancelled.",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "book_appointment",
+        "title": "Book an appointment",
+        "description": "Create a new appointment for an existing patient in the signed-in user's clinic. Check list_appointments first to avoid double-booking.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "patient_id": {
+              "type": "string",
+              "description": "Patient UUID, from list_patients."
+            },
+            "appointment_date": {
+              "type": "string",
+              "description": "Date in YYYY-MM-DD format."
+            },
+            "appointment_time": {
+              "type": "string",
+              "description": "Start time in 24h HH:MM format."
+            },
+            "duration_minutes": {
+              "description": "Slot length in minutes, default 30.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "type": {
+              "description": "Appointment type, e.g. Consultation, Cleaning, Root Canal.",
+              "type": "string"
+            },
+            "notes": {
+              "description": "Optional note for the front desk or doctor.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "patient_id",
+            "appointment_date",
+            "appointment_time"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_invoices",
+        "title": "List invoices",
+        "description": "List clinic invoices, optionally only those with an outstanding balance or within a date range.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "outstanding_only": {
+              "description": "Only return invoices with a balance greater than zero.",
+              "type": "boolean"
+            },
+            "from_date": {
+              "description": "Earliest invoice date, YYYY-MM-DD.",
+              "type": "string"
+            },
+            "to_date": {
+              "description": "Latest invoice date, YYYY-MM-DD.",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Maximum invoices to return (default 25, max 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
