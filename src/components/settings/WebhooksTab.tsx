@@ -213,6 +213,20 @@ export default function WebhooksTab({ clinicId }: { clinicId: string }) {
         scheduled_at: new Date(Date.now() + 3600000).toISOString(),
       },
     },
+    "slot.availability.booked": {
+      event: "slot.availability.booked",
+      clinic_id: clinicId,
+      timestamp: new Date().toISOString(),
+      data: {
+        requested_date: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+        timezone: "Asia/Kolkata",
+        slot_duration_min: 30,
+        available_slots: ["10:00", "10:30", "11:30", "16:00"],
+        booked_slot: "10:30",
+        patient: { name: "Riya Sharma", phone: "9876543210" },
+        intake_form_url: `${window.location.origin}/register/${clinicId ?? "CLINIC_ID"}`,
+      },
+    },
   };
 
   const MAKE_TEMPLATES = [
@@ -221,6 +235,20 @@ export default function WebhooksTab({ clinicId }: { clinicId: string }) {
       title: "New Appointment → Google Calendar + WhatsApp",
       description: "When a booking happens, create a Google Calendar event and send a WhatsApp confirmation to the patient.",
       modules: ["Webhooks → Custom webhook", "Google Calendar → Create event", "WhatsApp Business → Send template"],
+    },
+    {
+      key: "slot.availability.booked",
+      title: "Slot Availability → Book → Send QR Intake Form",
+      description:
+        "Ask the assistant tool for free slots on a date, let the caller pick one, book it, then WhatsApp the patient the QR intake form link to fill before arrival.",
+      modules: [
+        "Webhooks → Custom webhook (trigger: slot request)",
+        "HTTP → Make a request (assistant tool: check_availability, body {date, timezone})",
+        "Iterator → available_slots",
+        "Router → slot chosen? / no slots → offer next date",
+        "HTTP → Make a request (assistant tool: book_appointment)",
+        "WhatsApp Business → Send intake_form_url",
+      ],
     },
     {
       key: "invoice.paid",
@@ -241,6 +269,7 @@ export default function WebhooksTab({ clinicId }: { clinicId: string }) {
       modules: ["Webhooks → Custom webhook", "Iterator (platforms)", "Instagram for Business → Create photo post", "Facebook Pages → Create post", "LinkedIn → Share update"],
     },
   ];
+
 
   const handlePreTest = async () => {
     if (!newHook.url.trim()) {
