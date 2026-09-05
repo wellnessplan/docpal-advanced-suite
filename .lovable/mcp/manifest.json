@@ -113,6 +113,40 @@
         "outputSchema": null
       },
       {
+        "name": "check_availability",
+        "title": "Check slot availability",
+        "description": "Return bookable appointment slots for the signed-in user's clinic on a given date. Uses the clinic's working hours, breaks and slot duration, subtracts already-booked appointments, and hides past slots based on the supplied timezone.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "description": "Date to check, YYYY-MM-DD (clinic-local date)."
+            },
+            "timezone": {
+              "description": "IANA timezone, e.g. Asia/Kolkata. Used to hide past slots. Defaults to Asia/Kolkata.",
+              "type": "string"
+            },
+            "slot_duration_minutes": {
+              "description": "Override the clinic's configured slot duration for this check.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "date"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
         "name": "book_appointment",
         "title": "Book an appointment",
         "description": "Create a new appointment for an existing patient in the signed-in user's clinic. Check list_appointments first to avoid double-booking.",
