@@ -49,6 +49,8 @@ const Memberships = lazy(() => import("./pages/Memberships"));
 const Staff = lazy(() => import("./pages/Staff"));
 const DrDashboard = lazy(() => import("./pages/DrDashboard"));
 const Integrations = lazy(() => import("./pages/Integrations"));
+const AgentPreview = lazy(() => import("./pages/AgentPreview"));
+
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const Partners = lazy(() => import("./pages/Partners"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
