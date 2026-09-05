@@ -5,6 +5,7 @@ import listAppointments from "./tools/list-appointments";
 import bookAppointment from "./tools/book-appointment";
 import listInvoices from "./tools/list-invoices";
 import clinicSnapshot from "./tools/clinic-snapshot";
+import checkAvailability from "./tools/check-availability";
 
 // Import-safe: Vite inlines this literal at build time, so no runtime env read.
 const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
