@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794993751178,
+      "tag": "0000_restrict_selected_public_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794993848401,
+      "tag": "0001_preserve_display_pair_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794993875372,
+      "tag": "0002_scope_registration_settings_access",
+      "breakpoints": true
+    }
+  ]
+}

@@ -6303,6 +6303,10 @@ export type Database = {
         Returns: number
       }
       get_public_clinic_brand: { Args: { p_clinic_id: string }; Returns: Json }
+      get_public_display_screen: {
+        Args: { p_pair_code: string }
+        Returns: Json
+      }
       get_public_programs: {
         Args: { p_clinic_id: string }
         Returns: {
@@ -6313,6 +6317,10 @@ export type Database = {
           interval_months: number
           name: string
         }[]
+      }
+      get_public_registration_settings: {
+        Args: { p_clinic_id: string }
+        Returns: Json
       }
       get_user_clinic_id: { Args: never; Returns: string }
       get_user_group_id: { Args: never; Returns: string }
@@ -6387,6 +6395,10 @@ export type Database = {
       suggest_best_post_times: { Args: { p_clinic_id: string }; Returns: Json }
       switch_active_branch: {
         Args: { p_clinic_id: string }
+        Returns: undefined
+      }
+      touch_display_screen_by_pair_code: {
+        Args: { p_app_version: string; p_error?: string; p_pair_code: string }
         Returns: undefined
       }
       update_my_program_enrollment: {

@@ -166,23 +166,24 @@ export default function PatientSelfRegister() {
     (async () => {
       const [whRes, rsRes, brandRes] = await Promise.all([
         (supabase as any).from("clinic_working_hours").select("*").eq("clinic_id", clinicId).order("day_of_week"),
-        (supabase as any).from("clinic_registration_settings").select("*").eq("clinic_id", clinicId).maybeSingle(),
+        (supabase as any).rpc("get_public_registration_settings", { p_clinic_id: clinicId }),
         (supabase as any).rpc("get_public_clinic_brand", { p_clinic_id: clinicId }),
       ]);
       if (whRes.data) setHours(whRes.data);
       const brand = (brandRes?.data ?? null) as ClinicBrand | null;
       if (brand) setClinic(brand);
-      if (rsRes.data) {
+      const publicSettings = rsRes.data as Partial<RegSettings> | null;
+      if (publicSettings) {
         setSettings({
-          welcome_heading: rsRes.data.welcome_heading ?? DEFAULT_SETTINGS.welcome_heading,
-          welcome_subheading: rsRes.data.welcome_subheading ?? DEFAULT_SETTINGS.welcome_subheading,
-          banner_image_url: rsRes.data.banner_image_url,
-          brand_color: brand?.brand_color ?? rsRes.data.brand_color ?? DEFAULT_SETTINGS.brand_color,
-          thank_you_heading: rsRes.data.thank_you_heading ?? DEFAULT_SETTINGS.thank_you_heading,
-          thank_you_message: rsRes.data.thank_you_message ?? DEFAULT_SETTINGS.thank_you_message,
-          show_logo: rsRes.data.show_logo ?? true,
-          action_links: Array.isArray(rsRes.data.action_links) ? rsRes.data.action_links : [],
-          require_phone_verification: rsRes.data.require_phone_verification ?? true,
+          welcome_heading: publicSettings.welcome_heading ?? DEFAULT_SETTINGS.welcome_heading,
+          welcome_subheading: publicSettings.welcome_subheading ?? DEFAULT_SETTINGS.welcome_subheading,
+          banner_image_url: publicSettings.banner_image_url ?? null,
+          brand_color: brand?.brand_color ?? publicSettings.brand_color ?? DEFAULT_SETTINGS.brand_color,
+          thank_you_heading: publicSettings.thank_you_heading ?? DEFAULT_SETTINGS.thank_you_heading,
+          thank_you_message: publicSettings.thank_you_message ?? DEFAULT_SETTINGS.thank_you_message,
+          show_logo: publicSettings.show_logo ?? true,
+          action_links: Array.isArray(publicSettings.action_links) ? publicSettings.action_links : [],
+          require_phone_verification: publicSettings.require_phone_verification ?? true,
         });
       } else if (brand?.brand_color) {
         setSettings((s) => ({ ...s, brand_color: brand.brand_color }));

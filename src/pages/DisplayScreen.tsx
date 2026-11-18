@@ -37,17 +37,18 @@ export default function DisplayScreen() {
   // Surface uncaught errors back to the dashboard via last_error
   useEffect(() => {
     const onErr = async (e: ErrorEvent) => {
-      if (!screen?.id) return;
+      if (!code || !screen?.id) return;
       try {
-        await supabase.from("display_screens" as any).update({
-          last_error: String(e.message || e.error || "unknown").slice(0, 500),
-          last_error_at: new Date().toISOString(),
-        }).eq("id", screen.id);
+        await (supabase as any).rpc("touch_display_screen_by_pair_code", {
+          p_pair_code: code.toUpperCase(),
+          p_app_version: APP_VERSION,
+          p_error: String(e.message || e.error || "unknown").slice(0, 500),
+        });
       } catch {}
     };
     window.addEventListener("error", onErr);
     return () => window.removeEventListener("error", onErr);
-  }, [screen?.id]);
+  }, [code, screen?.id]);
 
   // Initial load + heartbeat
   useEffect(() => {
@@ -55,19 +56,16 @@ export default function DisplayScreen() {
     let mounted = true;
 
     const loadAll = async () => {
-      const { data: s } = await supabase
-        .from("display_screens" as any)
-        .select("*")
-        .eq("pair_code", code.toUpperCase())
-        .maybeSingle();
+      const { data: s } = await (supabase as any).rpc("get_public_display_screen", {
+        p_pair_code: code.toUpperCase(),
+      });
       if (!s || !mounted) return;
       setScreen(s);
       lastCmdAtRef.current = (s as any).command_at || null;
-      await supabase.from("display_screens" as any).update({
-        is_paired: true,
-        last_seen_at: new Date().toISOString(),
-        app_version: APP_VERSION,
-      }).eq("id", (s as any).id);
+      await (supabase as any).rpc("touch_display_screen_by_pair_code", {
+        p_pair_code: code.toUpperCase(),
+        p_app_version: APP_VERSION,
+      });
 
       const { data: br } = await (supabase as any)
         .rpc("get_display_branding_by_pair", { p_pair_code: code.toUpperCase() });
@@ -100,16 +98,29 @@ export default function DisplayScreen() {
 
     const heartbeat = setInterval(async () => {
       try {
-        const { data: s } = await supabase
-          .from("display_screens" as any)
-          .select("*")
-          .eq("pair_code", code.toUpperCase())
-          .maybeSingle();
+        const { data: s } = await (supabase as any).rpc("get_public_display_screen", {
+          p_pair_code: code.toUpperCase(),
+        });
         if (s) {
-          await supabase.from("display_screens" as any)
-            .update({ last_seen_at: new Date().toISOString(), app_version: APP_VERSION })
-            .eq("id", (s as any).id);
+          setScreen(s);
+          await (supabase as any).rpc("touch_display_screen_by_pair_code", {
+            p_pair_code: code.toUpperCase(),
+            p_app_version: APP_VERSION,
+          });
           loadQueue((s as any).clinic_id);
+          const nextVideoId = (s as any).current_video_id;
+          if (nextVideoId !== video?.id) {
+            if (nextVideoId) {
+              const { data: nextVideo } = await supabase
+                .from("education_videos" as any)
+                .select("*")
+                .eq("id", nextVideoId)
+                .maybeSingle();
+              setVideo(nextVideo);
+            } else {
+              setVideo(null);
+            }
+          }
           // Detect & handle remote commands posted while we were offline
           const cmdAt = (s as any).command_at;
           if (cmdAt && cmdAt !== lastCmdAtRef.current) {
@@ -142,21 +153,6 @@ export default function DisplayScreen() {
     if (!screen) return;
     const channel = supabase
       .channel(`display-${screen.id}`)
-      .on("postgres_changes",
-        { event: "UPDATE", schema: "public", table: "display_screens", filter: `id=eq.${screen.id}` },
-        async (payload) => {
-          const newS: any = payload.new;
-          setScreen(newS);
-          if (newS.current_video_id && newS.current_video_id !== video?.id) {
-            const { data: v } = await supabase.from("education_videos" as any).select("*").eq("id", newS.current_video_id).maybeSingle();
-            setVideo(v);
-          }
-          // Process new command
-          if (newS.command_at && newS.command_at !== lastCmdAtRef.current) {
-            lastCmdAtRef.current = newS.command_at;
-            handleCommand(newS.command);
-          }
-        })
       .on("postgres_changes",
         { event: "UPDATE", schema: "public", table: "display_branding", filter: `clinic_id=eq.${screen.clinic_id}` },
         (payload) => setBranding(payload.new))
