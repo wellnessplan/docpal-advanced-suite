@@ -71,7 +71,6 @@ const navGroups: NavGroup[] = [
     collapsible: true,
     items: [
       { href: "/finance-hub", label: "Billing & Payments", icon: Receipt },
-      { href: "/memberships", label: "Memberships", icon: Crown },
     ],
   },
   {
@@ -91,27 +90,19 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Patient Communication",
+    groupIcon: MessageCircle,
+    collapsible: true,
+    items: [
+      { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+    ],
+  },
+  {
     label: "Communication",
     groupIcon: MessageCircle,
     collapsible: true,
     items: [
       { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
-      { href: "/patient-education", label: "Patient Education", icon: Library },
-      { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
-      { href: "/reviews", label: "Feedback", icon: Star },
-      { href: "/google-reviews", label: "Google Reviews", icon: Star },
-    ],
-  },
-  {
-    label: "Growth",
-    groupIcon: TrendingUp,
-    collapsible: true,
-    items: [
-      { href: "/campaigns", label: "Campaigns", icon: Megaphone },
-      { href: "/programs", label: "Patient Programs", icon: Gift },
-      { href: "/social-calendar", label: "Social Calendar", icon: CalendarDays },
-      { href: "/leads", label: "Leads", icon: Target },
-      { href: "/referrals", label: "Referrals", icon: Gift },
     ],
   },
   {
@@ -123,6 +114,25 @@ const navGroups: NavGroup[] = [
       { href: "/settings?tab=branches", label: "Branches", icon: Building2, roles: ["owner", "admin"] },
       { href: "/settings?tab=vendors", label: "Vendors & Suppliers", icon: Truck, roles: ["owner", "admin"] },
       { href: "/settings?tab=tpa", label: "TPAs", icon: ShieldCheck, roles: ["owner", "admin"] },
+    ],
+  },
+  {
+    label: "More Tools",
+    groupIcon: Library,
+    collapsible: true,
+    items: [
+      { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
+      { href: "/memberships", label: "Memberships", icon: Crown },
+      { href: "/patient-education", label: "Patient Education", icon: Library },
+      { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
+      { href: "/reviews", label: "Feedback", icon: Star },
+      { href: "/google-reviews", label: "Google Reviews", icon: Star },
+      { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+      { href: "/programs", label: "Patient Programs", icon: Gift },
+      { href: "/social-calendar", label: "Social Calendar", icon: CalendarDays },
+      { href: "/leads", label: "Leads", icon: Target },
+      { href: "/referrals", label: "Referrals", icon: Gift },
+      { href: "/partners", label: "Partners", icon: Package },
     ],
   },
 ];
