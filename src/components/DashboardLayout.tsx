@@ -25,14 +25,13 @@ import logoAsset from "@/assets/doctorsbuddy-logo.png.asset.json";
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, Megaphone,
   Settings, LogOut, Menu,
-  ListOrdered, Package, TrendingUp, BarChart3, Stethoscope,
+  ListOrdered, Package, BarChart3,
   ChevronDown, ChevronUp, FlaskConical, TestTubes, ClipboardList,
-  ClipboardCheck, Wallet, ShieldCheck, IndianRupee, Activity,
-  Target, Star, Gift, Crown, UserCog, ScrollText, CalendarClock, Shield,
+  ClipboardCheck, ShieldCheck, IndianRupee, Activity, ScrollText,
+  Target, Star, Gift, Crown, UserCog, CalendarClock, Shield,
   Truck, ListChecks, Focus, MessageCircle, Library, Tv,
   Building2
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 interface NavItem { href: string; label: string; icon: React.ElementType; roles?: string[] }
@@ -71,6 +70,8 @@ const navGroups: NavGroup[] = [
     collapsible: true,
     items: [
       { href: "/finance-hub", label: "Billing & Payments", icon: Receipt },
+      { href: "/memberships", label: "Memberships", icon: Crown },
+      { href: "/inventory", label: "Inventory", icon: Package },
     ],
   },
   {
@@ -79,22 +80,6 @@ const navGroups: NavGroup[] = [
     collapsible: true,
     items: [
       { href: "/analytics", label: "Reports & Insights", icon: BarChart3 },
-    ],
-  },
-  {
-    label: "Inventory",
-    groupIcon: Package,
-    collapsible: true,
-    items: [
-      { href: "/inventory", label: "Inventory", icon: Package },
-    ],
-  },
-  {
-    label: "Patient Communication",
-    groupIcon: MessageCircle,
-    collapsible: true,
-    items: [
-      { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     ],
   },
   {
@@ -114,6 +99,8 @@ const navGroups: NavGroup[] = [
       { href: "/settings?tab=branches", label: "Branches", icon: Building2, roles: ["owner", "admin"] },
       { href: "/settings?tab=vendors", label: "Vendors & Suppliers", icon: Truck, roles: ["owner", "admin"] },
       { href: "/settings?tab=tpa", label: "TPAs", icon: ShieldCheck, roles: ["owner", "admin"] },
+      { href: "/staff", label: "Staff", icon: UserCog },
+      { href: "/audit-log", label: "Audit Log", icon: ScrollText },
     ],
   },
   {
@@ -122,7 +109,6 @@ const navGroups: NavGroup[] = [
     collapsible: true,
     items: [
       { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
-      { href: "/memberships", label: "Memberships", icon: Crown },
       { href: "/patient-education", label: "Patient Education", icon: Library },
       { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
       { href: "/reviews", label: "Feedback", icon: Star },

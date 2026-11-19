@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Activity,
   BarChart3,
   Building2,
   CalendarDays,
@@ -26,8 +25,8 @@ import {
   Truck,
   UserCog,
   Users,
-  Wallet,
   LogOut,
+  Tv,
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -57,6 +56,7 @@ const sections = [
     icon: IndianRupee,
     items: [
       { href: "/finance-hub", label: "Billing & Payments", icon: Receipt },
+      { href: "/memberships", label: "Memberships", icon: Crown },
       { href: "/inventory", label: "Inventory", icon: Package },
     ],
   },
@@ -74,10 +74,9 @@ const sections = [
     label: "More Tools",
     icon: Library,
     items: [
-      { href: "/memberships", label: "Memberships", icon: Crown },
       { href: "/ortho", label: "Orthodontics", icon: FlaskConical },
       { href: "/patient-education", label: "Patient Education", icon: Library },
-      { href: "/displays", label: "Clinic Screens / TV", icon: Activity },
+      { href: "/displays", label: "Clinic Screens / TV", icon: Tv },
       { href: "/reviews", label: "Feedback", icon: Star },
       { href: "/google-reviews", label: "Google Reviews", icon: Star },
       { href: "/campaigns", label: "Campaigns", icon: Megaphone },
