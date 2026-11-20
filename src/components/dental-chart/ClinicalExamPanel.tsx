@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardList } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ClipboardList, FilePlus2 } from "lucide-react";
 import VoiceDictation, { type SoapResult } from "./VoiceDictation";
 
 interface ClinicalExamPanelProps {
@@ -10,15 +11,45 @@ interface ClinicalExamPanelProps {
   gumCondition: string;
   alignmentCondition: string;
   diagnosisNotes: string;
+  selectedTooth?: number | null;
   onChange: (field: string, value: string) => void;
 }
 
 const GUM_CONDITIONS = ["Normal", "Gingivitis", "Periodontitis", "Recession", "Swelling", "Bleeding", "Abscess"];
 const ALIGNMENT_CONDITIONS = ["Normal", "Crowding", "Spacing", "Crossbite", "Overbite", "Underbite", "Open Bite", "Deep Bite"];
 
+const PROCEDURE_MACROS = [
+  {
+    name: "RCT",
+    note: "Root canal therapy\nTooth: {tooth}\nPulpal/periapical diagnosis: [edit]\nCanals and working lengths: [edit]\nIrrigation: [edit]\nObturation: [edit]\nCoronal restoration: [edit]\nPost-operative advice: [edit]",
+  },
+  {
+    name: "Class II composite",
+    note: "Class II composite restoration\nTooth: {tooth}\nSurface(s): [edit]\nAnaesthesia/isolation: [edit]\nCaries and pulp findings: [edit]\nLiner/base, if used: [edit]\nMaterial and shade: [edit]\nContact and occlusion checked: [edit]\nPost-operative advice: [edit]",
+  },
+  {
+    name: "Simple extraction",
+    note: "Simple extraction\nTooth: {tooth}\nIndication: [edit]\nAnaesthesia: [edit]\nProcedure and findings: [edit]\nHaemostasis: [edit]\nComplications, if any: [edit]\nPost-operative instructions: [edit]",
+  },
+  {
+    name: "Scaling & polishing",
+    note: "Scaling and polishing\nAreas treated: [edit]\nDeposits/gingival findings: [edit]\nPatient tolerance: [edit]\nOral hygiene advice: [edit]\nRecommended review/recall: [edit]",
+  },
+  {
+    name: "Crown preparation",
+    note: "Crown preparation\nTooth: {tooth}\nIndication: [edit]\nAnaesthesia: [edit]\nPreparation and margin: [edit]\nMaterial/shade: [edit]\nProvisional and occlusion: [edit]\nLab instructions: [edit]\nNext visit: [edit]",
+  },
+];
+
 export default function ClinicalExamPanel({
-  chiefComplaint, gumCondition, alignmentCondition, diagnosisNotes, onChange,
+  chiefComplaint, gumCondition, alignmentCondition, diagnosisNotes, selectedTooth, onChange,
 }: ClinicalExamPanelProps) {
+  const insertProcedureMacro = (note: string) => {
+    const tooth = selectedTooth ? `#${selectedTooth}` : "[enter tooth/site]";
+    const preparedNote = note.replace(/\{tooth\}/g, tooth);
+    onChange("diagnosis_notes", diagnosisNotes.trim() ? `${diagnosisNotes.trim()}\n\n${preparedNote}` : preparedNote);
+  };
+
   return (
     <Card className="shadow-card border-0">
       <CardHeader className="pb-2">
@@ -73,7 +104,27 @@ export default function ClinicalExamPanel({
           </div>
         </div>
         <div>
-          <Label className="text-xs font-semibold">Diagnosis Notes</Label>
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <Label className="text-xs font-semibold">Diagnosis Notes</Label>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-[11px] text-muted-foreground">Procedure templates</span>
+          </div>
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {PROCEDURE_MACROS.map((macro) => (
+              <Button
+                key={macro.name}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 px-2.5 text-xs"
+                onClick={() => insertProcedureMacro(macro.note)}
+                aria-label={`Insert ${macro.name} note template`}
+              >
+                <FilePlus2 className="h-3.5 w-3.5" />
+                {macro.name}
+              </Button>
+            ))}
+          </div>
           <Textarea
             placeholder="Clinical findings..."
             value={diagnosisNotes}

@@ -184,6 +184,7 @@ export default function DentalChartPage() {
                   gumCondition={gumCondition}
                   alignmentCondition={alignmentCondition}
                   diagnosisNotes={diagnosisNotes}
+                  selectedTooth={selectedTooth}
                   onChange={handleClinicalChange}
                 />
 
